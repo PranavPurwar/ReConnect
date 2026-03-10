@@ -10,9 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -28,30 +26,34 @@ import dev.pranav.reconnect.ui.theme.*
 @Composable
 fun HomeScreen(
     onContactClick: (String) -> Unit,
+    onAddClick: () -> Unit,
     innerPadding: PaddingValues = PaddingValues(),
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
     Scaffold(
-        modifier = Modifier.padding(innerPadding),
+        modifier = Modifier,
+        contentWindowInsets = WindowInsets(0.dp),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {},
+                onClick = onAddClick,
                 containerColor = GoldPrimary,
                 contentColor = Color.White,
-                shape = CircleShape
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+                Icon(Icons.Default.Add, contentDescription = "Add contact")
             }
         },
         containerColor = Color.Transparent
     ) { scaffoldPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(scaffoldPadding),
-            contentPadding = PaddingValues(bottom = 80.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding() + scaffoldPadding.calculateBottomPadding() + 80.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { HomeTopBar() }
@@ -82,40 +84,43 @@ private fun HomeTopBar() {
             .padding(horizontal = 20.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            shape = CircleShape,
-            color = GoldPrimary.copy(alpha = 0.15f),
-            modifier = Modifier.size(40.dp)
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(GoldPrimary, CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("⚇", fontSize = 20.sp, color = GoldPrimary)
-            }
+            Icon(
+                Icons.Default.BubbleChart,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(22.dp)
+            )
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(10.dp))
         Text(
             text = "ReConnect",
-            style = MaterialTheme.typography.titleLarge,
+            fontFamily = UltraFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 22.sp,
             color = GoldPrimary
         )
         Spacer(Modifier.weight(1f))
         IconButton(onClick = {}) {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = "Search",
-                tint = CharcoalText
-            )
+            Icon(Icons.Default.Search, contentDescription = "Search", tint = CharcoalText)
         }
         Surface(
             modifier = Modifier.size(36.dp),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.secondaryContainer
+            color = GoldPrimary.copy(alpha = 0.15f),
+            border = androidx.compose.foundation.BorderStroke(2.dp, GoldPrimary)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Default.Person,
                     contentDescription = "Profile",
                     modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    tint = GoldPrimary
                 )
             }
         }
@@ -176,23 +181,25 @@ private fun BirthdayBashCard(event: UpcomingEvent.Birthday, onContactClick: (Str
                     Column {
                         Text(
                             text = "${event.day}",
-                            fontFamily = SerifFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 64.sp,
-                            color = CharcoalText.copy(alpha = 0.15f)
+                            fontFamily = UltraFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 72.sp,
+                            lineHeight = 72.sp,
+                            color = GoldPrimary.copy(alpha = 0.3f)
                         )
                         Text(
                             text = event.month,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = GoldDark
+                            fontFamily = UltraFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 20.sp,
+                            color = CharcoalText
                         )
                     }
                     Button(
                         onClick = { onContactClick(event.contactId) },
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = GoldDark,
+                            containerColor = GoldPrimary,
                             contentColor = Color.White
                         ),
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
@@ -237,15 +244,15 @@ private fun CatchUpCard(event: UpcomingEvent.CatchUp, onContactClick: (String) -
             Spacer(Modifier.height(16.dp))
             Text(
                 text = "${event.day}",
-                fontFamily = SerifFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 48.sp,
-                color = GoldPrimary
+                fontFamily = UltraFamily,
+                fontWeight = FontWeight.Normal,
+                fontSize = 36.sp,
+                color = BlueText
             )
             Text(
                 text = event.dayOfWeek,
                 style = MaterialTheme.typography.labelLarge,
-                color = GoldPrimary
+                color = BlueText
             )
         }
     }
@@ -261,13 +268,13 @@ private fun TimelineReminderCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = BlueCard)
+        colors = CardDefaults.cardColors(containerColor = PurpleCard)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Icon(
                 Icons.Default.History,
                 contentDescription = null,
-                tint = CharcoalText,
+                tint = PurpleText,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(Modifier.height(12.dp))
@@ -277,15 +284,14 @@ private fun TimelineReminderCard(
                 color = CharcoalText
             )
             Spacer(Modifier.height(24.dp))
-            OutlinedButton(
+            TextButton(
                 onClick = { onContactClick(event.contactId) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = event.actionLabel,
                     style = MaterialTheme.typography.labelLarge,
-                    color = GoldPrimary
+                    color = PurpleText
                 )
             }
         }
@@ -369,7 +375,7 @@ private fun QuickCatchUpRow(
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Quick Send",
-                    tint = CharcoalText
+                    tint = GoldPrimary
                 )
             }
         }

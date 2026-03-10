@@ -16,6 +16,10 @@ val AmberCardStart = Color(0xFFFFF3D6)
 val AmberCardEnd = Color(0xFFFFE4A8)
 
 val BlueCard = Color(0xFFD6E4F5)
+val BlueText = Color(0xFF4A72A0)
+
+val PurpleCard = Color(0xFFEDD6F8)
+val PurpleText = Color(0xFF7B5EA7)
 
 val ActiveGreen = Color(0xFF4CAF50)
 val CoralLabel = Color(0xFFD4724A)

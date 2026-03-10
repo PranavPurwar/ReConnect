@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -29,9 +30,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ReconnectInterval
+import dev.pranav.reconnect.ui.components.ReConnectTopBar
 import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactPickerScreen(
     onContinue: () -> Unit,
@@ -45,104 +48,102 @@ fun ContactPickerScreen(
         viewModel.loadContacts(context.contentResolver)
     }
 
-    Column(
+    Scaffold(
+        topBar = {
+            ReConnectTopBar(
+                showLogo = false,
+                navigationIcon = {
+                    IconButton(onClick = onSkip) {
+                        Icon(Icons.Default.Close, contentDescription = "Skip")
+                    }
+                }
+            )
+        },
+        containerColor = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(CreamBackground, Color.White))
-            )
-    ) {
-        Spacer(Modifier.height(16.dp))
-
-        Row(
+            .background(Brush.verticalGradient(listOf(CreamBackground, Color.White)))
+    ) { scaffoldPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .padding(top = scaffoldPadding.calculateTopPadding())
         ) {
-            Text(
-                text = "Choose Your Circle",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(onClick = onSkip) {
-                Text("Skip", color = GoldPrimary)
-            }
-        }
-
-        Text(
-            text = "Select the people who matter most and how often you'd like to reconnect.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = state.searchQuery,
-            onValueChange = { viewModel.updateSearch(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            placeholder = { Text("Search contacts…") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            shape = RoundedCornerShape(28.dp),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GoldPrimary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-            )
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = GoldPrimary)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(state.filteredContacts, key = { it.id }) { contact ->
-                    ContactPickerItem(
-                        contact = contact,
-                        isSelected = contact.id in state.selectedIds,
-                        interval = state.intervals[contact.id] ?: ReconnectInterval.MONTHLY,
-                        onToggle = { viewModel.toggleContact(contact.id) },
-                        onIntervalChanged = { viewModel.setInterval(contact.id, it) }
-                    )
-                }
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 8.dp,
-                color = Color.White
-            ) {
-                Button(
-                    onClick = onContinue,
-                    enabled = state.selectedCount > 0,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
-                        .height(56.dp),
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                Text(
+                    text = "Choose Your Circle",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Select the people who matter most and how often you'd like to reconnect.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.updateSearch(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search contacts…") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GoldPrimary,
-                        contentColor = Color.White
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = GoldPrimary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            if (state.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = GoldPrimary)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = "Continue · ${state.selectedCount} selected",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    items(state.filteredContacts, key = { it.id }) { contact ->
+                        ContactPickerItem(
+                            contact = contact,
+                            isSelected = contact.id in state.selectedIds,
+                            interval = state.intervals[contact.id] ?: ReconnectInterval.MONTHLY,
+                            onToggle = { viewModel.toggleContact(contact.id) },
+                            onIntervalChanged = { viewModel.setInterval(contact.id, it) }
+                        )
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = Color.White
+                ) {
+                    Button(
+                        onClick = {
+                            viewModel.confirmSelection()
+                            onContinue()
+                        },
+                        enabled = state.selectedCount > 0,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = GoldPrimary,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Continue · ${state.selectedCount} selected",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
             }
         }
@@ -253,4 +254,3 @@ private fun ContactPickerItem(
         }
     }
 }
-

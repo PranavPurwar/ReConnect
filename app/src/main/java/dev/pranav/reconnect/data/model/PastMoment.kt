@@ -4,6 +4,7 @@ enum class MomentCategory { DINING, ART, OUTDOORS, GENERAL }
 
 data class PastMoment(
     val id: String,
+    val contactId: String = "",
     val title: String,
     val description: String,
     val dateLabel: String,

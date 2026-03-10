@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ReconnectInterval
 import dev.pranav.reconnect.data.repository.ContactRepository
+import dev.pranav.reconnect.data.repository.SharedPrefsContactStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,5 +65,17 @@ class ContactPickerViewModel : ViewModel() {
     fun updateSearch(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
-}
 
+    fun confirmSelection() {
+        val state = _uiState.value
+        val selected = state.contacts
+            .filter { it.id in state.selectedIds }
+            .map { contact ->
+                contact.copy(
+                    reconnectInterval = state.intervals[contact.id] ?: ReconnectInterval.MONTHLY,
+                    isImportant = true
+                )
+            }
+        SharedPrefsContactStore.addContacts(selected)
+    }
+}

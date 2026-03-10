@@ -5,6 +5,7 @@ data class Contact(
     val name: String,
     val title: String = "",
     val relationship: String = "",
+    val notes: String = "",
     val photoUri: String? = null,
     val phoneNumber: String = "",
     val isActive: Boolean = false,

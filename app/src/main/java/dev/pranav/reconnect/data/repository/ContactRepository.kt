@@ -35,7 +35,7 @@ class ContactRepository {
 
                 contacts.add(
                     Contact(
-                        id = id,
+                        id = "device_$id",
                         name = it.getString(nameIdx) ?: "Unknown",
                         phoneNumber = it.getString(numberIdx) ?: "",
                         photoUri = it.getString(photoIdx)

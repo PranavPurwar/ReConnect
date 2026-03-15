@@ -9,20 +9,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import dev.pranav.reconnect.data.model.ContactFormData
 import dev.pranav.reconnect.data.model.ReconnectInterval
 import dev.pranav.reconnect.ui.theme.GoldPrimary
+import java.text.DateFormatSymbols
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddContactSheet(
     onDismiss: () -> Unit,
-    onSave: (name: String, phone: String, title: String, relationship: String, interval: ReconnectInterval) -> Unit
+    onSave: (ContactFormData) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var relationship by remember { mutableStateOf("") }
     var interval by remember { mutableStateOf(ReconnectInterval.MONTHLY) }
+    var birthdayMonth by remember { mutableStateOf<Int?>(null) }
+    var birthdayDay by remember { mutableStateOf<Int?>(null) }
+    var showMonthMenu by remember { mutableStateOf(false) }
+    var showDayMenu by remember { mutableStateOf(false) }
+
+    val monthNames = DateFormatSymbols().months.take(12)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -76,6 +84,69 @@ fun AddContactSheet(
                 singleLine = true
             )
 
+            Text("Birthday (optional)", style = MaterialTheme.typography.labelLarge)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    OutlinedButton(
+                        onClick = { showMonthMenu = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(birthdayMonth?.let { monthNames[it - 1] } ?: "Month")
+                    }
+                    DropdownMenu(
+                        expanded = showMonthMenu,
+                        onDismissRequest = { showMonthMenu = false }
+                    ) {
+                        monthNames.forEachIndexed { index, month ->
+                            DropdownMenuItem(
+                                text = { Text(month) },
+                                onClick = {
+                                    birthdayMonth = index + 1
+                                    showMonthMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    OutlinedButton(
+                        onClick = { showDayMenu = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(birthdayDay?.toString() ?: "Day")
+                    }
+                    DropdownMenu(
+                        expanded = showDayMenu,
+                        onDismissRequest = { showDayMenu = false }
+                    ) {
+                        val daysInMonth = when (birthdayMonth) {
+                            2 -> 29
+                            4, 6, 9, 11 -> 30
+                            else -> 31
+                        }
+                        (1..daysInMonth).forEach { day ->
+                            DropdownMenuItem(
+                                text = { Text(day.toString()) },
+                                onClick = {
+                                    birthdayDay = day
+                                    showDayMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+                if (birthdayMonth != null || birthdayDay != null) {
+                    TextButton(onClick = { birthdayMonth = null; birthdayDay = null }) {
+                        Text("Clear", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+
             Text("Reconnect every", style = MaterialTheme.typography.labelLarge)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -99,7 +170,17 @@ fun AddContactSheet(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        onSave(name, phone, title, relationship, interval)
+                        onSave(
+                            ContactFormData(
+                                name = name,
+                                phone = phone,
+                                title = title,
+                                relationship = relationship,
+                                interval = interval,
+                                birthdayMonth = birthdayMonth,
+                                birthdayDay = birthdayDay
+                            )
+                        )
                     }
                 },
                 enabled = name.isNotBlank(),
@@ -117,4 +198,3 @@ fun AddContactSheet(
         }
     }
 }
-

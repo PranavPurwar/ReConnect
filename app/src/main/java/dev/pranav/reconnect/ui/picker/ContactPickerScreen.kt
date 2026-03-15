@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
+import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ReconnectInterval
 import dev.pranav.reconnect.ui.components.ReConnectTopBar
@@ -172,7 +172,7 @@ private fun ContactPickerItem(
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (contact.photoUri != null) {
                 AsyncImage(
-                    model = contact.photoUri,
+                    uri = contact.photoUri,
                     contentDescription = contact.name,
                     modifier = Modifier
                         .size(48.dp)

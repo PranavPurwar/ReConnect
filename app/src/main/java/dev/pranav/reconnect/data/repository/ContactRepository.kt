@@ -2,7 +2,10 @@ package dev.pranav.reconnect.data.repository
 
 import android.content.ContentResolver
 import android.provider.ContactsContract
-import dev.pranav.reconnect.data.model.*
+import dev.pranav.reconnect.data.model.Contact
+import dev.pranav.reconnect.data.model.MomentCategory
+import dev.pranav.reconnect.data.model.PastMoment
+import dev.pranav.reconnect.data.model.ReconnectInterval
 
 class ContactRepository {
 
@@ -86,34 +89,6 @@ class ContactRepository {
             isImportant = true,
             reconnectInterval = ReconnectInterval.WEEKLY
         )
-    )
-
-    fun getSampleUpcomingEvents(): List<UpcomingEvent> = listOf(
-        UpcomingEvent.Birthday(
-            contactName = "Sarah\nJenkins",
-            contactId = "2",
-            age = 28,
-            day = 12,
-            month = "MARCH",
-            note = "Turning 28. Don't forget the lilies!"
-        ),
-        UpcomingEvent.CatchUp(
-            contactName = "Mark",
-            contactId = "3",
-            day = 15,
-            dayOfWeek = "WEDNESDAY"
-        ),
-        UpcomingEvent.TimelineReminder(
-            contactName = "Mom",
-            contactId = "6",
-            duration = "3 Months Since Mom",
-            actionLabel = "CALL NOW"
-        )
-    )
-
-    fun getSampleQuickCatchUps(): List<Pair<Contact, String>> = listOf(
-        Contact(id = "4", name = "David Chen") to "Last spoke: 2 weeks ago",
-        Contact(id = "5", name = "Elena Rodriguez") to "Suggested: Afternoon tea"
     )
 
     fun getSamplePastMoments(): List<PastMoment> = listOf(

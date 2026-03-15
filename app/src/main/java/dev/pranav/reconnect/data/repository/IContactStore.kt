@@ -10,7 +10,9 @@ interface IContactStore {
 
     fun addContacts(newContacts: List<Contact>)
     fun addContact(contact: Contact)
+    fun updateContact(contact: Contact)
     fun addMoment(moment: PastMoment)
     fun getMomentsFor(contactId: String): List<PastMoment>
+    fun deleteContact(contactId: String)
 }
 

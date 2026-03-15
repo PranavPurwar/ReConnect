@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class * implements com.github.panpf.sketch.util.DecoderProvider { *; }
+-keep class * implements com.github.panpf.sketch.util.FetcherProvider { *; }

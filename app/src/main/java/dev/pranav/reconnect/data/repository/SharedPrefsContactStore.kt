@@ -62,6 +62,11 @@ object SharedPrefsContactStore : IContactStore {
         persistContacts()
     }
 
+    override fun updateContact(contact: Contact) {
+        _contacts.value = _contacts.value.map { if (it.id == contact.id) contact else it }
+        persistContacts()
+    }
+
     override fun addMoment(moment: PastMoment) {
         _moments.value = listOf(moment) + _moments.value
         persistMoments()
@@ -69,6 +74,13 @@ object SharedPrefsContactStore : IContactStore {
 
     override fun getMomentsFor(contactId: String): List<PastMoment> =
         _moments.value.filter { it.contactId == contactId }
+
+    override fun deleteContact(contactId: String) {
+        _contacts.value = _contacts.value.map {
+           if (it.id == contactId) null else it
+        }.filterNotNull()
+        persistContacts()
+    }
 
     private fun persistContacts() {
         val arr = JSONArray()
@@ -109,10 +121,13 @@ object SharedPrefsContactStore : IContactStore {
         put("relationship", relationship)
         put("notes", notes)
         photoUri?.let { put("photoUri", it) }
+        seedColorArgb?.let { put("seedColorArgb", it) }
         put("phoneNumber", phoneNumber)
         put("isActive", isActive)
         put("isImportant", isImportant)
         put("reconnectInterval", reconnectInterval.name)
+        birthdayMonth?.let { put("birthdayMonth", it) }
+        birthdayDay?.let { put("birthdayDay", it) }
     }
 
     private fun JSONObject.toContact(): Contact = Contact(
@@ -122,6 +137,7 @@ object SharedPrefsContactStore : IContactStore {
         relationship = optString("relationship", ""),
         notes = optString("notes", ""),
         photoUri = optString("photoUri").takeIf { it.isNotBlank() },
+        seedColorArgb = if (has("seedColorArgb")) getInt("seedColorArgb") else null,
         phoneNumber = optString("phoneNumber", ""),
         isActive = optBoolean("isActive", false),
         isImportant = optBoolean("isImportant", false),
@@ -129,7 +145,9 @@ object SharedPrefsContactStore : IContactStore {
             ReconnectInterval.valueOf(optString("reconnectInterval", ReconnectInterval.MONTHLY.name))
         } catch (e: Exception) {
             ReconnectInterval.MONTHLY
-        }
+        },
+        birthdayMonth = if (has("birthdayMonth")) getInt("birthdayMonth") else null,
+        birthdayDay = if (has("birthdayDay")) getInt("birthdayDay") else null
     )
 
     private fun PastMoment.toJson(): JSONObject = JSONObject().apply {

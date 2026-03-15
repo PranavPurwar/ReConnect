@@ -1,6 +1,7 @@
 package dev.pranav.reconnect.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,253 +11,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.UpcomingEvent
 import dev.pranav.reconnect.ui.theme.*
-
-@Composable
-fun HomeScreen(
-    onContactClick: (String) -> Unit,
-    onAddClick: () -> Unit,
-    innerPadding: PaddingValues = PaddingValues(),
-    viewModel: HomeViewModel = viewModel()
-) {
-    val state by viewModel.uiState.collectAsState()
-
-    Scaffold(
-        modifier = Modifier,
-        contentWindowInsets = WindowInsets(0.dp),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                containerColor = GoldPrimary,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add contact")
-            }
-        },
-        containerColor = Color.Transparent
-    ) { scaffoldPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() + scaffoldPadding.calculateBottomPadding() + 80.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item { HomeTopBar() }
-            item { SectionHeader() }
-
-            items(state.upcomingEvents) { event ->
-                when (event) {
-                    is UpcomingEvent.Birthday -> BirthdayBashCard(event, onContactClick)
-                    is UpcomingEvent.CatchUp -> CatchUpCard(event, onContactClick)
-                    is UpcomingEvent.TimelineReminder -> TimelineReminderCard(event, onContactClick)
-                }
-            }
-
-            item { QuickCatchUpsHeader() }
-
-            items(state.quickCatchUps) { (contact, subtitle) ->
-                QuickCatchUpRow(contact, subtitle, onContactClick)
-            }
-        }
-    }
-}
-
-@Composable
-private fun HomeTopBar() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(GoldPrimary, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Default.BubbleChart,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp)
-            )
-        }
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = "ReConnect",
-            fontFamily = UltraFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 22.sp,
-            color = GoldPrimary
-        )
-        Spacer(Modifier.weight(1f))
-        IconButton(onClick = {}) {
-            Icon(Icons.Default.Search, contentDescription = "Search", tint = CharcoalText)
-        }
-        Surface(
-            modifier = Modifier.size(36.dp),
-            shape = CircleShape,
-            color = GoldPrimary.copy(alpha = 0.15f),
-            border = androidx.compose.foundation.BorderStroke(2.dp, GoldPrimary)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Profile",
-                    modifier = Modifier.size(20.dp),
-                    tint = GoldPrimary
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader() {
-    Text(
-        text = "Upcoming\nConnections",
-        style = MaterialTheme.typography.displayMedium,
-        color = CharcoalText,
-        modifier = Modifier.padding(horizontal = 20.dp)
-    )
-}
-
-@Composable
-private fun BirthdayBashCard(event: UpcomingEvent.Birthday, onContactClick: (String) -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(listOf(AmberCardStart, AmberCardEnd))
-                )
-                .padding(24.dp)
-        ) {
-            Column {
-                Text(
-                    text = "BIRTHDAY BASH",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = CoralLabel
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = event.contactName,
-                    style = MaterialTheme.typography.displayLarge,
-                    color = CharcoalText
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = event.note,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = CharcoalText.copy(alpha = 0.7f)
-                )
-                Spacer(Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Column {
-                        Text(
-                            text = "${event.day}",
-                            fontFamily = UltraFamily,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 72.sp,
-                            lineHeight = 72.sp,
-                            color = GoldPrimary.copy(alpha = 0.3f)
-                        )
-                        Text(
-                            text = event.month,
-                            fontFamily = UltraFamily,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 20.sp,
-                            color = CharcoalText
-                        )
-                    }
-                    Button(
-                        onClick = { onContactClick(event.contactId) },
-                        shape = RoundedCornerShape(24.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = GoldPrimary,
-                            contentColor = Color.White
-                        ),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text("Send\nWish", style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CatchUpCard(event: UpcomingEvent.CatchUp, onContactClick: (String) -> Unit) {
-    Card(
-        onClick = { onContactClick(event.contactId) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = BlueCard)
-    ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Icon(
-                Icons.Default.Checklist,
-                contentDescription = null,
-                tint = CharcoalText,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "Catch up with ${event.contactName}",
-                style = MaterialTheme.typography.headlineMedium,
-                color = CharcoalText
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = "${event.day}",
-                fontFamily = UltraFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 36.sp,
-                color = BlueText
-            )
-            Text(
-                text = event.dayOfWeek,
-                style = MaterialTheme.typography.labelLarge,
-                color = BlueText
-            )
-        }
-    }
-}
 
 @Composable
 private fun TimelineReminderCard(
@@ -299,7 +72,7 @@ private fun TimelineReminderCard(
 }
 
 @Composable
-private fun QuickCatchUpsHeader() {
+private fun QuickCatchUpsHeader(onViewAllClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -314,8 +87,344 @@ private fun QuickCatchUpsHeader() {
             color = CharcoalText,
             modifier = Modifier.weight(1f)
         )
-        TextButton(onClick = {}) {
+        TextButton(onClick = onViewAllClick) {
             Text("View all", color = GoldPrimary)
+        }
+    }
+}
+
+
+@Composable
+private fun HomeHeader() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = GoldPrimary
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.BubbleChart, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                }
+            }
+            Text(
+                text = "ReConnect",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = UltraFamily,
+                    color = GoldPrimary,
+                    letterSpacing = (-1).sp
+                )
+            )
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(modifier = Modifier.size(40.dp), shape = CircleShape, color = Color.LightGray.copy(0.2f)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Search, null, tint = CharcoalText)
+                }
+            }
+            Surface(
+                modifier = Modifier.size(40.dp).border(2.dp, GoldPrimary, CircleShape),
+                shape = CircleShape
+            ) {
+                AsyncImage(
+                    uri = "https://lh3.googleusercontent.com/aida-public/AB6AXuAVIAW1MXyPH0lbiJSkVqCmrcUIjgB6FhHPLV4LUIGpUtDo0_Xcl_F79XMqd5l7Rgc7libSBX82F_9kKWvNfE5VSiHAqBRMNAJ-l7mL_JBxOj6SpHJ2aVxruUiJB-voIaiCFerz4DeyWMGyI7RR3I6aVVl9sb_8UnlNAMY688sDCX3pnaYW1JuiSJY3a1gEV5M_iWcMAK4xIH-7R8ZS6uOCaugX9OaRpNkbOcq8w1qrwApqIdq6klUSsVC7eG0McegEh2U8wRFj__bx",
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeScreen(
+    onContactClick: (String) -> Unit,
+    onAddClick: () -> Unit,
+    onViewAllCatchUpsClick: () -> Unit,
+    innerPadding: PaddingValues = PaddingValues(),
+    viewModel: HomeViewModel = viewModel()
+) {
+    val state by viewModel.uiState.collectAsState()
+    val featuredBirthdayId = (state.upcomingEvents.firstOrNull() as? UpcomingEvent.Birthday)?.contactId
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CreamBackground)
+            .padding(bottom = innerPadding.calculateBottomPadding())
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 100.dp)
+        ) {
+            item { HomeHeader() }
+
+            item {
+                Text(
+                    text = "Upcoming\nConnections",
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontFamily = UltraFamily,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 42.sp,
+                        fontSize = 44.sp,
+                        letterSpacing = (-1).sp
+                    ),
+                    color = CharcoalText,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)
+                )
+            }
+
+            items(state.upcomingEvents) { event ->
+                Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    when (event) {
+                        is UpcomingEvent.Birthday -> {
+                            if (event.contactId == featuredBirthdayId) {
+                                BirthdayBashCard(event, onContactClick)
+                            } else {
+                                BirthdayCompactCard(event, onContactClick)
+                            }
+                        }
+                        is UpcomingEvent.CatchUp -> CatchUpCard(event)
+                        is UpcomingEvent.TimelineReminder -> TimelineReminderCard(event, onContactClick)
+                    }
+                }
+            }
+
+            item {
+                QuickCatchUpsHeader(onViewAllClick = onViewAllCatchUpsClick)
+            }
+
+            items(state.quickCatchUps.take(5)) { (contact, subtitle) ->
+                QuickCatchUpRow(contact, subtitle, onContactClick)
+            }
+        }
+
+        FloatingActionButton(
+            onClick = onAddClick,
+            containerColor = GoldPrimary,
+            contentColor = Color.White,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+                .size(64.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun BirthdayCompactCard(event: UpcomingEvent.Birthday, onContactClick: (String) -> Unit) {
+    Card(
+        onClick = { onContactClick(event.contactId) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "BIRTHDAY",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    ),
+                    color = GoldPrimary
+                )
+                Text(
+                    text = event.contactName,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = PlayfairFamily,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = CharcoalText
+                )
+            }
+
+            Text(
+                text = "${event.day} ${event.month}",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = UltraFamily,
+                    fontWeight = FontWeight.Black
+                ),
+                color = GoldPrimary
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun BirthdayBashCard(event: UpcomingEvent.Birthday, onContactClick: (String) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(48.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent) // Transparent to show gradient
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(AmberCardStart, AmberCardEnd)
+                    )
+                )
+        ) {
+            // Decorative blurred circle in the top right corner
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 40.dp, y = (-40).dp)
+                    .size(160.dp)
+                    .background(GoldPrimary.copy(alpha = 0.15f), CircleShape)
+                    .blur(60.dp)
+            )
+
+            Column(modifier = Modifier.padding(32.dp)) {
+                Text(
+                    text = "BIRTHDAY BASH",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.5.sp,
+                        color = GoldPrimary
+                    )
+                )
+
+                Text(
+                    text = event.contactName.replace(" ", "\n"),
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontFamily = PlayfairFamily,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 52.sp,
+                        fontSize = 56.sp
+                    ),
+                    color = CharcoalText,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                )
+
+                Text(
+                    text = "Turning 28. Don't forget the lilies!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CharcoalText.copy(0.7f)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy((-20).dp)) {
+                        Text(
+                            text = "${event.day}",
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontFamily = UltraFamily,
+                                fontSize = 90.sp,
+                                color = GoldPrimary.copy(alpha = 0.3f)
+                            )
+                        )
+                        Text(
+                            text = event.month.uppercase(),
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontFamily = UltraFamily,
+                                fontWeight = FontWeight.Black
+                            ),
+                            color = CharcoalText
+                        )
+                    }
+
+                    // Shadowed Button from mockup
+                    Surface(
+                        onClick = { onContactClick(event.contactId) },
+                        color = GoldPrimary,
+                        shape = RoundedCornerShape(32.dp),
+                        shadowElevation = 8.dp,
+                        modifier = Modifier
+                            .height(64.dp)
+                            .padding(start = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Text(
+                                "Send Wish",
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleMediumEmphasized
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CatchUpCard(event: UpcomingEvent.CatchUp) {
+    val backgroundColor = event.seedColorArgb?.let { Color(it) } ?: BlueCard
+    val contentColor = if (backgroundColor.luminance() > 0.62f) CharcoalText else Color.White
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(34.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 22.dp, vertical = 18.dp)) {
+            Icon(Icons.Default.Coffee, null, tint = contentColor, modifier = Modifier.size(20.dp))
+
+            Text(
+                text = "Catch up with ${event.contactName}",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = PlayfairFamily,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = contentColor,
+                modifier = Modifier.padding(top = 8.dp, bottom = 10.dp)
+            )
+
+            Text(
+                text = "${event.day}",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontFamily = UltraFamily,
+                    fontSize = 34.sp
+                ),
+                color = contentColor.copy(alpha = 0.6f)
+            )
+            Text(
+                text = event.dayOfWeek.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp
+                ),
+                color = contentColor
+            )
         }
     }
 }
@@ -328,57 +437,44 @@ private fun QuickCatchUpRow(
 ) {
     Card(
         onClick = { onContactClick(contact.id) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-            Spacer(Modifier.width(12.dp))
+            AsyncImage(
+                uri = contact.photoUri,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp).clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(Modifier.width(16.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = contact.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = PlayfairFamily,
+                        fontWeight = FontWeight.Black
+                    )
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MediumGray
-                )
+                Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
-            IconButton(onClick = {}) {
-                Icon(
-                    Icons.Default.EditNote,
-                    contentDescription = "Log Note",
-                    tint = CharcoalText
-                )
-            }
-            IconButton(onClick = {}) {
-                Icon(
-                    Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Quick Send",
-                    tint = GoldPrimary
-                )
+
+            Surface(
+                shape = CircleShape,
+                color = AmberCardStart.copy(alpha = 0.5f),
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = GoldPrimary)
+                }
             }
         }
     }
 }
-

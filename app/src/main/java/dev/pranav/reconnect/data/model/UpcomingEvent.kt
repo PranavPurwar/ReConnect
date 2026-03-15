@@ -17,7 +17,8 @@ sealed class UpcomingEvent {
         override val contactName: String,
         override val contactId: String,
         val day: Int,
-        val dayOfWeek: String
+        val dayOfWeek: String,
+        val seedColorArgb: Int?
     ) : UpcomingEvent()
 
     data class TimelineReminder(

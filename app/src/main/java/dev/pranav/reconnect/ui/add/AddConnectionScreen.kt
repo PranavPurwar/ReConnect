@@ -1,5 +1,8 @@
 package dev.pranav.reconnect.ui.add
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,274 +17,475 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.model.ReconnectInterval
+import dev.pranav.reconnect.data.model.ContactFormData
 import dev.pranav.reconnect.data.repository.ContactRepository
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
+import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
+import dev.pranav.reconnect.util.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
-private val SageColor = Color(0xFFE2E8DA)
-private val AmberSoftColor = Color(0xFFFDF2D5)
 private val MorphedFabShape = RoundedCornerShape(topStart = 48.dp, topEnd = 16.dp, bottomEnd = 48.dp, bottomStart = 40.dp)
-private val SquircleShape = RoundedCornerShape(28.dp)
 private val relationships = listOf("Family", "Friend", "Colleague", "Other")
+
+private fun decodePhotoBitmap(context: android.content.Context, photoUri: String?): android.graphics.Bitmap? {
+    if (photoUri.isNullOrBlank()) return null
+    return runCatching { photoUri.toUri().toBitmap(context) }.getOrNull()
+}
+
+private fun provisionalSeedColorFromPhotoUri(photoUri: String?): Color {
+    if (photoUri.isNullOrBlank()) return DefaultSeedColor
+    val hue = ((photoUri.hashCode().toLong() and 0x7FFFFFFF) % 360L).toFloat()
+    return Color.hsv(hue = hue, saturation = 0.42f, value = 0.82f)
+}
 
 @Composable
 fun AddConnectionScreen(
+    contactIdToEdit: String? = null,
     onBack: () -> Unit,
     onAdded: () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var selectedRelationship by remember { mutableStateOf<String?>(null) }
     var notes by remember { mutableStateOf("") }
+    var photoUri by remember { mutableStateOf<String?>(null) }
+    var birthdayMonth by remember { mutableStateOf<Int?>(null) }
+    var birthdayDay by remember { mutableStateOf<Int?>(null) }
     var showContactSearch by remember { mutableStateOf(false) }
+    var showBirthdayPicker by remember { mutableStateOf(false) }
+    var didPrefillForContactId by remember(contactIdToEdit) { mutableStateOf<String?>(null) }
 
-    Scaffold(
+    val uiState by viewModel.uiState.collectAsState()
+    val existingContact = remember(contactIdToEdit, uiState.quickCatchUps) {
+        contactIdToEdit?.let { id -> uiState.quickCatchUps.firstOrNull { it.first.id == id }?.first }
+    }
+    val isEditMode = existingContact != null
+    val birthdayFormatter = remember { SimpleDateFormat("MMMM d", Locale.US) }
+
+    LaunchedEffect(existingContact?.id) {
+        val contact = existingContact ?: return@LaunchedEffect
+        if (didPrefillForContactId == contact.id) return@LaunchedEffect
+
+        name = contact.name
+        title = contact.title
+        phone = contact.phoneNumber
+        selectedRelationship = contact.relationship.takeIf { it.isNotBlank() }
+        notes = contact.notes
+        photoUri = contact.photoUri
+        birthdayMonth = contact.birthdayMonth
+        birthdayDay = contact.birthdayDay
+        didPrefillForContactId = contact.id
+    }
+
+    var photoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var seedColor by remember(existingContact?.id, photoUri) {
+        mutableStateOf(existingContact?.seedColorArgb?.let(::Color) ?: provisionalSeedColorFromPhotoUri(photoUri))
+    }
+
+    LaunchedEffect(photoUri) {
+        val fallbackSeedColor = existingContact?.seedColorArgb?.let(::Color)
+            ?: provisionalSeedColorFromPhotoUri(photoUri)
+        seedColor = fallbackSeedColor
+        val decodedBitmap = withContext(Dispatchers.IO) {
+            decodePhotoBitmap(context, photoUri)
+        }
+        photoBitmap = decodedBitmap
+        if (decodedBitmap != null) {
+            seedColor = extractSeedColorOrDefault(decodedBitmap, fallbackSeedColor)
+        }
+    }
+
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            context.takePersistableReadPermissionIfPossible(it)
+            photoUri = it.toString()
+        }
+    }
+
+    val expressiveScheme = remember(seedColor) {
+        colorSchemeFromSeed(seedColor)
+    }
+    val expressiveColors = remember(expressiveScheme) { addConnectionExpressiveColors(expressiveScheme) }
+
+    val baseBackgroundBrush = remember(expressiveScheme) {
+        Brush.linearGradient(
+            colors = listOf(
+                expressiveScheme.primaryContainer.copy(alpha = 0.50f),
+                expressiveScheme.secondaryContainer.copy(alpha = 0.24f),
+                expressiveScheme.tertiaryContainer.copy(alpha = 0.34f)
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(1500f, 2400f)
+        )
+    }
+
+    val topBloomBrush = remember(expressiveScheme) {
+        Brush.radialGradient(
+            colors = listOf(expressiveScheme.primary.copy(alpha = 0.42f), Color.Transparent),
+            center = Offset(1100f, 120f),
+            radius = 760f
+        )
+    }
+
+    val bottomBloomBrush = remember(expressiveScheme) {
+        Brush.radialGradient(
+            colors = listOf(expressiveScheme.tertiary.copy(alpha = 0.32f), Color.Transparent),
+            center = Offset(140f, 1950f),
+            radius = 920f
+        )
+    }
+
+    val screenContent: @Composable () -> Unit = {
+        Scaffold(
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             AddConnectionFooter(
-                onHomeClick = onBack,
                 onAdd = {
-                    viewModel.addContact(
-                        name = name,
-                        phone = phone,
-                        title = "",
-                        relationship = selectedRelationship ?: "",
-                        interval = ReconnectInterval.MONTHLY,
-                        notes = notes
-                    )
+                    if (isEditMode) {
+                        existingContact.let { contact ->
+                            viewModel.updateContact(
+                                contact.copy(
+                                    name = name.trim(),
+                                    title = title.trim(),
+                                    phoneNumber = phone.trim(),
+                                    relationship = selectedRelationship.orEmpty().trim(),
+                                    notes = notes.trim(),
+                                    birthdayMonth = birthdayMonth,
+                                    birthdayDay = birthdayDay,
+                                    photoUri = photoUri,
+                                    seedColorArgb = seedColor.toArgb()
+                                )
+                            )
+                        }
+                    } else {
+                        viewModel.addContact(
+                            ContactFormData(
+                                name = name,
+                                phone = phone,
+                                title = title,
+                                relationship = selectedRelationship ?: "",
+                                notes = notes,
+                                birthdayMonth = birthdayMonth,
+                                birthdayDay = birthdayDay,
+                                photoUri = photoUri,
+                                seedColorArgb = seedColor.toArgb()
+                            )
+                        )
+                    }
                     onAdded()
                 },
-                canAdd = name.isNotBlank()
+                canAdd = name.isNotBlank(),
+                isEditMode = isEditMode,
+                expressiveScheme = expressiveScheme
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = padding.calculateBottomPadding()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                CircleIconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = CharcoalText)
-                }
-                CircleIconButton(onClick = {}) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = CharcoalText)
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "New Connection",
-                fontFamily = UltraFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 36.sp,
-                color = GoldPrimary,
-                textAlign = TextAlign.Center
+                    .fillMaxSize()
+                    .background(baseBackgroundBrush)
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = "Grow your circle with intention",
-                fontFamily = RobotoFlexFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 13.sp,
-                color = CharcoalText.copy(alpha = 0.5f)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(topBloomBrush)
             )
-            Spacer(Modifier.height(28.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(bottomBloomBrush)
+            )
 
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(28.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = padding.calculateBottomPadding())
+                    .padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Surface(
-                    onClick = { showContactSearch = true },
-                    shape = CircleShape,
-                    color = SageColor,
-                    shadowElevation = 2.dp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Surface(
+                        onClick = onBack,
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.78f),
+                        shadowElevation = 2.dp,
+                        modifier = Modifier.size(46.dp)
                     ) {
-                        Icon(Icons.Default.ImportContacts, contentDescription = null, tint = Color(0xFF2E7D32))
-                        Text(
-                            "Sync from Contacts",
-                            fontFamily = PlusJakartaSansFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFF1B5E20)
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                }
 
-                FormSection(label = "Name") {
-                    TextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = {
-                            Text(
-                                "Who are you reconnecting with?",
-                                color = CharcoalText.copy(alpha = 0.4f),
-                                fontFamily = PlusJakartaSansFamily,
-                                fontSize = 14.sp
-                            )
-                        },
-                        textStyle = LocalTextStyle.current.copy(fontFamily = PlusJakartaSansFamily, fontSize = 16.sp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = AmberSoftColor,
-                            unfocusedContainerColor = AmberSoftColor,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = CharcoalText,
-                            unfocusedTextColor = CharcoalText
-                        ),
-                        shape = SquircleShape,
-                        singleLine = true
-                    )
                     Text(
-                        "Full name or a nickname you use",
-                        fontFamily = RobotoFlexFamily,
-                        fontSize = 12.sp,
-                        color = CharcoalText.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(start = 16.dp)
+                        text = if (isEditMode) "Edit Connection" else "New Connection",
+                        fontFamily = UltraFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 30.sp,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f).padding(start = 8.dp)
                     )
+
+                    Spacer(Modifier.size(46.dp))
                 }
 
-                FormSection(label = "Phone") {
-                    TextField(
-                        value = phone,
-                        onValueChange = { phone = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = {
-                            Text(
-                                "Optional — for quick-dial reminders",
-                                color = CharcoalText.copy(alpha = 0.4f),
-                                fontFamily = PlusJakartaSansFamily,
-                                fontSize = 14.sp
-                            )
-                        },
-                        textStyle = LocalTextStyle.current.copy(fontFamily = PlusJakartaSansFamily, fontSize = 16.sp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = AmberSoftColor,
-                            unfocusedContainerColor = AmberSoftColor,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = CharcoalText,
-                            unfocusedTextColor = CharcoalText
-                        ),
-                        shape = SquircleShape,
-                        singleLine = true
-                    )
-                }
+                Spacer(Modifier.height(18.dp))
 
-                FormSection(label = "Relationship") {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        relationships.chunked(2).forEach { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                row.forEach { rel ->
-                                    val isSelected = selectedRelationship == rel
-                                    Surface(
-                                        onClick = { selectedRelationship = if (isSelected) null else rel },
-                                        modifier = Modifier.weight(1f),
-                                        shape = SquircleShape,
-                                        color = if (isSelected) GoldPrimary.copy(alpha = 0.15f) else Color.White,
-                                        border = BorderStroke(2.dp, if (isSelected) GoldPrimary else GoldPrimary.copy(alpha = 0.25f))
-                                    ) {
-                                        Text(
-                                            text = rel,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 18.dp),
-                                            textAlign = TextAlign.Center,
-                                            fontFamily = PlusJakartaSansFamily,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 15.sp,
-                                            color = if (isSelected) GoldPrimary else CharcoalText
-                                        )
-                                    }
-                                }
-                                if (row.size == 1) Spacer(Modifier.weight(1f))
+                Box(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    Surface(
+                        onClick = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        shape = RoundedCornerShape(topStart = 52.dp, topEnd = 34.dp, bottomEnd = 54.dp, bottomStart = 44.dp),
+                        color = expressiveColors.avatarContainer,
+                        border = BorderStroke(2.dp, Color.White.copy(alpha = 0.75f)),
+                        shadowElevation = 5.dp,
+                        modifier = Modifier.size(150.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (!photoUri.isNullOrBlank()) {
+                                AsyncImage(
+                                    uri = photoUri,
+                                    contentDescription = "Profile photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(topStart = 52.dp, topEnd = 34.dp, bottomEnd = 54.dp, bottomStart = 44.dp))
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.AddAPhoto,
+                                    contentDescription = "Add photo",
+                                    tint = expressiveColors.avatarIcon,
+                                    modifier = Modifier.size(44.dp)
+                                )
                             }
                         }
                     }
-                    Text(
-                        "Helps us suggest the right tone for reminders",
-                        fontFamily = RobotoFlexFamily,
-                        fontSize = 12.sp,
-                        color = CharcoalText.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                }
 
-                FormSection(label = "Memory Jogger") {
-                    TextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(130.dp),
-                        placeholder = {
-                            Text(
-                                "Where did you meet? What do they love?",
-                                color = CharcoalText.copy(alpha = 0.4f),
-                                fontFamily = PlusJakartaSansFamily,
-                                fontSize = 14.sp
+                    Surface(
+                        shape = CircleShape,
+                        color = expressiveScheme.primary,
+                        shadowElevation = 4.dp,
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Edit photo",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
                             )
-                        },
-                        textStyle = LocalTextStyle.current.copy(fontFamily = PlusJakartaSansFamily, fontSize = 16.sp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = SageColor.copy(alpha = 0.5f),
-                            unfocusedContainerColor = SageColor.copy(alpha = 0.5f),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = CharcoalText,
-                            unfocusedTextColor = CharcoalText
-                        ),
-                        shape = SquircleShape,
-                        maxLines = 5
-                    )
+                        }
+                    }
                 }
 
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Box(
-                        modifier = Modifier
-                            .width(64.dp)
-                            .height(4.dp)
-                            .clip(CircleShape)
-                            .background(GoldPrimary.copy(alpha = 0.2f))
-                    )
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = if (photoUri.isNullOrBlank()) "Add Profile Picture" else "Update Profile Picture",
+                    fontFamily = PlayfairFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Capture a moment to remember",
+                    fontFamily = PlusJakartaSansFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                    verticalArrangement = Arrangement.spacedBy(22.dp)
+                ) {
+                    Surface(
+                        onClick = { showContactSearch = true },
+                        shape = CircleShape,
+                        color = expressiveColors.syncChipContainer,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(Icons.Default.ImportContacts, contentDescription = null, tint = expressiveColors.syncChipIcon)
+                            Text(
+                                "Sync from Contacts",
+                                fontFamily = PlusJakartaSansFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = expressiveColors.syncChipText
+                            )
+                        }
+                    }
+
+                    FormSection(label = "Full Name") {
+                        GlassInputField(
+                            value = name,
+                            onValueChange = { name = it },
+                            placeholder = "Who are you connecting with?"
+                        )
+                    }
+
+                    FormSection(label = "Title") {
+                        GlassInputField(
+                            value = title,
+                            onValueChange = { title = it },
+                            placeholder = "Optional - e.g. Designer, Manager"
+                        )
+                    }
+
+                    FormSection(label = "Phone") {
+                        GlassInputField(
+                            value = phone,
+                            onValueChange = { phone = it },
+                            placeholder = "Optional - for quick reminders"
+                        )
+                    }
+
+                    FormSection(label = "Birthday") {
+                        val birthdayLabel = if (birthdayMonth != null && birthdayDay != null) {
+                            val cal = Calendar.getInstance().apply {
+                                set(Calendar.MONTH, birthdayMonth!! - 1)
+                                set(Calendar.DAY_OF_MONTH, birthdayDay!!)
+                            }
+                            birthdayFormatter.format(cal.time)
+                        } else null
+
+                        Surface(
+                            onClick = { showBirthdayPicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color.White.copy(alpha = 0.44f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.CalendarMonth,
+                                    contentDescription = null,
+                                    tint = expressiveScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    birthdayLabel ?: "Tap to add birthday",
+                                    fontFamily = PlusJakartaSansFamily,
+                                    fontSize = 15.sp,
+                                    color = if (birthdayLabel != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (birthdayLabel != null) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Clear birthday",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clickable { birthdayMonth = null; birthdayDay = null }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    FormSection(label = "Relationship Circle") {
+                        RelationshipChips(
+                            selectedRelationship = selectedRelationship,
+                            expressiveColors = expressiveColors,
+                            expressiveScheme = expressiveScheme,
+                            onRelationshipSelect = { rel ->
+                                selectedRelationship = if (selectedRelationship == rel) null else rel
+                            }
+                        )
+                    }
+
+                    FormSection(label = "Memory Jogger") {
+                        TextField(
+                            value = notes,
+                            onValueChange = { notes = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(132.dp),
+                            placeholder = {
+                                Text(
+                                    "Write a note about how you met or what they love...",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontFamily = PlusJakartaSansFamily,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            textStyle = LocalTextStyle.current.copy(fontFamily = PlusJakartaSansFamily, fontSize = 16.sp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.White.copy(alpha = 0.42f),
+                                unfocusedContainerColor = Color.White.copy(alpha = 0.42f),
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            shape = RoundedCornerShape(topStart = 22.dp, topEnd = 28.dp, bottomEnd = 26.dp, bottomStart = 24.dp),
+                            maxLines = 5
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
                 }
-                Spacer(Modifier.height(8.dp))
             }
         }
+    }
     }
 
     if (showContactSearch) {
@@ -290,8 +494,139 @@ fun AddConnectionScreen(
             onContactPicked = { contact ->
                 name = contact.name
                 phone = contact.phoneNumber
+                photoUri = contact.photoUri
                 showContactSearch = false
             }
+        )
+    }
+
+    if (showBirthdayPicker) {
+        BirthdayPickerDialog(
+            onDismiss = { showBirthdayPicker = false },
+            onConfirm = { month, day ->
+                birthdayMonth = month
+                birthdayDay = day
+                showBirthdayPicker = false
+            }
+        )
+    }
+
+    val bitmap = photoBitmap
+    if (bitmap != null) {
+        SeedColorTheme(bitmap = bitmap, content = screenContent)
+    } else {
+        SeedColorTheme(colors = expressiveScheme, content = screenContent)
+    }
+}
+
+@Composable
+private fun GlassInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    singleLine: Boolean = true
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = {
+            Text(
+                placeholder,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = PlusJakartaSansFamily,
+                fontSize = 14.sp
+            )
+        },
+        textStyle = LocalTextStyle.current.copy(fontFamily = PlusJakartaSansFamily, fontSize = 16.sp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.White.copy(alpha = 0.42f),
+            unfocusedContainerColor = Color.White.copy(alpha = 0.42f),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        shape = RoundedCornerShape(20.dp),
+        singleLine = singleLine
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RelationshipChips(
+    selectedRelationship: String?,
+    expressiveColors: AddConnectionExpressiveColors,
+    expressiveScheme: ColorScheme,
+    onRelationshipSelect: (String) -> Unit
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        relationships.forEach { rel ->
+            val isSelected = selectedRelationship == rel
+            Surface(
+                onClick = { onRelationshipSelect(rel) },
+                shape = CircleShape,
+                color = when {
+                    isSelected -> expressiveScheme.primary
+                    rel == "Friend" -> expressiveColors.relationshipFriendContainer
+                    rel == "Colleague" -> expressiveColors.relationshipColleagueContainer
+                    else -> Color.White.copy(alpha = 0.65f)
+                },
+                border = BorderStroke(1.dp, if (isSelected) expressiveScheme.primary else Color.White.copy(alpha = 0.65f))
+            ) {
+                Text(
+                    text = rel,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
+                    fontFamily = PlusJakartaSansFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = if (isSelected) expressiveScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BirthdayPickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (month: Int, day: Int) -> Unit
+) {
+    val datePickerState = rememberDatePickerState()
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val cal = Calendar.getInstance().apply { timeInMillis = millis }
+                        onConfirm(cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+                    }
+                },
+                enabled = datePickerState.selectedDateMillis != null
+            ) {
+                Text("Set", color = MaterialTheme.colorScheme.primary)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    ) {
+        DatePicker(
+            state = datePickerState,
+            headline = {
+                Text(
+                    "Select Birthday",
+                    modifier = Modifier.padding(start = 24.dp, end = 12.dp, bottom = 12.dp)
+                )
+            },
+            showModeToggle = true
         )
     }
 }
@@ -337,7 +672,7 @@ private fun ContactSearchSheet(
                 fontFamily = PlayfairFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
-                color = CharcoalText
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             TextField(
@@ -345,12 +680,12 @@ private fun ContactSearchSheet(
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
-                    Text("Search by name…", fontFamily = PlusJakartaSansFamily, fontSize = 14.sp, color = CharcoalText.copy(alpha = 0.4f))
+                    Text("Search by name…", fontFamily = PlusJakartaSansFamily, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = CharcoalText.copy(alpha = 0.5f)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFFF5F5F5),
-                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -365,7 +700,7 @@ private fun ContactSearchSheet(
                         .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = GoldPrimary)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
 
                 filtered.isEmpty() -> Box(
@@ -379,7 +714,7 @@ private fun ContactSearchSheet(
                         else "No contacts match \"$query\".",
                         fontFamily = RobotoFlexFamily,
                         fontSize = 14.sp,
-                        color = CharcoalText.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -400,17 +735,39 @@ private fun ContactSearchSheet(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = GoldPrimary.copy(alpha = 0.15f),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                                 modifier = Modifier.size(44.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = contact.name.take(1).uppercase(),
-                                        fontFamily = PlusJakartaSansFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        color = GoldPrimary
-                                    )
+                                Box(
+                                    modifier = Modifier.size(44.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (!contact.photoUri.isNullOrBlank()) {
+                                        AsyncImage(
+                                            uri = contact.photoUri,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clip(CircleShape),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                            modifier = Modifier.fillMaxSize()
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = contact.name.take(1).uppercase(),
+                                                    fontFamily = PlusJakartaSansFamily,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 16.sp,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             Column(modifier = Modifier.weight(1f)) {
@@ -419,14 +776,14 @@ private fun ContactSearchSheet(
                                     fontFamily = PlusJakartaSansFamily,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 15.sp,
-                                    color = CharcoalText
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (contact.phoneNumber.isNotBlank()) {
                                     Text(
                                         contact.phoneNumber,
                                         fontFamily = RobotoFlexFamily,
                                         fontSize = 12.sp,
-                                        color = CharcoalText.copy(alpha = 0.5f)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -446,7 +803,7 @@ private fun FormSection(label: String, content: @Composable () -> Unit) {
             fontFamily = PlayfairFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
-            color = CharcoalText,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 8.dp)
         )
         content()
@@ -454,27 +811,15 @@ private fun FormSection(label: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun CircleIconButton(onClick: () -> Unit, content: @Composable () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = Color.White.copy(alpha = 0.6f),
-        shadowElevation = 2.dp,
-        modifier = Modifier.size(48.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) { content() }
-    }
-}
-
-@Composable
 private fun AddConnectionFooter(
-    onHomeClick: () -> Unit,
     onAdd: () -> Unit,
-    canAdd: Boolean
+    canAdd: Boolean,
+    isEditMode: Boolean,
+    expressiveScheme: ColorScheme
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.background.copy(alpha = 0.92f),
-        shadowElevation = 4.dp,
+        color = Color.Transparent,
+        shadowElevation = 0.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -485,26 +830,6 @@ private fun AddConnectionFooter(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.Home,
-                    contentDescription = "Home",
-                    tint = GoldPrimary,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable(onClick = onHomeClick)
-                )
-                Icon(
-                    Icons.Default.People,
-                    contentDescription = "Circle",
-                    tint = CharcoalText.copy(alpha = 0.35f),
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
             Button(
                 onClick = onAdd,
                 enabled = canAdd,
@@ -513,17 +838,21 @@ private fun AddConnectionFooter(
                     .height(68.dp),
                 shape = MorphedFabShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = GoldPrimary,
-                    contentColor = CharcoalText,
-                    disabledContainerColor = GoldPrimary.copy(alpha = 0.35f),
-                    disabledContentColor = CharcoalText.copy(alpha = 0.4f)
+                    containerColor = expressiveScheme.primary,
+                    contentColor = expressiveScheme.onPrimary,
+                    disabledContainerColor = expressiveScheme.surfaceVariant,
+                    disabledContentColor = expressiveScheme.onSurfaceVariant
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
             ) {
-                Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(22.dp))
+                Icon(
+                    if (isEditMode) Icons.Default.Save else Icons.Default.PersonAdd,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    "ADD TO CIRCLE",
+                    if (isEditMode) "SAVE DETAILS" else "ADD TO CIRCLE",
                     fontFamily = UltraFamily,
                     fontWeight = FontWeight.Normal,
                     fontSize = 17.sp,

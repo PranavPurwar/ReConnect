@@ -29,13 +29,17 @@ val UltraFamily = FontFamily(
 )
 
 val PlayfairFamily = FontFamily(
-    Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.Bold)
+    Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.Bold),
+    Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.ExtraBold),
+    Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.Black),
 )
 
 val RobotoFlexFamily = FontFamily(
     Font(googleFont = GoogleFont("Roboto Flex"), fontProvider = provider, weight = FontWeight.Light),
     Font(googleFont = GoogleFont("Roboto Flex"), fontProvider = provider, weight = FontWeight.Normal),
     Font(googleFont = GoogleFont("Roboto Flex"), fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = GoogleFont("Roboto Flex"), fontProvider = provider, weight = FontWeight.SemiBold),
+    Font(googleFont = GoogleFont("Roboto Flex"), fontProvider = provider, weight = FontWeight.Bold),
 )
 
 val SerifFontFamily = PlayfairFamily
@@ -53,8 +57,8 @@ val Typography = Typography(
     titleSmall  = TextStyle(fontFamily = PlusJakartaSansFamily, fontWeight = FontWeight.SemiBold,  fontSize = 14.sp, lineHeight = 20.sp),
     bodyLarge  = TextStyle(fontFamily = PlusJakartaSansFamily,  fontWeight = FontWeight.Normal,    fontSize = 16.sp, lineHeight = 24.sp),
     bodyMedium = TextStyle(fontFamily = PlusJakartaSansFamily,  fontWeight = FontWeight.Normal,    fontSize = 14.sp, lineHeight = 20.sp),
-    bodySmall  = TextStyle(fontFamily = RobotoFlexFamily,       fontWeight = FontWeight.Normal,    fontSize = 12.sp, lineHeight = 16.sp),
-    labelLarge  = TextStyle(fontFamily = RobotoFlexFamily,      fontWeight = FontWeight.Medium,    fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.8.sp),
-    labelMedium = TextStyle(fontFamily = RobotoFlexFamily,      fontWeight = FontWeight.Medium,    fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.6.sp),
-    labelSmall  = TextStyle(fontFamily = RobotoFlexFamily,      fontWeight = FontWeight.Medium,    fontSize = 10.sp, lineHeight = 14.sp, letterSpacing = 0.5.sp),
+    bodySmall  = TextStyle(fontFamily = PlusJakartaSansFamily,       fontWeight = FontWeight.Normal,    fontSize = 12.sp, lineHeight = 16.sp),
+    labelLarge  = TextStyle(fontFamily = PlusJakartaSansFamily,      fontWeight = FontWeight.Medium,    fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.8.sp),
+    labelMedium = TextStyle(fontFamily = PlusJakartaSansFamily,      fontWeight = FontWeight.Medium,    fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.6.sp),
+    labelSmall  = TextStyle(fontFamily = PlusJakartaSansFamily,      fontWeight = FontWeight.Medium,    fontSize = 10.sp, lineHeight = 14.sp, letterSpacing = 0.5.sp),
 )

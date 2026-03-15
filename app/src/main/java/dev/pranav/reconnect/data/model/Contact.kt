@@ -7,9 +7,12 @@ data class Contact(
     val relationship: String = "",
     val notes: String = "",
     val photoUri: String? = null,
+    val seedColorArgb: Int? = null,
     val phoneNumber: String = "",
     val isActive: Boolean = false,
     val isImportant: Boolean = false,
-    val reconnectInterval: ReconnectInterval = ReconnectInterval.MONTHLY
+    val reconnectInterval: ReconnectInterval = ReconnectInterval.MONTHLY,
+    val birthdayMonth: Int? = null,
+    val birthdayDay: Int? = null
 )
 

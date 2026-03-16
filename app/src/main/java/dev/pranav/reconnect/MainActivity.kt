@@ -28,7 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import dev.pranav.reconnect.data.repository.SharedPrefsContactStore
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.add.AddConnectionScreen
 import dev.pranav.reconnect.ui.circle.SocialCircleScreen
 import dev.pranav.reconnect.ui.detail.PersonDetailScreen
@@ -44,7 +44,7 @@ import dev.pranav.reconnect.ui.theme.ReConnectTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        SharedPrefsContactStore.init(this)
+        AppContainer.init(this)
         enableEdgeToEdge()
         setContent {
             ReConnectTheme {

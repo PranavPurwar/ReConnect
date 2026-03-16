@@ -4,8 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.data.model.MomentCategory
 import dev.pranav.reconnect.data.model.PastMoment
-import dev.pranav.reconnect.data.repository.IContactStore
-import dev.pranav.reconnect.data.repository.SharedPrefsContactStore
+import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.data.port.ContactRepository
+import dev.pranav.reconnect.data.port.MomentRepository
 import kotlinx.coroutines.flow.*
 
 data class JourneyItem(
@@ -22,12 +23,13 @@ data class JourneyUiState(
 
 class JourneyViewModel : ViewModel() {
 
-    private val store: IContactStore = SharedPrefsContactStore
+    private val contactRepository: ContactRepository = AppContainer.contactRepository
+    private val momentRepository: MomentRepository = AppContainer.momentRepository
     private val _selectedCategory = MutableStateFlow<MomentCategory?>(null)
 
     val uiState: StateFlow<JourneyUiState> = combine(
-        store.contacts,
-        store.moments,
+        contactRepository.contacts,
+        momentRepository.moments,
         _selectedCategory
     ) { contacts, moments, selectedCategory ->
         val contactMap = contacts.associateBy { it.id }

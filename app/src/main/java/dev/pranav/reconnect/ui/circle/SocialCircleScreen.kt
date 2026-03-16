@@ -12,20 +12,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
+import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,9 +36,9 @@ fun SocialCircleScreen(
     innerPadding: PaddingValues = PaddingValues(),
     viewModel: SocialCircleViewModel = viewModel()
 ) {
-    val contacts by viewModel.filteredContacts.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val contacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -161,11 +161,9 @@ private fun CircleHeader() {
             shape = CircleShape,
             border = BorderStroke(2.dp, GoldPrimary)
         ) {
-            AsyncImage(
-                uri = "https://lh3.googleusercontent.com/aida-public/AB6AXuAVIAW1MXyPH0lbiJSkVqCmrcUIjgB6FhHPLV4LUIGpUtDo0_Xcl_F79XMqd5l7Rgc7libSBX82F_9kKWvNfE5VSiHAqBRMNAJ-l7mL_JBxOj6SpHJ2aVxruUiJB-voIaiCFerz4DeyWMGyI7RR3I6aVVl9sb_8UnlNAMY688sDCX3pnaYW1JuiSJY3a1gEV5M_iWcMAK4xIH-7R8ZS6uOCaugX9OaRpNkbOcq8w1qrwApqIdq6klUSsVC7eG0McegEh2U8wRFj__bx",
-                contentDescription = "Profile",
-                modifier = Modifier.clip(CircleShape),
-                contentScale = ContentScale.Crop
+            UserAvatarBadge(
+                modifier = Modifier.size(48.dp),
+                showBorder = false
             )
         }
     }

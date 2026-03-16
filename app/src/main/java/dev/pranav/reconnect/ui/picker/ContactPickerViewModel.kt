@@ -5,8 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ReconnectInterval
-import dev.pranav.reconnect.data.repository.ContactRepository
-import dev.pranav.reconnect.data.repository.SharedPrefsContactStore
+import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.data.port.ContactRepository
+import dev.pranav.reconnect.data.repository.ContactRepository as DeviceContactRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +31,8 @@ data class ContactPickerUiState(
 
 class ContactPickerViewModel : ViewModel() {
 
-    private val repository = ContactRepository()
+    private val repository = DeviceContactRepository()
+    private val contactRepository: ContactRepository = AppContainer.contactRepository
     private val _uiState = MutableStateFlow(ContactPickerUiState())
     val uiState: StateFlow<ContactPickerUiState> = _uiState.asStateFlow()
 
@@ -76,6 +78,8 @@ class ContactPickerViewModel : ViewModel() {
                     isImportant = true
                 )
             }
-        SharedPrefsContactStore.addContacts(selected)
+        viewModelScope.launch {
+            contactRepository.addContacts(selected)
+        }
     }
 }

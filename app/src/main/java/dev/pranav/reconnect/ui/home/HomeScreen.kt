@@ -12,11 +12,9 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -26,9 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.UpcomingEvent
+import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
 
 @Composable
@@ -134,11 +134,7 @@ private fun HomeHeader() {
                 modifier = Modifier.size(40.dp).border(2.dp, GoldPrimary, CircleShape),
                 shape = CircleShape
             ) {
-                AsyncImage(
-                    uri = "https://lh3.googleusercontent.com/aida-public/AB6AXuAVIAW1MXyPH0lbiJSkVqCmrcUIjgB6FhHPLV4LUIGpUtDo0_Xcl_F79XMqd5l7Rgc7libSBX82F_9kKWvNfE5VSiHAqBRMNAJ-l7mL_JBxOj6SpHJ2aVxruUiJB-voIaiCFerz4DeyWMGyI7RR3I6aVVl9sb_8UnlNAMY688sDCX3pnaYW1JuiSJY3a1gEV5M_iWcMAK4xIH-7R8ZS6uOCaugX9OaRpNkbOcq8w1qrwApqIdq6klUSsVC7eG0McegEh2U8wRFj__bx",
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
+                UserAvatarBadge(showBorder = false)
             }
         }
     }
@@ -152,7 +148,7 @@ fun HomeScreen(
     innerPadding: PaddingValues = PaddingValues(),
     viewModel: HomeViewModel = viewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val featuredBirthdayId = (state.upcomingEvents.firstOrNull() as? UpcomingEvent.Birthday)?.contactId
 
     Box(
@@ -182,7 +178,16 @@ fun HomeScreen(
                 )
             }
 
-            items(state.upcomingEvents) { event ->
+            items(
+                items = state.upcomingEvents,
+                key = { event ->
+                    when (event) {
+                        is UpcomingEvent.Birthday -> "birthday_${event.contactId}_${event.day}_${event.month}"
+                        is UpcomingEvent.CatchUp -> "catchup_${event.contactId}_${event.day}_${event.dayOfWeek}"
+                        is UpcomingEvent.TimelineReminder -> "timeline_${event.contactId}_${event.duration}"
+                    }
+                }
+            ) { event ->
                 Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     when (event) {
                         is UpcomingEvent.Birthday -> {
@@ -202,7 +207,10 @@ fun HomeScreen(
                 QuickCatchUpsHeader(onViewAllClick = onViewAllCatchUpsClick)
             }
 
-            items(state.quickCatchUps.take(5)) { (contact, subtitle) ->
+            items(
+                items = state.quickCatchUps.take(5),
+                key = { pair -> pair.first.id }
+            ) { (contact, subtitle) ->
                 QuickCatchUpRow(contact, subtitle, onContactClick)
             }
         }
@@ -292,8 +300,7 @@ private fun BirthdayBashCard(event: UpcomingEvent.Birthday, onContactClick: (Str
                     .align(Alignment.TopEnd)
                     .offset(x = 40.dp, y = (-40).dp)
                     .size(160.dp)
-                    .background(GoldPrimary.copy(alpha = 0.15f), CircleShape)
-                    .blur(60.dp)
+                    .background(GoldPrimary.copy(alpha = 0.12f), CircleShape)
             )
 
             Column(modifier = Modifier.padding(32.dp)) {

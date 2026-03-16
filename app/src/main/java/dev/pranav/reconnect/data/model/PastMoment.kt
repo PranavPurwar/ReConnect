@@ -9,6 +9,7 @@ data class PastMoment(
     val description: String,
     val dateLabel: String,
     val category: MomentCategory,
-    val imageUris: List<String> = emptyList()
+    val imageUris: List<String> = emptyList(),
+    val createdAtEpochMs: Long = System.currentTimeMillis()
 )
 

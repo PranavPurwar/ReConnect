@@ -5,15 +5,17 @@ import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ContactFormData
 import dev.pranav.reconnect.data.model.UpcomingEvent
-import dev.pranav.reconnect.data.repository.IContactStore
-import dev.pranav.reconnect.data.repository.SharedPrefsContactStore
+import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.data.port.ContactRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.UUID
 
 data class HomeUiState(
     val upcomingEvents: List<UpcomingEvent> = emptyList(),
@@ -27,9 +29,9 @@ class HomeViewModel : ViewModel() {
         val timeInMillis: Long
     )
 
-    private val store: IContactStore = SharedPrefsContactStore
+    private val contactRepository: ContactRepository = AppContainer.contactRepository
 
-    val uiState: StateFlow<HomeUiState> = store.contacts.map { contacts ->
+    val uiState: StateFlow<HomeUiState> = contactRepository.contacts.map { contacts ->
         HomeUiState(
             upcomingEvents = deriveEvents(contacts),
             quickCatchUps = contacts.map { it to "Reconnect · ${it.reconnectInterval.label}" }
@@ -41,26 +43,30 @@ class HomeViewModel : ViewModel() {
     )
 
     fun addContact(form: ContactFormData) {
-        store.addContact(
-            Contact(
-                id = System.currentTimeMillis().toString(),
-                name = form.name.trim(),
-                phoneNumber = form.phone.trim(),
-                title = form.title.trim(),
-                relationship = form.relationship.trim(),
-                notes = form.notes.trim(),
-                reconnectInterval = form.interval,
-                isImportant = true,
-                birthdayMonth = form.birthdayMonth,
-                birthdayDay = form.birthdayDay,
-                photoUri = form.photoUri,
-                seedColorArgb = form.seedColorArgb
+        viewModelScope.launch {
+            contactRepository.addContact(
+                Contact(
+                    id = UUID.randomUUID().toString(),
+                    name = form.name.trim(),
+                    phoneNumber = form.phone.trim(),
+                    title = form.title.trim(),
+                    relationship = form.relationship.trim(),
+                    notes = form.notes.trim(),
+                    reconnectInterval = form.interval,
+                    isImportant = true,
+                    birthdayMonth = form.birthdayMonth,
+                    birthdayDay = form.birthdayDay,
+                    photoUri = form.photoUri,
+                    seedColorArgb = form.seedColorArgb
+                )
             )
-        )
+        }
     }
 
     fun updateContact(contact: Contact) {
-        store.updateContact(contact)
+        viewModelScope.launch {
+            contactRepository.updateContact(contact)
+        }
     }
 
     private fun deriveEvents(contacts: List<Contact>): List<UpcomingEvent> {

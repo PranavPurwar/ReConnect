@@ -15,7 +15,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,10 +30,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.SubcomposeAsyncImage
 import dev.pranav.reconnect.data.model.MomentCategory
+import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
 
 @Composable
@@ -44,7 +44,7 @@ fun JourneyScreen(
     onBackClick: () -> Unit = {},
     viewModel: JourneyViewModel = viewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier
@@ -82,10 +82,9 @@ fun JourneyScreen(
                             shape = CircleShape,
                             color = Color.LightGray
                         ) {
-                            AsyncImage(
-                                uri = "https://lh3.googleusercontent.com/aida-public/AB6AXuA8TyMEa1YzQoZFgOaV0ErZPlqzE9fpE79gCVs4M4Q1tN9e8FEjhBDDqxrl_QuNLh-K5-cXNXYjmhxXg3SzM55MvnE9sIn8s46GvsWJvi4PmaNev3S5eNsbFda1hTeD8S3NuLgAn2vEUKjPDExD2yzEkMoIbnMVEnimmzoaOCh0rkSoIvygTNtDyPSIelhgR7i8irjxv0s6DfPlk4ptPGeBIGYCIL7ctX5Xce2fjQ31gpmRWLIy53wvDaTu7rKfsvRLXQmUl3z3avym",
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop
+                            UserAvatarBadge(
+                                modifier = Modifier.size(48.dp),
+                                showBorder = false
                             )
                         }
                     }
@@ -128,7 +127,10 @@ fun JourneyScreen(
                     EmptyJourneyState(state.selectedCategory?.displayName()?.lowercase())
                 }
             } else {
-                itemsIndexed(state.filteredItems) { index, item ->
+                itemsIndexed(
+                    items = state.filteredItems,
+                    key = { _, item -> item.moment.id }
+                ) { index, item ->
                     TimelineEntry(
                         modifier = Modifier.padding(horizontal = 24.dp),
                         item = item,

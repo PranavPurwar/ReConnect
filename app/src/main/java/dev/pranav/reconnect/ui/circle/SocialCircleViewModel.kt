@@ -3,13 +3,13 @@ package dev.pranav.reconnect.ui.circle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.repository.IContactStore
-import dev.pranav.reconnect.data.repository.SharedPrefsContactStore
+import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.data.port.ContactRepository
 import kotlinx.coroutines.flow.*
 
 class SocialCircleViewModel : ViewModel() {
 
-    private val store: IContactStore = SharedPrefsContactStore
+    private val contactRepository: ContactRepository = AppContainer.contactRepository
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -18,7 +18,7 @@ class SocialCircleViewModel : ViewModel() {
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
     val filteredContacts: StateFlow<List<Contact>> = combine(
-        store.contacts,
+        contactRepository.contacts,
         _searchQuery,
         _selectedCategory
     ) { contacts, query, category ->

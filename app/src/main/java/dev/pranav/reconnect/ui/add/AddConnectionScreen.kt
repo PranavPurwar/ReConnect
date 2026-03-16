@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
@@ -77,7 +78,7 @@ fun AddConnectionScreen(
     var showBirthdayPicker by remember { mutableStateOf(false) }
     var didPrefillForContactId by remember(contactIdToEdit) { mutableStateOf<String?>(null) }
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val existingContact = remember(contactIdToEdit, uiState.quickCatchUps) {
         contactIdToEdit?.let { id -> uiState.quickCatchUps.firstOrNull { it.first.id == id }?.first }
     }

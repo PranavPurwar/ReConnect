@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.MomentCategory
@@ -51,7 +52,7 @@ fun PersonDetailScreen(
 ) {
     LaunchedEffect(contactId) { viewModel.loadContact(contactId) }
 
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val contact = state.contact
     val persistedSeedColor = contact?.seedColorArgb?.let(::Color) ?: DefaultSeedColor
     val context = LocalContext.current

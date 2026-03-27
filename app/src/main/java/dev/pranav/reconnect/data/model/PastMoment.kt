@@ -1,15 +1,19 @@
 package dev.pranav.reconnect.data.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class MomentCategory { DINING, ART, OUTDOORS, GENERAL }
 
+@Serializable
 data class PastMoment(
     val id: String,
-    val contactId: String = "",
+    @SerialName("contact_ids") val contactIds: List<String> = emptyList(),
     val title: String,
     val description: String,
-    val dateLabel: String,
+    @SerialName("date_epoch_ms") val dateEpochMs: Long,
     val category: MomentCategory,
-    val imageUris: List<String> = emptyList(),
-    val createdAtEpochMs: Long = System.currentTimeMillis()
+    @SerialName("image_uris") val imageUris: List<String> = emptyList(),
+    @SerialName("created_at_epoch_ms") val createdAtEpochMs: Long = System.currentTimeMillis()
 )
-

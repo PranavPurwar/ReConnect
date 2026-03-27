@@ -37,6 +37,9 @@ import dev.pranav.reconnect.data.model.MomentCategory
 import dev.pranav.reconnect.data.model.PastMoment
 import dev.pranav.reconnect.ui.theme.*
 import dev.pranav.reconnect.util.toBitmap
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -360,7 +363,7 @@ fun PersonDetailScreen(
                 ) {
                     StatCard(
                         modifier = Modifier.weight(1f),
-                        value = state.pastMoments.size.toString(),
+                        value = state.filteredMoments.size.toString(),
                         label = "moments",
                         icon = Icons.Default.BookmarkBorder
                     )
@@ -473,7 +476,9 @@ fun PersonDetailScreen(
                                     Icons.AutoMirrored.Filled.StickyNote2,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp).padding(top = 2.dp)
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .padding(top = 2.dp)
                                 )
                                 Text(
                                     contact.notes,
@@ -532,7 +537,11 @@ fun PersonDetailScreen(
                             Spacer(Modifier.height(10.dp))
                             state.aiPrepBullets.forEach { bullet ->
                                 Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.Top) {
-                                    Box(modifier = Modifier.padding(top = 7.dp).size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+                                    Box(modifier = Modifier
+                                        .padding(top = 7.dp)
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary))
                                     Spacer(Modifier.width(10.dp))
                                     Text(bullet, style = MaterialTheme.typography.bodyMedium)
                                 }
@@ -547,7 +556,9 @@ fun PersonDetailScreen(
                                     }
                                     context.startActivity(intent)
                                 },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
                                 shape = RoundedCornerShape(28.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary)
                             ) {
@@ -562,15 +573,23 @@ fun PersonDetailScreen(
 
             item {
                 // Past Moments Header + Filter Chips
-                Column(modifier = Modifier.fillMaxWidth().padding(top = 32.dp)) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Past Moments", style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.weight(1f))
-                        if (state.pastMoments.isNotEmpty()) {
-                            Text("${state.pastMoments.size} logged", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (state.filteredMoments.isNotEmpty()) {
+                            Text(
+                                "${state.filteredMoments.size} logged",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -599,11 +618,15 @@ fun PersonDetailScreen(
             if (state.filteredMoments.isEmpty()) {
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(8.dp))
                             Text(
@@ -745,24 +768,22 @@ private fun PastMomentItem(
     onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    // ...existing code...
     val icon = when (moment.category) {
         MomentCategory.DINING -> Icons.Default.Restaurant
-        MomentCategory.ART -> Icons.Default.Palette
+        MomentCategory.ART -> Icons.Default.AutoAwesome
         MomentCategory.OUTDOORS -> Icons.Default.Park
         MomentCategory.GENERAL -> Icons.Default.ChatBubbleOutline
     }
-    val iconBg = when (moment.category) {
-        MomentCategory.DINING -> Color(0xFFFFF3E0)
-        MomentCategory.ART -> Color(0xFFF3E5F5)
-        MomentCategory.OUTDOORS -> Color(0xFFE8F5E9)
-        MomentCategory.GENERAL -> Color(0xFFE3F2FD)
-    }
     val iconTint = when (moment.category) {
-        MomentCategory.DINING -> Color(0xFFE65100)
-        MomentCategory.ART -> Color(0xFF7B1FA2)
-        MomentCategory.OUTDOORS -> Color(0xFF2E7D32)
-        MomentCategory.GENERAL -> Color(0xFF1565C0)
+        MomentCategory.DINING -> GoldPrimary
+        MomentCategory.ART -> Color(0xFF10B981)
+        MomentCategory.OUTDOORS -> Color(0xFFF97316)
+        MomentCategory.GENERAL -> Color(0xFF94A3B8)
+    }
+
+    val dateLabel = remember(moment.dateEpochMs) {
+        val fmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+        fmt.format(Date(moment.dateEpochMs))
     }
 
     Row(
@@ -776,7 +797,7 @@ private fun PastMomentItem(
         ) {
             Surface(
                 shape = CircleShape,
-                color = iconBg,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -809,7 +830,7 @@ private fun PastMomentItem(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    moment.dateLabel,
+                    dateLabel,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

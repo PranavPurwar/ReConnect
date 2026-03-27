@@ -15,6 +15,7 @@ fun ContactEntity.toModel(): Contact = Contact(
     isActive = isActive,
     isImportant = isImportant,
     reconnectInterval = reconnectInterval,
+    birthdayYear = birthdayYear,
     birthdayMonth = birthdayMonth,
     birthdayDay = birthdayDay
 )
@@ -31,16 +32,17 @@ fun Contact.toEntity(): ContactEntity = ContactEntity(
     isActive = isActive,
     isImportant = isImportant,
     reconnectInterval = reconnectInterval,
+    birthdayYear = birthdayYear,
     birthdayMonth = birthdayMonth,
     birthdayDay = birthdayDay
 )
 
 fun MomentEntity.toModel(): PastMoment = PastMoment(
     id = id,
-    contactId = contactId,
+    contactIds = contactIds,
     title = title,
     description = description,
-    dateLabel = dateLabel,
+    dateEpochMs = dateEpochMs,
     category = category,
     imageUris = imageUris,
     createdAtEpochMs = createdAtEpochMs
@@ -48,12 +50,11 @@ fun MomentEntity.toModel(): PastMoment = PastMoment(
 
 fun PastMoment.toEntity(): MomentEntity = MomentEntity(
     id = id,
-    contactId = contactId,
+    contactIds = contactIds,
     title = title,
     description = description,
-    dateLabel = dateLabel,
+    dateEpochMs = dateEpochMs,
     category = category,
     imageUris = imageUris,
     createdAtEpochMs = createdAtEpochMs
 )
-

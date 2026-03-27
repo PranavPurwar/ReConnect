@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -26,9 +27,11 @@ android {
     productFlavors {
         create("privateLocal") {
             dimension = "backend"
+            buildConfigField("boolean", "ENABLE_LOGIN_GATE", "false")
         }
         create("playstoreSupabase") {
             dimension = "backend"
+            buildConfigField("boolean", "ENABLE_LOGIN_GATE", "true")
         }
     }
 
@@ -47,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -69,13 +73,17 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.realtime)
     implementation(libs.supabase.storage)
     implementation(libs.supabase.sketch)
     implementation(libs.supabase.compose)
+
+    implementation(libs.ktor.cio)
 
     implementation(libs.sketch.compose)
     implementation(libs.sketch.compose.resources)
@@ -96,4 +104,3 @@ dependencies {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
-

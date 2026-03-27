@@ -33,7 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ContactFormData
-import dev.pranav.reconnect.data.repository.ContactRepository
+import dev.pranav.reconnect.data.repository.SystemContactsDataSource
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
@@ -46,6 +46,15 @@ import java.util.Locale
 
 private val MorphedFabShape = RoundedCornerShape(topStart = 48.dp, topEnd = 16.dp, bottomEnd = 48.dp, bottomStart = 40.dp)
 private val relationships = listOf("Family", "Friend", "Colleague", "Other")
+private val fallbackSeedColors = listOf(
+    Color(0xFFE53935),
+    Color(0xFFD81B60),
+    Color(0xFF5E35B1),
+    Color(0xFF3949AB),
+    Color(0xFF1E88E5),
+    Color(0xFF00897B),
+    Color(0xFF43A047),
+)
 
 private fun decodePhotoBitmap(context: android.content.Context, photoUri: String?): android.graphics.Bitmap? {
     if (photoUri.isNullOrBlank()) return null
@@ -72,10 +81,12 @@ fun AddConnectionScreen(
     var selectedRelationship by remember { mutableStateOf<String?>(null) }
     var notes by remember { mutableStateOf("") }
     var photoUri by remember { mutableStateOf<String?>(null) }
+    var birthdayYear by remember { mutableStateOf<Int?>(null) }
     var birthdayMonth by remember { mutableStateOf<Int?>(null) }
     var birthdayDay by remember { mutableStateOf<Int?>(null) }
     var showContactSearch by remember { mutableStateOf(false) }
     var showBirthdayPicker by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
     var didPrefillForContactId by remember(contactIdToEdit) { mutableStateOf<String?>(null) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -95,6 +106,7 @@ fun AddConnectionScreen(
         selectedRelationship = contact.relationship.takeIf { it.isNotBlank() }
         notes = contact.notes
         photoUri = contact.photoUri
+        birthdayYear = contact.birthdayYear
         birthdayMonth = contact.birthdayMonth
         birthdayDay = contact.birthdayDay
         didPrefillForContactId = contact.id
@@ -104,17 +116,22 @@ fun AddConnectionScreen(
     var seedColor by remember(existingContact?.id, photoUri) {
         mutableStateOf(existingContact?.seedColorArgb?.let(::Color) ?: provisionalSeedColorFromPhotoUri(photoUri))
     }
+    var isSeedColorCustom by remember(existingContact?.id) {
+        mutableStateOf(existingContact?.seedColorArgb != null)
+    }
 
     LaunchedEffect(photoUri) {
         val fallbackSeedColor = existingContact?.seedColorArgb?.let(::Color)
             ?: provisionalSeedColorFromPhotoUri(photoUri)
-        seedColor = fallbackSeedColor
         val decodedBitmap = withContext(Dispatchers.IO) {
             decodePhotoBitmap(context, photoUri)
         }
         photoBitmap = decodedBitmap
-        if (decodedBitmap != null) {
-            seedColor = extractSeedColorOrDefault(decodedBitmap, fallbackSeedColor)
+        if (!isSeedColorCustom) {
+            seedColor = fallbackSeedColor
+            if (decodedBitmap != null) {
+                seedColor = extractSeedColorOrDefault(decodedBitmap, fallbackSeedColor)
+            }
         }
     }
 
@@ -129,6 +146,12 @@ fun AddConnectionScreen(
 
     val expressiveScheme = remember(seedColor) {
         colorSchemeFromSeed(seedColor)
+    }
+    val selectableSeedColors = remember(photoBitmap) {
+        extractVibrantSeedColors(
+            bitmap = photoBitmap,
+            fallbackColors = fallbackSeedColors
+        )
     }
     val expressiveColors = remember(expressiveScheme) { addConnectionExpressiveColors(expressiveScheme) }
 
@@ -176,6 +199,7 @@ fun AddConnectionScreen(
                                     phoneNumber = phone.trim(),
                                     relationship = selectedRelationship.orEmpty().trim(),
                                     notes = notes.trim(),
+                                    birthdayYear = birthdayYear,
                                     birthdayMonth = birthdayMonth,
                                     birthdayDay = birthdayDay,
                                     photoUri = photoUri,
@@ -191,6 +215,7 @@ fun AddConnectionScreen(
                                 title = title,
                                 relationship = selectedRelationship ?: "",
                                 notes = notes,
+                                birthdayYear = birthdayYear,
                                 birthdayMonth = birthdayMonth,
                                 birthdayDay = birthdayDay,
                                 photoUri = photoUri,
@@ -265,7 +290,9 @@ fun AddConnectionScreen(
                         fontSize = 30.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f).padding(start = 8.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp)
                     )
 
                     Spacer(Modifier.size(46.dp))
@@ -293,7 +320,14 @@ fun AddConnectionScreen(
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .clip(RoundedCornerShape(topStart = 52.dp, topEnd = 34.dp, bottomEnd = 54.dp, bottomStart = 44.dp))
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = 52.dp,
+                                                topEnd = 34.dp,
+                                                bottomEnd = 54.dp,
+                                                bottomStart = 44.dp
+                                            )
+                                        )
                                 )
                             } else {
                                 Icon(
@@ -394,8 +428,10 @@ fun AddConnectionScreen(
                     }
 
                     FormSection(label = "Birthday") {
-                        val birthdayLabel = if (birthdayMonth != null && birthdayDay != null) {
+                        val birthdayLabel =
+                            if (birthdayYear != null && birthdayMonth != null && birthdayDay != null) {
                             val cal = Calendar.getInstance().apply {
+                                set(Calendar.YEAR, birthdayYear!!)
                                 set(Calendar.MONTH, birthdayMonth!! - 1)
                                 set(Calendar.DAY_OF_MONTH, birthdayDay!!)
                             }
@@ -433,7 +469,10 @@ fun AddConnectionScreen(
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier
                                             .size(18.dp)
-                                            .clickable { birthdayMonth = null; birthdayDay = null }
+                                            .clickable {
+                                                birthdayYear = null; birthdayMonth =
+                                                null; birthdayDay = null
+                                            }
                                     )
                                 }
                             }
@@ -448,6 +487,24 @@ fun AddConnectionScreen(
                             onRelationshipSelect = { rel ->
                                 selectedRelationship = if (selectedRelationship == rel) null else rel
                             }
+                        )
+                    }
+
+                    FormSection(label = "Theme Color") {
+                        SeedColorSelector(
+                            colors = selectableSeedColors,
+                            selectedColor = seedColor,
+                            onSelect = {
+                                seedColor = it
+                                isSeedColorCustom = true
+                            },
+                            onOpenCustomPicker = { showColorPicker = true },
+                            onUsePhotoColor = {
+                                val bitmap = photoBitmap ?: return@SeedColorSelector
+                                seedColor = extractSeedColorOrDefault(bitmap, seedColor)
+                                isSeedColorCustom = false
+                            },
+                            canUsePhotoColor = photoBitmap != null
                         )
                     }
 
@@ -504,10 +561,23 @@ fun AddConnectionScreen(
     if (showBirthdayPicker) {
         BirthdayPickerDialog(
             onDismiss = { showBirthdayPicker = false },
-            onConfirm = { month, day ->
+            onConfirm = { year, month, day ->
+                birthdayYear = year
                 birthdayMonth = month
                 birthdayDay = day
                 showBirthdayPicker = false
+            }
+        )
+    }
+
+    if (showColorPicker) {
+        CustomSeedColorDialog(
+            initialColor = seedColor,
+            onDismiss = { showColorPicker = false },
+            onConfirm = {
+                seedColor = it
+                isSeedColorCustom = true
+                showColorPicker = false
             }
         )
     }
@@ -518,6 +588,120 @@ fun AddConnectionScreen(
     } else {
         SeedColorTheme(colors = expressiveScheme, content = screenContent)
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SeedColorSelector(
+    colors: List<Color>,
+    selectedColor: Color,
+    onSelect: (Color) -> Unit,
+    onOpenCustomPicker: () -> Unit,
+    onUsePhotoColor: () -> Unit,
+    canUsePhotoColor: Boolean
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            colors.forEach { color ->
+                val isSelected = selectedColor.toArgb() == color.toArgb()
+                Surface(
+                    onClick = { onSelect(color) },
+                    shape = CircleShape,
+                    color = color,
+                    border = BorderStroke(
+                        width = if (isSelected) 3.dp else 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.White.copy(
+                            alpha = 0.55f
+                        )
+                    ),
+                    modifier = Modifier.size(34.dp)
+                ) {}
+            }
+
+            Surface(
+                onClick = onOpenCustomPicker,
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.65f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+                modifier = Modifier.size(34.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Palette,
+                        contentDescription = "Custom color",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        TextButton(
+            onClick = onUsePhotoColor,
+            enabled = canUsePhotoColor,
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+        ) {
+            Text(
+                text = "Use photo color",
+                fontFamily = PlusJakartaSansFamily,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomSeedColorDialog(
+    initialColor: Color,
+    onDismiss: () -> Unit,
+    onConfirm: (Color) -> Unit
+) {
+    val hsv = remember(initialColor) {
+        FloatArray(3).also { android.graphics.Color.colorToHSV(initialColor.toArgb(), it) }
+    }
+    var hue by remember(initialColor) { mutableStateOf(hsv[0]) }
+    var saturation by remember(initialColor) { mutableStateOf(hsv[1]) }
+    var value by remember(initialColor) { mutableStateOf(hsv[2]) }
+    val selected = remember(hue, saturation, value) { Color.hsv(hue, saturation, value) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selected) }) {
+                Text("Apply")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        title = { Text("Pick a Color") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = selected,
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.6f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {}
+
+                Text("Hue", style = MaterialTheme.typography.labelMedium)
+                Slider(value = hue, onValueChange = { hue = it }, valueRange = 0f..360f)
+
+                Text("Saturation", style = MaterialTheme.typography.labelMedium)
+                Slider(value = saturation, onValueChange = { saturation = it }, valueRange = 0f..1f)
+
+                Text("Brightness", style = MaterialTheme.typography.labelMedium)
+                Slider(value = value, onValueChange = { value = it }, valueRange = 0f..1f)
+            }
+        }
+    )
 }
 
 @Composable
@@ -597,7 +781,7 @@ private fun RelationshipChips(
 @Composable
 private fun BirthdayPickerDialog(
     onDismiss: () -> Unit,
-    onConfirm: (month: Int, day: Int) -> Unit
+    onConfirm: (year: Int, month: Int, day: Int) -> Unit
 ) {
     val datePickerState = rememberDatePickerState()
     DatePickerDialog(
@@ -607,7 +791,11 @@ private fun BirthdayPickerDialog(
                 onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         val cal = Calendar.getInstance().apply { timeInMillis = millis }
-                        onConfirm(cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+                        onConfirm(
+                            cal.get(Calendar.YEAR),
+                            cal.get(Calendar.MONTH) + 1,
+                            cal.get(Calendar.DAY_OF_MONTH)
+                        )
                     }
                 },
                 enabled = datePickerState.selectedDateMillis != null
@@ -645,7 +833,7 @@ private fun ContactSearchSheet(
 
     LaunchedEffect(Unit) {
         val loaded = withContext(Dispatchers.IO) {
-            ContactRepository().getDeviceContacts(context.contentResolver)
+            SystemContactsDataSource().getSystemContacts(context.contentResolver)
         }
         contacts = loaded
         isLoading = false

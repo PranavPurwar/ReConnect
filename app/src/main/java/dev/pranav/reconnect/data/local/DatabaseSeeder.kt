@@ -1,30 +1,29 @@
 package dev.pranav.reconnect.data.local
 
-import dev.pranav.reconnect.data.model.PastMoment
-import dev.pranav.reconnect.data.port.ContactRepository
-import dev.pranav.reconnect.data.port.MomentRepository
-import dev.pranav.reconnect.data.repository.ContactRepository as LegacyContactRepository
+import dev.pranav.reconnect.data.port.ContactStore
+import dev.pranav.reconnect.data.port.MomentStore
 import kotlinx.coroutines.flow.first
 
 object DatabaseSeeder {
     suspend fun seedIfNeeded(
-        contactRepository: ContactRepository,
-        momentRepository: MomentRepository
+        contactStore: ContactStore,
+        momentStore: MomentStore
     ) {
-        if (contactRepository.contacts.first().isNotEmpty()) return
+        if (contactStore.contacts.first().isNotEmpty()) return
 
-        val legacy = LegacyContactRepository()
-        val contacts = legacy.getSampleContacts()
-        contactRepository.addContacts(contacts)
+        val seedDataSource = SampleSeedDataSource()
+        val contacts = seedDataSource.getSampleContacts()
+        contactStore.addContacts(contacts)
 
-        val moments = legacy.getSamplePastMoments().mapIndexed { index, moment ->
-            val contactId = contacts[index % contacts.size].id
-            moment.copy(contactId = contactId, createdAtEpochMs = System.currentTimeMillis() - (index * 86_400_000L))
+        val moments = seedDataSource.getSamplePastMoments().mapIndexed { index, moment ->
+            val contact = contacts[index % contacts.size]
+            moment.copy(
+                contactIds = listOf(contact.id),
+                createdAtEpochMs = System.currentTimeMillis() - (index * 86_400_000L)
+            )
         }
-        moments.forEach { moment: PastMoment ->
-            momentRepository.addMoment(moment)
+        moments.forEach { moment ->
+            momentStore.addMoment(moment)
         }
     }
 }
-
-

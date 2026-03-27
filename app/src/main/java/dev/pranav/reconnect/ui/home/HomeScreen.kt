@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.UpcomingEvent
+import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
 
@@ -76,7 +77,7 @@ private fun QuickCatchUpsHeader(onViewAllClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -131,7 +132,9 @@ private fun HomeHeader() {
                 }
             }
             Surface(
-                modifier = Modifier.size(40.dp).border(2.dp, GoldPrimary, CircleShape),
+                modifier = Modifier
+                    .size(40.dp)
+                    .border(2.dp, GoldPrimary, CircleShape),
                 shape = CircleShape
             ) {
                 UserAvatarBadge(showBorder = false)
@@ -157,61 +160,62 @@ fun HomeScreen(
             .background(CreamBackground)
             .padding(bottom = innerPadding.calculateBottomPadding())
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp)
-        ) {
-            item { HomeHeader() }
+        Column(modifier = Modifier.fillMaxSize()) {
+            HomeHeader()
 
-            item {
-                Text(
-                    text = "Upcoming\nConnections",
-                    style = MaterialTheme.typography.displayMedium.copy(
-                        fontFamily = UltraFamily,
-                        fontWeight = FontWeight.Black,
-                        lineHeight = 42.sp,
-                        fontSize = 44.sp,
-                        letterSpacing = (-1).sp
-                    ),
-                    color = CharcoalText,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)
-                )
-            }
-
-            items(
-                items = state.upcomingEvents,
-                key = { event ->
-                    when (event) {
-                        is UpcomingEvent.Birthday -> "birthday_${event.contactId}_${event.day}_${event.month}"
-                        is UpcomingEvent.CatchUp -> "catchup_${event.contactId}_${event.day}_${event.dayOfWeek}"
-                        is UpcomingEvent.TimelineReminder -> "timeline_${event.contactId}_${event.duration}"
-                    }
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
+                item {
+                    ScreenTitle(
+                        text = "Upcoming\nConnections",
+                        modifier = Modifier.padding(
+                            horizontal = 24.dp,
+                            vertical = 24.dp
+                        )
+                    )
                 }
-            ) { event ->
-                Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                    when (event) {
-                        is UpcomingEvent.Birthday -> {
-                            if (event.contactId == featuredBirthdayId) {
-                                BirthdayBashCard(event, onContactClick)
-                            } else {
-                                BirthdayCompactCard(event, onContactClick)
-                            }
+
+                items(
+                    items = state.upcomingEvents,
+                    key = { event ->
+                        when (event) {
+                            is UpcomingEvent.Birthday -> "birthday_${event.contactId}_${event.day}_${event.month}"
+                            is UpcomingEvent.CatchUp -> "catchup_${event.contactId}_${event.day}_${event.dayOfWeek}"
+                            is UpcomingEvent.TimelineReminder -> "timeline_${event.contactId}_${event.duration}"
                         }
-                        is UpcomingEvent.CatchUp -> CatchUpCard(event)
-                        is UpcomingEvent.TimelineReminder -> TimelineReminderCard(event, onContactClick)
+                    }
+                ) { event ->
+                    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                        when (event) {
+                            is UpcomingEvent.Birthday -> {
+                                if (event.contactId == featuredBirthdayId) {
+                                    BirthdayBashCard(event, onContactClick)
+                                } else {
+                                    BirthdayCompactCard(event, onContactClick)
+                                }
+                            }
+
+                            is UpcomingEvent.CatchUp -> CatchUpCard(event)
+                            is UpcomingEvent.TimelineReminder -> TimelineReminderCard(
+                                event,
+                                onContactClick
+                            )
+                        }
                     }
                 }
-            }
 
-            item {
-                QuickCatchUpsHeader(onViewAllClick = onViewAllCatchUpsClick)
-            }
+                item {
+                    QuickCatchUpsHeader(onViewAllClick = onViewAllCatchUpsClick)
+                }
 
-            items(
-                items = state.quickCatchUps.take(5),
-                key = { pair -> pair.first.id }
-            ) { (contact, subtitle) ->
-                QuickCatchUpRow(contact, subtitle, onContactClick)
+                items(
+                    items = state.quickCatchUps.take(5),
+                    key = { pair -> pair.first.id }
+                ) { (contact, subtitle) ->
+                    QuickCatchUpRow(contact, subtitle, onContactClick)
+                }
             }
         }
 
@@ -282,7 +286,7 @@ private fun BirthdayCompactCard(event: UpcomingEvent.Birthday, onContactClick: (
 private fun BirthdayBashCard(event: UpcomingEvent.Birthday, onContactClick: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(48.dp),
+        shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent) // Transparent to show gradient
     ) {
         Box(
@@ -399,7 +403,7 @@ private fun CatchUpCard(event: UpcomingEvent.CatchUp) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(34.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -444,7 +448,9 @@ private fun QuickCatchUpRow(
 ) {
     Card(
         onClick = { onContactClick(contact.id) },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 6.dp),
         shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -456,7 +462,9 @@ private fun QuickCatchUpRow(
             AsyncImage(
                 uri = contact.photoUri,
                 contentDescription = null,
-                modifier = Modifier.size(64.dp).clip(CircleShape),
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
 

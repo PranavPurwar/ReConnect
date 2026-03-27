@@ -2,6 +2,8 @@ package dev.pranav.reconnect.ui.theme
 
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.palette.graphics.Palette
 import kotlin.math.abs
 
@@ -32,6 +34,34 @@ fun extractSeedColorOrDefault(
 ): Color {
     if (bitmap == null) return defaultSeedColor
     return extractSeedColor(bitmap) ?: defaultSeedColor
+}
+
+fun extractVibrantSeedColors(
+    bitmap: Bitmap?,
+    fallbackColors: List<Color>,
+    maxCount: Int = 16
+): List<Color> {
+    if (bitmap == null) {
+        return fallbackColors
+            .sortedByDescending { it.luminance() }
+            .take(maxCount)
+    }
+
+    val palette = Palette.from(bitmap)
+        .clearFilters()
+        .maximumColorCount(48)
+        .generate()
+
+    return palette.swatches
+        .asSequence()
+        .sortedByDescending { swatch ->
+            val hsv = FloatArray(3)
+            android.graphics.Color.colorToHSV(swatch.rgb, hsv)
+            hsv[2]
+        }
+        .map { Color(it.rgb) }
+        .take(maxCount)
+        .toList()
 }
 
 private data class SeedColorCandidate(

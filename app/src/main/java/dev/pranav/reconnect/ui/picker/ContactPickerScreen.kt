@@ -1,5 +1,9 @@
 package dev.pranav.reconnect.ui.picker
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ReconnectInterval
@@ -43,9 +48,24 @@ fun ContactPickerScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.loadContacts(context.contentResolver)
+        }
+    }
 
     LaunchedEffect(Unit) {
-        viewModel.loadContacts(context.contentResolver)
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (hasPermission) {
+            viewModel.loadContacts(context.contentResolver)
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
     }
 
     Scaffold(
@@ -101,6 +121,25 @@ fun ContactPickerScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = GoldPrimary)
                 }
+            } else if (state.needsContactsPermission) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Allow contacts access to show your device contacts.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Button(onClick = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) }) {
+                            Text("Grant Permission")
+                        }
+                    }
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
@@ -114,6 +153,21 @@ fun ContactPickerScreen(
                             interval = state.intervals[contact.id] ?: ReconnectInterval.MONTHLY,
                             onToggle = { viewModel.toggleContact(contact.id) },
                             onIntervalChanged = { viewModel.setInterval(contact.id, it) }
+                        )
+                    }
+                }
+
+                if (state.contacts.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No contacts found on this device.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

@@ -5,42 +5,40 @@ import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.data.model.MomentCategory
 import dev.pranav.reconnect.data.model.PastMoment
 import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.port.ContactRepository
-import dev.pranav.reconnect.data.port.MomentRepository
+import dev.pranav.reconnect.data.port.ContactStore
+import dev.pranav.reconnect.data.port.MomentStore
 import kotlinx.coroutines.flow.*
 
 data class JourneyItem(
     val moment: PastMoment,
-    val contactName: String,
-    val contactId: String
+    val contactNames: String
 )
 
 data class JourneyUiState(
-    val allItems: List<JourneyItem> = emptyList(),
     val filteredItems: List<JourneyItem> = emptyList(),
     val selectedCategory: MomentCategory? = null
 )
 
-class JourneyViewModel : ViewModel() {
+class JourneyViewModel(
+    contactStore: ContactStore = AppContainer.contactStore,
+    momentStore: MomentStore = AppContainer.momentStore
+): ViewModel() {
 
-    private val contactRepository: ContactRepository = AppContainer.contactRepository
-    private val momentRepository: MomentRepository = AppContainer.momentRepository
     private val _selectedCategory = MutableStateFlow<MomentCategory?>(null)
 
     val uiState: StateFlow<JourneyUiState> = combine(
-        contactRepository.contacts,
-        momentRepository.moments,
+        contactStore.contacts,
+        momentStore.moments,
         _selectedCategory
     ) { contacts, moments, selectedCategory ->
-        val contactMap = contacts.associateBy { it.id }
-        val allItems = moments.mapNotNull { moment ->
-            val contact = contactMap[moment.contactId] ?: return@mapNotNull null
-            JourneyItem(moment, contact.name, contact.id)
-        }
-        val filtered = if (selectedCategory != null)
-            allItems.filter { it.moment.category == selectedCategory }
-        else allItems
-        JourneyUiState(allItems = allItems, filteredItems = filtered, selectedCategory = selectedCategory)
+        val allItems = buildJourneyItems(contacts = contacts, moments = moments)
+        JourneyUiState(
+            filteredItems = applyCategoryFilter(
+                items = allItems,
+                selectedCategory = selectedCategory
+            ),
+            selectedCategory = selectedCategory
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -50,5 +48,27 @@ class JourneyViewModel : ViewModel() {
     fun setFilter(category: MomentCategory?) {
         _selectedCategory.value = if (_selectedCategory.value == category) null else category
     }
-}
 
+    private fun buildJourneyItems(
+        contacts: List<dev.pranav.reconnect.data.model.Contact>,
+        moments: List<PastMoment>
+    ): List<JourneyItem> {
+        val contactMap = contacts.associateBy { it.id }
+        return moments.mapNotNull { moment ->
+            val involvedContacts = moment.contactIds.mapNotNull { contactMap[it] }
+            if (involvedContacts.isEmpty()) return@mapNotNull null
+            JourneyItem(
+                moment = moment,
+                contactNames = involvedContacts.joinToString(", ") { it.name }
+            )
+        }
+    }
+
+    private fun applyCategoryFilter(
+        items: List<JourneyItem>,
+        selectedCategory: MomentCategory?
+    ): List<JourneyItem> {
+        if (selectedCategory == null) return items
+        return items.filter { it.moment.category == selectedCategory }
+    }
+}

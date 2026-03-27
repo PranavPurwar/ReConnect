@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.data.model.Contact
+import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
 
@@ -104,7 +105,10 @@ fun SocialCircleScreen(
             } else {
                 items(contacts, key = { it.id }) { contact ->
                     val category = contact.relationship.toCircleCategory()
-                    val cardColor = when (category) {
+                    val cardColor = contact.seedColorArgb
+                        ?.let(::Color)
+                        ?.let { seeded -> colorSchemeFromSeed(seeded).primaryContainer.copy(alpha = 0.95f) }
+                        ?: when (category) {
                         "Family" -> AmberCardStart
                         "Friends" -> BlueCard
                         "Work" -> PurpleCard
@@ -141,19 +145,16 @@ private fun CircleHeader() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 20.dp),
+            .padding(
+                horizontal = 24.dp,
+                vertical = 20.dp
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
+        ScreenTitle(
             text = "Your Circle",
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontFamily = UltraFamily,
-                fontWeight = FontWeight.Black,
-                fontSize = 44.sp,
-                letterSpacing = (-1).sp
-            ),
-            color = CharcoalText
+            modifier = Modifier.weight(1f)
         )
 
         Surface(

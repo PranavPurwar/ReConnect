@@ -4,35 +4,51 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.port.ContactRepository
+import dev.pranav.reconnect.data.port.ContactStore
 import kotlinx.coroutines.flow.*
 
-class SocialCircleViewModel : ViewModel() {
+data class SocialCircleUiState(
+    val filteredContacts: List<Contact> = emptyList(),
+    val searchQuery: String = "",
+    val selectedCategory: String = "All"
+)
 
-    private val contactRepository: ContactRepository = AppContainer.contactRepository
+class SocialCircleViewModel(
+    contactStore: ContactStore = AppContainer.contactStore
+): ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
     private val _selectedCategory = MutableStateFlow("All")
+
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
     val filteredContacts: StateFlow<List<Contact>> = combine(
-        contactRepository.contacts,
+        contactStore.contacts,
         _searchQuery,
         _selectedCategory
     ) { contacts, query, category ->
-        contacts.filter { contact ->
-            val matchesSearch = query.isBlank() ||
-                contact.name.contains(query, ignoreCase = true)
-            val matchesCategory = category == "All" ||
-                contact.relationship.toCircleCategory() == category
-            matchesSearch && matchesCategory
-        }
+        applyFilters(contacts, query, category)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
+    )
+
+    val uiState: StateFlow<SocialCircleUiState> = combine(
+        contactStore.contacts,
+        _searchQuery,
+        _selectedCategory
+    ) { contacts, query, category ->
+        SocialCircleUiState(
+            filteredContacts = applyFilters(contacts, query, category),
+            searchQuery = query,
+            selectedCategory = category
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SocialCircleUiState()
     )
 
     fun updateSearch(query: String) {
@@ -41,6 +57,20 @@ class SocialCircleViewModel : ViewModel() {
 
     fun selectCategory(category: String) {
         _selectedCategory.value = category
+    }
+
+    private fun applyFilters(
+        contacts: List<Contact>,
+        query: String,
+        category: String
+    ): List<Contact> {
+        return contacts.filter { contact ->
+            val matchesSearch = query.isBlank() ||
+                    contact.name.contains(query, ignoreCase = true)
+            val matchesCategory = category == "All" ||
+                    contact.relationship.toCircleCategory() == category
+            matchesSearch && matchesCategory
+        }
     }
 }
 

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,8 +35,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.SubcomposeAsyncImage
 import dev.pranav.reconnect.data.model.MomentCategory
+import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun JourneyScreen(
@@ -57,7 +62,12 @@ fun JourneyScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 16.dp)
+                        .padding(
+                            start = 24.dp,
+                            end = 24.dp,
+                            top = 32.dp,
+                            bottom = 16.dp
+                        )
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -91,14 +101,9 @@ fun JourneyScreen(
 
                     Spacer(Modifier.height(24.dp))
 
-                    Text(
+                    ScreenTitle(
                         text = "Your Journey",
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-2).sp,
-                            fontSize = 48.sp
-                        ),
-                        color = CharcoalText
+                        modifier = Modifier.padding(end = 32.dp)
                     )
 
                     Spacer(Modifier.height(24.dp))
@@ -150,25 +155,47 @@ private fun TimelineEntry(
     onOpenGallery: (title: String, uris: List<String>) -> Unit
 ) {
     val dotColor = item.moment.category.dotColor()
+    val dateLabel = remember(item.moment.dateEpochMs) {
+        // Equivalent to previous dateLabel format
+        // SampleSeedDataSource used rough strings "LAST WEEK".
+        // But logic changed to epochMs. So use date format.
+        val fmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+        fmt.format(Date(item.moment.dateEpochMs)).uppercase()
+    }
 
-    Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+    Row(modifier = modifier
+        .fillMaxWidth()
+        .height(IntrinsicSize.Min)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(32.dp).padding(top = 28.dp)
+            modifier = Modifier
+                .width(32.dp)
+                .padding(top = 28.dp)
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.size(22.dp)) {
-                Box(Modifier.size(22.dp).clip(CircleShape).background(dotColor.copy(alpha = 0.2f)))
-                Box(Modifier.size(10.dp).clip(CircleShape).background(dotColor))
+                Box(Modifier
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(dotColor.copy(alpha = 0.2f)))
+                Box(Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(dotColor))
             }
             if (!isLast) {
-                Box(Modifier.width(2.dp).weight(1f).background(GoldPrimary.copy(alpha = 0.15f)))
+                Box(Modifier
+                    .width(2.dp)
+                    .weight(1f)
+                    .background(GoldPrimary.copy(alpha = 0.15f)))
             }
         }
 
         Spacer(Modifier.width(16.dp))
 
         Card(
-            modifier = Modifier.weight(1f).padding(bottom = 24.dp),
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = 24.dp),
             shape = RoundedCornerShape(48.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -176,7 +203,7 @@ private fun TimelineEntry(
             Column(modifier = Modifier.padding(28.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        text = item.moment.dateLabel.uppercase(),
+                        text = dateLabel,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.5.sp
@@ -189,7 +216,7 @@ private fun TimelineEntry(
                 Spacer(Modifier.height(12.dp))
 
                 Text(
-                    text = item.contactName,
+                    text = item.contactNames,
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontFamily = SerifFontFamily,
                         fontStyle = FontStyle.Italic

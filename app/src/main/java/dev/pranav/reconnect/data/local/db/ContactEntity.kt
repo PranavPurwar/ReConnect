@@ -17,6 +17,7 @@ data class ContactEntity(
     val isActive: Boolean,
     val isImportant: Boolean,
     val reconnectInterval: ReconnectInterval,
+    val birthdayYear: Int?,
     val birthdayMonth: Int?,
     val birthdayDay: Int?
 )

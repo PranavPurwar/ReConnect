@@ -3,6 +3,8 @@ package dev.pranav.reconnect.ui.navigation
 import android.net.Uri
 
 object AppRoute {
+    const val LOGIN = "login"
+    const val SIGNUP = "signup"
     const val ONBOARDING = "onboarding"
     const val PICKER = "picker"
     const val MAIN = "main"
@@ -10,6 +12,7 @@ object AppRoute {
     const val ADD_CONNECTION = "add?contactId={contactId}"
     const val GALLERY = "gallery"
     const val IMAGE_PREVIEW = "imagePreview/{index}"
+    const val VERIFY_EMAIL = "verify-email"
 
     fun personDetail(contactId: String) = "detail/${Uri.encode(contactId)}"
     fun addConnection(contactId: String?) =

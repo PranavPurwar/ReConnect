@@ -1,6 +1,5 @@
 package dev.pranav.reconnect
 
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,12 +15,12 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.edit
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -29,6 +28,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.data.remote.SupabaseAuthManager
+import dev.pranav.reconnect.data.session.AppSessionStore
 import dev.pranav.reconnect.ui.add.AddConnectionScreen
 import dev.pranav.reconnect.ui.circle.SocialCircleScreen
 import dev.pranav.reconnect.ui.detail.PersonDetailScreen
@@ -36,20 +37,57 @@ import dev.pranav.reconnect.ui.gallery.GalleryScreen
 import dev.pranav.reconnect.ui.gallery.ImagePreviewScreen
 import dev.pranav.reconnect.ui.home.HomeScreen
 import dev.pranav.reconnect.ui.journey.JourneyScreen
-import dev.pranav.reconnect.ui.navigation.AppRoute
+import dev.pranav.reconnect.ui.navigation.*
 import dev.pranav.reconnect.ui.onboarding.OnboardingScreen
 import dev.pranav.reconnect.ui.picker.ContactPickerScreen
+import dev.pranav.reconnect.ui.theme.CreamBackground
+import dev.pranav.reconnect.ui.theme.CreamLight
 import dev.pranav.reconnect.ui.theme.ReConnectTheme
+import dev.pranav.reconnect.ui.user.EmailVerificationScreen
+import dev.pranav.reconnect.ui.user.LoginScreen
+import dev.pranav.reconnect.ui.user.SignUpScreen
 
 class MainActivity : ComponentActivity() {
+    private var pendingIntent: android.content.Intent? = null
+    private var navController: NavController? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContainer.init(this)
+        SupabaseAuthManager.getCurrentSession()
         enableEdgeToEdge()
         setContent {
             ReConnectTheme {
-                ReConnectApp()
+                ReConnectApp { controller ->
+                    navController = controller
+                    pendingIntent?.let {
+                        handleIntent(it)
+                        pendingIntent = null
+                    }
+                }
             }
+        }
+        if (intent?.data != null) {
+            pendingIntent = intent
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: android.content.Intent) {
+        val data = intent.data
+        println("MainActivity: Received intent data: $data")
+
+        val isSupabaseLink = data?.scheme == "reconnect" && data?.host == "confirm"
+
+        if (isSupabaseLink) {
+            SupabaseAuthManager.handleDeepLink(intent)
+
+            // Verification UI is hidden from normal flow, so we don't navigate there here either.
+            // If the user has disabled email verification in Supabase, the account will be active immediately.
         }
     }
 }
@@ -61,17 +99,20 @@ enum class AppDestination(val label: String, val icon: ImageVector) {
     SETTINGS("Settings", Icons.Default.Settings)
 }
 
-private const val PREFS_NAME = "reconnect_prefs"
-private const val KEY_ONBOARDING_DONE = "onboarding_done"
-
 @Composable
-fun ReConnectApp() {
+fun ReConnectApp(onNavControllerReady: (NavController) -> Unit = {}) {
     val context = LocalContext.current
-    val prefs = remember(context) { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
-    val onboardingDone = remember { prefs.getBoolean(KEY_ONBOARDING_DONE, false) }
-    val startDestination = if (onboardingDone) AppRoute.MAIN else AppRoute.ONBOARDING
+    val sessionStore = remember(context) { AppSessionStore(context) }
+    val loginRequired = BuildConfig.ENABLE_LOGIN_GATE
+    val startDestination = remember(loginRequired) {
+        sessionStore.resolveStartDestination(loginRequired)
+    }
 
     val navController = rememberNavController()
+
+    LaunchedEffect(navController) {
+        onNavControllerReady(navController)
+    }
 
     NavHost(
         navController = navController,
@@ -101,11 +142,66 @@ fun ReConnectApp() {
             )
         }
     ) {
+        composable(AppRoute.LOGIN) {
+            LoginScreen(
+                onLoginSuccess = {
+                    sessionStore.setLoginDone(true)
+                    val destination = if (sessionStore.isOnboardingDone()) {
+                        AppRoute.MAIN
+                    } else {
+                        AppRoute.ONBOARDING
+                    }
+                    navController.navigate(destination) {
+                        popUpTo(AppRoute.LOGIN) { inclusive = true }
+                    }
+                },
+                onCreateAccountClick = {
+                    navController.navigate(AppRoute.SIGNUP)
+                }
+            )
+        }
+
+        composable(AppRoute.SIGNUP) {
+            SignUpScreen(
+                onSignUpSuccess = {
+                    sessionStore.setLoginDone(true)
+                    navController.navigate(AppRoute.ONBOARDING) {
+                        popUpTo(AppRoute.SIGNUP) { inclusive = true }
+                        popUpTo(AppRoute.LOGIN) { inclusive = true }
+                    }
+                },
+                onBackToLogin = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(AppRoute.VERIFY_EMAIL) {
+            EmailVerificationScreen(
+                onVerificationSuccess = {
+                    sessionStore.setLoginDone(true)
+                    val destination = if (sessionStore.isOnboardingDone()) {
+                        AppRoute.MAIN
+                    } else {
+                        AppRoute.ONBOARDING
+                    }
+                    navController.navigate(destination) {
+                        popUpTo(AppRoute.VERIFY_EMAIL) { inclusive = true }
+                    }
+                },
+                onBackToLogin = {
+                    navController.navigate(AppRoute.LOGIN) {
+                        popUpTo(AppRoute.VERIFY_EMAIL) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(AppRoute.ONBOARDING) {
             OnboardingScreen(
                 onPermissionGranted = { navController.navigate(AppRoute.PICKER) },
                 onSkip = {
-                    prefs.edit { putBoolean(KEY_ONBOARDING_DONE, true) }
+                    sessionStore.setOnboardingDone(true)
                     navController.navigate(AppRoute.MAIN) {
                         popUpTo(AppRoute.ONBOARDING) { inclusive = true }
                     }
@@ -116,13 +212,13 @@ fun ReConnectApp() {
         composable(AppRoute.PICKER) {
             ContactPickerScreen(
                 onContinue = {
-                    prefs.edit { putBoolean(KEY_ONBOARDING_DONE, true) }
+                    sessionStore.setOnboardingDone(true)
                     navController.navigate(AppRoute.MAIN) {
                         popUpTo(AppRoute.ONBOARDING) { inclusive = true }
                     }
                 },
                 onSkip = {
-                    prefs.edit { putBoolean(KEY_ONBOARDING_DONE, true) }
+                    sessionStore.setOnboardingDone(true)
                     navController.navigate(AppRoute.MAIN) {
                         popUpTo(AppRoute.ONBOARDING) { inclusive = true }
                     }
@@ -169,9 +265,7 @@ fun ReConnectApp() {
                 onBack = { navController.popBackStack() },
                 onEditDetails = { id -> navController.navigate(AppRoute.addConnection(id)) },
                 onOpenGallery = { title, uris ->
-                    navController.currentBackStackEntry?.savedStateHandle?.set("gallery_title", title)
-                    navController.currentBackStackEntry?.savedStateHandle?.set("gallery_uris", ArrayList(uris))
-                    navController.navigate(AppRoute.GALLERY)
+                    navController.openGallery(title, uris)
                 }
             )
         }
@@ -218,16 +312,13 @@ fun ReConnectApp() {
                 )
             }
         ) {
-            val handle = navController.previousBackStackEntry?.savedStateHandle
-            val title = handle?.get<String>("gallery_title") ?: ""
-            val uris = handle?.get<ArrayList<String>>("gallery_uris") ?: arrayListOf()
+            val (title, uris) = navController.galleryPayload()
             GalleryScreen(
                 title = title,
                 imageUris = uris,
                 onBack = { navController.popBackStack() },
                 onImageClick = { index ->
-                    navController.currentBackStackEntry?.savedStateHandle?.set("preview_uris", uris)
-                    navController.navigate(AppRoute.imagePreview(index))
+                    navController.openImagePreview(index, uris)
                 }
             )
         }
@@ -241,8 +332,7 @@ fun ReConnectApp() {
             popExitTransition = { fadeOut(animationSpec = tween(250)) }
         ) { backStack ->
             val index = backStack.arguments!!.getInt("index")
-            val uris = navController.previousBackStackEntry?.savedStateHandle
-                ?.get<ArrayList<String>>("preview_uris") ?: arrayListOf()
+            val uris = navController.previewPayload()
             ImagePreviewScreen(
                 imageUris = uris,
                 initialIndex = index,
@@ -257,6 +347,12 @@ private fun MainScreen(navController: NavController) {
     var selectedTab by rememberSaveable { mutableStateOf(AppDestination.HOME) }
 
     NavigationSuiteScaffold(
+        containerColor = CreamBackground,
+        navigationSuiteColors = NavigationSuiteDefaults.colors(
+            navigationBarContainerColor = CreamLight,
+            navigationRailContainerColor = CreamLight,
+            navigationDrawerContainerColor = CreamLight
+        ),
         navigationSuiteItems = {
             AppDestination.entries.forEach { dest ->
                 val resolvedTab = if (dest == AppDestination.SETTINGS) AppDestination.HOME else dest
@@ -276,9 +372,7 @@ private fun MainScreen(navController: NavController) {
             )
             AppDestination.HISTORY -> JourneyScreen(
                 onOpenGallery = { title, uris ->
-                    navController.currentBackStackEntry?.savedStateHandle?.set("gallery_title", title)
-                    navController.currentBackStackEntry?.savedStateHandle?.set("gallery_uris", ArrayList(uris))
-                    navController.navigate(AppRoute.GALLERY)
+                    navController.openGallery(title, uris)
                 }
             )
             else -> HomeScreen(

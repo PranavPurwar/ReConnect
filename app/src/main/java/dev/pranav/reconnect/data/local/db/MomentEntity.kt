@@ -7,12 +7,11 @@ import dev.pranav.reconnect.data.model.MomentCategory
 @Entity(tableName = "moments")
 data class MomentEntity(
     @PrimaryKey val id: String,
-    val contactId: String,
+    val contactIds: List<String>,
     val title: String,
     val description: String,
-    val dateLabel: String,
+    val dateEpochMs: Long,
     val category: MomentCategory,
     val imageUris: List<String>,
     val createdAtEpochMs: Long
 )
-

@@ -1,19 +1,23 @@
 package dev.pranav.reconnect.data.port
 
 import android.content.Context
+import dev.pranav.reconnect.BuildConfig
 import dev.pranav.reconnect.data.local.LocalAiInsightStore
 import dev.pranav.reconnect.data.local.LocalAttachmentStore
-import dev.pranav.reconnect.data.local.LocalContactRepository
-import dev.pranav.reconnect.data.local.LocalMomentRepository
+import dev.pranav.reconnect.data.local.RoomContactStore
+import dev.pranav.reconnect.data.local.RoomMomentStore
 import dev.pranav.reconnect.data.local.db.ReConnectDatabase
+import dev.pranav.reconnect.data.remote.SupabaseAuthManager
+import dev.pranav.reconnect.data.remote.SupabaseContactStore
+import dev.pranav.reconnect.data.remote.SupabaseMomentStore
 import kotlinx.coroutines.runBlocking
 
 object AppContainer {
     private var initialized = false
 
-    lateinit var contactRepository: ContactRepository
+    lateinit var contactStore: ContactStore
         private set
-    lateinit var momentRepository: MomentRepository
+    lateinit var momentStore: MomentStore
         private set
     lateinit var attachmentStore: AttachmentStore
         private set
@@ -26,25 +30,28 @@ object AppContainer {
         if (initialized) return
 
         val appContext = context.applicationContext
-        val database = ReConnectDatabase.getInstance(appContext)
         val metricsRecorder = InMemoryStorageMetricsRecorder()
-        val contactRepo = LocalContactRepository(database.contactDao(), metricsRecorder)
-        val momentRepo = LocalMomentRepository(database.momentDao(), metricsRecorder)
-
-        contactRepository = contactRepo
-        momentRepository = momentRepo
-        attachmentStore = LocalAttachmentStore(appContext, metricsRecorder)
-        aiInsightStore = LocalAiInsightStore()
         storageMetricsRecorder = metricsRecorder
 
-        runBlocking {
-            dev.pranav.reconnect.data.local.DatabaseSeeder.seedIfNeeded(
-                contactRepository = contactRepo,
-                momentRepository = momentRepo
-            )
+        if (BuildConfig.FLAVOR == "playstoreSupabase") {
+            contactStore = SupabaseContactStore(SupabaseAuthManager.client)
+            momentStore = SupabaseMomentStore(SupabaseAuthManager.client)
+        } else {
+            val database = ReConnectDatabase.getInstance(appContext)
+            contactStore = RoomContactStore(database.contactDao())
+            momentStore = RoomMomentStore(database.momentDao())
+
+            runBlocking {
+                dev.pranav.reconnect.data.local.DatabaseSeeder.seedIfNeeded(
+                    contactStore = contactStore,
+                    momentStore = momentStore
+                )
+            }
         }
+
+        attachmentStore = LocalAttachmentStore(appContext, metricsRecorder)
+        aiInsightStore = LocalAiInsightStore()
 
         initialized = true
     }
 }
-

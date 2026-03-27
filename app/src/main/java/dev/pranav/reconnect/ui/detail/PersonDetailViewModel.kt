@@ -8,16 +8,19 @@ import dev.pranav.reconnect.data.model.PastMoment
 import dev.pranav.reconnect.data.port.AiInsightStore
 import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.data.port.AttachmentStore
-import dev.pranav.reconnect.data.port.ContactRepository
-import dev.pranav.reconnect.data.port.MomentRepository
-import kotlinx.coroutines.flow.*
+import dev.pranav.reconnect.data.port.ContactStore
+import dev.pranav.reconnect.data.port.MomentStore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 enum class RelationshipHealth { STRONG, NEUTRAL, FADING }
 
@@ -34,41 +37,40 @@ data class PersonDetailUiState(
     val aiPrepBullets: List<String> = emptyList()
 )
 
-class PersonDetailViewModel : ViewModel() {
+class PersonDetailViewModel(
+    contactStore: ContactStore = AppContainer.contactStore,
+    momentStore: MomentStore = AppContainer.momentStore,
+    attachmentStore: AttachmentStore = AppContainer.attachmentStore,
+    aiInsightStore: AiInsightStore = AppContainer.aiInsightStore
+): ViewModel() {
 
-    private val contactRepository: ContactRepository = AppContainer.contactRepository
-    private val momentRepository: MomentRepository = AppContainer.momentRepository
-    private val attachmentStore: AttachmentStore = AppContainer.attachmentStore
-    private val aiInsightStore: AiInsightStore = AppContainer.aiInsightStore
+    private val _contactStore = contactStore
+    private val _momentStore = momentStore
+    private val _attachmentStore = attachmentStore
+    private val _aiInsightStore = aiInsightStore
+
     private val _contactId = MutableStateFlow<String?>(null)
     private val _selectedCategory = MutableStateFlow<MomentCategory?>(null)
 
     val uiState: StateFlow<PersonDetailUiState> = combine(
-        contactRepository.contacts,
-        momentRepository.moments,
+        _contactStore.contacts,
+        _momentStore.moments,
         _contactId,
         _selectedCategory
     ) { contacts, moments, contactId, selectedCategory ->
         val contact = contactId?.let { id -> contacts.find { it.id == id } }
-        val contactMoments = moments.filter { it.contactId == contactId }
+        val contactMoments =
+            if (contactId != null) moments.filter { it.contactIds.contains(contactId) } else emptyList()
         val filteredMoments = if (selectedCategory == null) contactMoments
         else contactMoments.filter { it.category == selectedCategory }
 
-        val daysSinceLastContact = contactMoments.firstOrNull()?.let { parseDaysSince(it.dateLabel) }
+        val daysSinceLastContact = contactMoments.maxByOrNull { it.dateEpochMs }?.let {
+            TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - it.dateEpochMs).toInt()
+                .coerceAtLeast(0)
+        }
         val daysUntilBirthday = contact?.let { calculateDaysUntilBirthday(it) }
         val relationshipHealth = deriveHealth(daysSinceLastContact, contactMoments.size)
-        val fallbackBullets = if (contactMoments.isNotEmpty()) listOf(
-            "Catch up on: ${contactMoments.first().title}",
-            "Ask how things have been since you last spoke",
-            "Share something new happening in your life"
-        ) else emptyList()
-        val aiPrepBullets = if (contact != null) {
-            runCatching {
-                aiInsightStore.getPrepBullets(contact.id, fallbackBullets)
-            }.getOrDefault(fallbackBullets)
-        } else {
-            fallbackBullets
-        }
+        val aiPrepBullets = generateAiPrepBullets(contact, contactMoments, _aiInsightStore)
 
         PersonDetailUiState(
             contact = contact,
@@ -78,9 +80,9 @@ class PersonDetailViewModel : ViewModel() {
             pastMoments = contactMoments,
             filteredMoments = filteredMoments,
             selectedCategory = selectedCategory,
-            daysSinceLastContact = daysSinceLastContact,
             daysUntilBirthday = daysUntilBirthday,
             relationshipHealth = relationshipHealth,
+            daysSinceLastContact = daysSinceLastContact,
             aiPrepBullets = aiPrepBullets
         )
     }.stateIn(
@@ -96,15 +98,19 @@ class PersonDetailViewModel : ViewModel() {
     fun toggleImportant() {
         val contact = uiState.value.contact ?: return
         viewModelScope.launch {
-            contactRepository.updateContact(contact.copy(isImportant = !contact.isImportant))
+            _contactStore.updateContact(contact.copy(isImportant = !contact.isImportant))
         }
     }
 
     fun deleteContact() {
         val contact = uiState.value.contact ?: return
         viewModelScope.launch {
-            momentRepository.deleteMomentsForContact(contact.id)
-            contactRepository.deleteContact(contact.id)
+            val moments = _momentStore.getMomentsFor(contact.id)
+            moments.forEach { moment ->
+                _attachmentStore.deleteMomentAttachments(moment.id)
+            }
+            _momentStore.deleteMomentsForContact(contact.id)
+            _contactStore.deleteContact(contact.id)
         }
     }
 
@@ -122,19 +128,19 @@ class PersonDetailViewModel : ViewModel() {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val momentId = UUID.randomUUID().toString()
-            val dateLabel = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(now))
-            val persistedUris = attachmentStore.persistMomentAttachments(
+            val persistedUris = _attachmentStore.persistMomentAttachments(
                 contactId = contactId,
                 momentId = momentId,
                 sourceUris = imageUris
             )
-            momentRepository.addMoment(
+
+            _momentStore.addMoment(
                 PastMoment(
                     id = momentId,
-                    contactId = contactId,
-                    title = title.trim(),
-                    description = description.trim(),
-                    dateLabel = dateLabel,
+                    contactIds = listOf(contactId),
+                    title = title,
+                    description = description,
+                    dateEpochMs = now,
                     category = category,
                     imageUris = persistedUris,
                     createdAtEpochMs = now
@@ -143,25 +149,31 @@ class PersonDetailViewModel : ViewModel() {
         }
     }
 
+    private fun generateAiPrepBullets(
+        contact: Contact?,
+        moments: List<PastMoment>,
+        aiStore: AiInsightStore
+    ): List<String> {
+        val fallbackBullets = if (moments.isNotEmpty()) listOf(
+            "Catch up on: ${moments.first().title}",
+            "Ask how things have been since you last spoke",
+            "Share something new happening in your life"
+        ) else emptyList()
+
+        return if (contact != null) {
+            runCatching {
+                aiStore.getPrepBullets(contact.id, fallbackBullets)
+            }.getOrDefault(fallbackBullets)
+        } else {
+            fallbackBullets
+        }
+    }
+
     private fun calculateNextTalkDate(days: Int): String {
         val cal = Calendar.getInstance().also { it.add(Calendar.DAY_OF_YEAR, days) }
         val dayName = SimpleDateFormat("EEEE", Locale.getDefault()).format(cal.time)
         val date = SimpleDateFormat("MMM d", Locale.getDefault()).format(cal.time)
         return "$dayName, $date"
-    }
-
-    private fun parseDaysSince(dateLabel: String): Int? {
-        val formats = listOf("MMM d, yyyy", "MMM dd, yyyy", "MMMM d, yyyy")
-        for (fmt in formats) {
-            try {
-                val parsed = SimpleDateFormat(fmt, Locale.getDefault()).parse(dateLabel)
-                if (parsed != null) {
-                    val diff = Date().time - parsed.time
-                    return TimeUnit.MILLISECONDS.toDays(diff).toInt().coerceAtLeast(0)
-                }
-            } catch (_: Exception) { }
-        }
-        return null
     }
 
     private fun calculateDaysUntilBirthday(contact: Contact): Int? {

@@ -30,13 +30,25 @@ class LocalMomentRepository(
 
     override suspend fun getMomentsFor(contactId: String): List<PastMoment> {
         return metricsRecorder.trackRead(name = "moment.byContact") {
-            dao.getMomentsFor(contactId).map { it.toModel() }
+            dao.getAllMoments().map { it.toModel() }
+                .filter { it.contactIds.contains(contactId) }
         }
     }
 
     override suspend fun deleteMomentsForContact(contactId: String) {
         metricsRecorder.trackWrite(name = "moment.deleteByContact") {
-            dao.deleteMomentsForContact(contactId)
+            val allMoments = dao.getAllMoments().map { it.toModel() }
+            val affectedMoments = allMoments.filter { it.contactIds.contains(contactId) }
+
+            affectedMoments.forEach { moment ->
+                val newContactIds = moment.contactIds - contactId
+                if (newContactIds.isEmpty()) {
+                    dao.deleteMoment(moment.toEntity())
+                } else {
+                    val updatedMoment = moment.copy(contactIds = newContactIds)
+                    dao.updateMoment(updatedMoment.toEntity())
+                }
+            }
         }
     }
 }

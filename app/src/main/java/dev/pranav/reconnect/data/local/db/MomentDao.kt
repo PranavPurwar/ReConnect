@@ -1,9 +1,6 @@
 package dev.pranav.reconnect.data.local.db
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.* // using wildcard for Update, Delete
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -14,10 +11,12 @@ interface MomentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMoment(moment: MomentEntity)
 
-    @Query("SELECT * FROM moments WHERE contactId = :contactId ORDER BY createdAtEpochMs DESC")
-    suspend fun getMomentsFor(contactId: String): List<MomentEntity>
+    @Update
+    suspend fun updateMoment(moment: MomentEntity)
 
-    @Query("DELETE FROM moments WHERE contactId = :contactId")
-    suspend fun deleteMomentsForContact(contactId: String)
+    @Delete
+    suspend fun deleteMoment(moment: MomentEntity)
+
+    @Query("SELECT * FROM moments ORDER BY createdAtEpochMs DESC")
+    suspend fun getAllMoments(): List<MomentEntity>
 }
-

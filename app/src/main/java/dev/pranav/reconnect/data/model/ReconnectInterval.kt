@@ -1,5 +1,8 @@
 package dev.pranav.reconnect.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class ReconnectInterval(val label: String, val days: Int) {
     WEEKLY("Weekly", 7),
     BIWEEKLY("Biweekly", 14),
@@ -7,4 +10,3 @@ enum class ReconnectInterval(val label: String, val days: Int) {
     QUARTERLY("Quarterly", 90),
     YEARLY("Yearly", 365)
 }
-

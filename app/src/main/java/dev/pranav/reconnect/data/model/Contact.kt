@@ -10,7 +10,6 @@ data class Contact(
     val title: String = "",
     val relationship: String = "",
     val notes: String = "",
-    @SerialName("photo_uri") val photoUri: String? = null,
     @SerialName("seed_color_argb") val seedColorArgb: Int? = null,
     @SerialName("phone_number") val phoneNumber: String = "",
     @SerialName("is_active") val isActive: Boolean = false,
@@ -18,5 +17,8 @@ data class Contact(
     @SerialName("reconnect_interval") val reconnectInterval: ReconnectInterval = ReconnectInterval.MONTHLY,
     @SerialName("birthday_month") val birthdayMonth: Int? = null,
     @SerialName("birthday_day") val birthdayDay: Int? = null,
-    @SerialName("birthday_year") val birthdayYear: Int? = null
+    @SerialName("birthday_year") val birthdayYear: Int? = null,
+
+    @kotlinx.serialization.Transient
+    val photoUri: String? = null
 )

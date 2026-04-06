@@ -55,17 +55,16 @@ fun JourneyScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(CreamBackground),
-        contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
+        contentPadding = WindowInsets.statusBars.asPaddingValues()
     ) {
             item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .statusBarsPadding()
                         .padding(
                             start = 24.dp,
                             end = 24.dp,
-                            top = 32.dp,
+                            top = 16.dp,
                             bottom = 16.dp
                         )
                 ) {
@@ -113,14 +112,16 @@ fun JourneyScreen(
                             JourneyFilterChip(
                                 selected = state.selectedCategory == null,
                                 label = "All",
-                                onClick = { viewModel.setFilter(null) }
+                                onClick = { viewModel.setFilter(null) },
+                                modifier = Modifier.animateItem()
                             )
                         }
-                        items(MomentCategory.entries.toList()) { cat ->
+                        items(MomentCategory.entries.toList(), key = { it.name }) { cat ->
                             JourneyFilterChip(
                                 selected = state.selectedCategory == cat,
                                 label = cat.displayName(),
-                                onClick = { viewModel.setFilter(cat) }
+                                onClick = { viewModel.setFilter(cat) },
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -129,7 +130,10 @@ fun JourneyScreen(
 
             if (state.filteredItems.isEmpty()) {
                 item {
-                    EmptyJourneyState(state.selectedCategory?.displayName()?.lowercase())
+                    EmptyJourneyState(
+                        categoryName = state.selectedCategory?.displayName()?.lowercase(),
+                        modifier = Modifier.animateItem()
+                    )
                 }
             } else {
                 itemsIndexed(
@@ -137,7 +141,9 @@ fun JourneyScreen(
                     key = { _, item -> item.moment.id }
                 ) { index, item ->
                     TimelineEntry(
-                        modifier = Modifier.padding(horizontal = 24.dp),
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 24.dp),
                         item = item,
                         isLast = index == state.filteredItems.lastIndex,
                         onOpenGallery = onOpenGallery
@@ -269,6 +275,20 @@ private fun ImageGrid(uris: List<String>, onClick: () -> Unit) {
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
+                    loading = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(GoldPrimary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = GoldPrimary.copy(alpha = 0.5f),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    },
                     error = {
                         Box(
                             modifier = Modifier
@@ -309,12 +329,14 @@ private fun ImageGrid(uris: List<String>, onClick: () -> Unit) {
 fun JourneyFilterChip(
     selected: Boolean,
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         onClick = onClick,
         shape = CircleShape,
         color = if (selected) GoldPrimary else GoldPrimary.copy(alpha = 0.1f),
+        modifier = modifier
     ) {
         Text(
             text = label,
@@ -329,9 +351,12 @@ fun JourneyFilterChip(
 }
 
 @Composable
-private fun EmptyJourneyState(categoryName: String? = null) {
+private fun EmptyJourneyState(
+    categoryName: String? = null,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 40.dp),
         contentAlignment = Alignment.Center

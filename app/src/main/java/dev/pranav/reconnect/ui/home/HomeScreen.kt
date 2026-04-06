@@ -2,6 +2,7 @@ package dev.pranav.reconnect.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,14 +24,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.PainterState
+import com.github.panpf.sketch.rememberAsyncImageState
+import com.github.panpf.sketch.request.ImageRequest
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.UpcomingEvent
+import dev.pranav.reconnect.data.remote.SupabaseAuthManager
+import dev.pranav.reconnect.data.remote.id
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
+import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.coil.asSketchUri
+import io.github.jan.supabase.storage.authenticatedStorageItem
 
 @Composable
 private fun TimelineReminderCard(
@@ -100,7 +109,6 @@ private fun HomeHeader() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -161,12 +169,17 @@ fun HomeScreen(
             .padding(bottom = innerPadding.calculateBottomPadding())
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            HomeHeader()
-
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(bottom = 100.dp)
+                contentPadding = PaddingValues(
+                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                    bottom = 100.dp
+                )
             ) {
+                item {
+                    HomeHeader()
+                }
+
                 item {
                     ScreenTitle(
                         text = "Upcoming\nConnections",
@@ -187,7 +200,11 @@ fun HomeScreen(
                         }
                     }
                 ) { event ->
-                    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 20.dp, vertical = 8.dp)
+                    ) {
                         when (event) {
                             is UpcomingEvent.Birthday -> {
                                 if (event.contactId == featuredBirthdayId) {
@@ -214,7 +231,12 @@ fun HomeScreen(
                     items = state.quickCatchUps.take(5),
                     key = { pair -> pair.first.id }
                 ) { (contact, subtitle) ->
-                    QuickCatchUpRow(contact, subtitle, onContactClick)
+                    QuickCatchUpRow(
+                        contact = contact,
+                        subtitle = subtitle,
+                        onClick = onContactClick,
+                        modifier = Modifier.animateItem()
+                    )
                 }
             }
         }
@@ -440,55 +462,82 @@ private fun CatchUpCard(event: UpcomingEvent.CatchUp) {
     }
 }
 
+@OptIn(SupabaseExperimental::class)
 @Composable
 private fun QuickCatchUpRow(
     contact: Contact,
     subtitle: String,
-    onContactClick: (String) -> Unit
+    onClick: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Card(
-        onClick = { onContactClick(contact.id) },
-        modifier = Modifier
+    Row(
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .clickable { onClick(contact.id) }
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                uri = contact.photoUri,
-                contentDescription = null,
+        val state = rememberAsyncImageState()
+        val seedColor = contact.seedColorArgb?.let { Color(it) } ?: DefaultSeedColor
+        val scheme = dev.pranav.reconnect.ui.theme.colorSchemeFromSeed(seedColor)
+
+        SeedColorTheme(colors = scheme) {
+            Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = contact.name,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = PlayfairFamily,
-                        fontWeight = FontWeight.Black
-                    )
-                )
-                Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-            }
-
-            Surface(
-                shape = CircleShape,
-                color = AmberCardStart.copy(alpha = 0.5f),
-                modifier = Modifier.size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = GoldPrimary)
+                if (state.painterState !is PainterState.Success) {
+                    val initials = contact.name.split(" ").take(2)
+                        .mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
+                        .takeIf { it.isNotEmpty() } ?: "?"
+                    Text(
+                        text = initials,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
                 }
+
+                AsyncImage(
+                    request = ImageRequest(
+                        androidx.compose.ui.platform.LocalContext.current,
+                        authenticatedStorageItem(
+                            "contacts",
+                            "${SupabaseAuthManager.client.id}/${contact.id}/photo.jpg"
+                        ).asSketchUri()
+                    ) { crossfade(true) },
+                    state = state,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+
+        Spacer(Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = contact.name,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = PlayfairFamily,
+                    fontWeight = FontWeight.Black
+                )
+            )
+            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        }
+
+        Surface(
+            shape = CircleShape,
+            color = AmberCardStart.copy(alpha = 0.5f),
+            modifier = Modifier.size(48.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.AutoMirrored.Filled.Send, null, tint = GoldPrimary)
             }
         }
     }

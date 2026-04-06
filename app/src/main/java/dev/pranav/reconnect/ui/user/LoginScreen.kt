@@ -373,7 +373,7 @@ fun SignUpScreen(
 }
 
 @Composable
-private fun ActionButton(text: String, isLoading: Boolean, enabled: Boolean, onClick: () -> Unit) {
+fun ActionButton(text: String, isLoading: Boolean, enabled: Boolean, onClick: () -> Unit) {
     val colorScheme = MaterialTheme.colorScheme
     Button(
         onClick = onClick,
@@ -415,7 +415,7 @@ private fun BackgroundOrbs(colorScheme: ColorScheme) {
 }
 
 @Composable
-private fun CustomTextField(
+fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,

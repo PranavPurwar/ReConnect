@@ -7,12 +7,6 @@ import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.data.port.ContactStore
 import kotlinx.coroutines.flow.*
 
-data class SocialCircleUiState(
-    val filteredContacts: List<Contact> = emptyList(),
-    val searchQuery: String = "",
-    val selectedCategory: String = "All"
-)
-
 class SocialCircleViewModel(
     contactStore: ContactStore = AppContainer.contactStore
 ): ViewModel() {
@@ -33,22 +27,6 @@ class SocialCircleViewModel(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
-    )
-
-    val uiState: StateFlow<SocialCircleUiState> = combine(
-        contactStore.contacts,
-        _searchQuery,
-        _selectedCategory
-    ) { contacts, query, category ->
-        SocialCircleUiState(
-            filteredContacts = applyFilters(contacts, query, category),
-            searchQuery = query,
-            selectedCategory = category
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = SocialCircleUiState()
     )
 
     fun updateSearch(query: String) {
@@ -98,5 +76,3 @@ fun String.toCircleCategory(): String = when {
 }
 
 fun String.toTagLabel(): String = toCircleCategory().uppercase()
-
-

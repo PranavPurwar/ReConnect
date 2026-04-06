@@ -17,8 +17,14 @@ fun Context.takePersistableReadPermissionIfPossible(uri: Uri) {
 
 fun Uri.toBitmap(context: Context): Bitmap? {
     return try {
-        context.contentResolver.openInputStream(this)?.use { inputStream ->
-            BitmapFactory.decodeStream(inputStream)
+        if (scheme == "http" || scheme == "https") {
+            java.net.URL(toString()).openStream().use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            }
+        } else {
+            context.contentResolver.openInputStream(this)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            }
         }
     } catch (e: Exception) {
         e.printStackTrace()

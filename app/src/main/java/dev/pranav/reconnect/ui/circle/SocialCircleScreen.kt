@@ -24,10 +24,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.PainterState
+import com.github.panpf.sketch.rememberAsyncImageState
+import com.github.panpf.sketch.request.ImageRequest
 import dev.pranav.reconnect.data.model.Contact
+import dev.pranav.reconnect.data.remote.id
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
+import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.coil.asSketchUri
+import io.github.jan.supabase.storage.authenticatedStorageItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,13 +66,15 @@ fun SocialCircleScreen(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }
-        }
+        },
+        contentWindowInsets = WindowInsets.statusBars
     ) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(bottom = 120.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = padding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding() + 120.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             item { CircleHeader() }
@@ -89,7 +98,8 @@ fun SocialCircleScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 64.dp),
+                            .padding(vertical = 64.dp)
+                            .animateItem(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -132,7 +142,9 @@ fun SocialCircleScreen(
                         actionLabel = actionLabel,
                         actionIcon = actionIcon,
                         onCardClick = { onContactClick(contact.id) },
-                        modifier = Modifier.padding(horizontal = 24.dp)
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 24.dp)
                     )
                 }
             }
@@ -229,26 +241,51 @@ private fun CategoryFilterRow(
     }
 }
 
+@OptIn(SupabaseExperimental::class)
 @Composable
-private fun ContactAvatar(photoUri: String?, name: String, modifier: Modifier = Modifier) {
-    if (!photoUri.isNullOrBlank()) {
-        AsyncImage(
-            uri = photoUri,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-        )
-    } else {
+private fun ContactAvatar(
+    contactId: String,
+    name: String,
+    seedColorArgb: Int?,
+    modifier: Modifier = Modifier
+) {
+    val state = rememberAsyncImageState()
+    val seedColor =
+        seedColorArgb?.let { Color(it) } ?: dev.pranav.reconnect.ui.theme.DefaultSeedColor
+    val scheme = dev.pranav.reconnect.ui.theme.colorSchemeFromSeed(seedColor)
+
+    dev.pranav.reconnect.ui.theme.SeedColorTheme(colors = scheme) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = modifier.background(GoldLight)
+            modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainer)
         ) {
-            Text(
-                text = name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = GoldDark
+            if (state.painterState !is PainterState.Success) {
+                val initials =
+                    name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                        .joinToString("").takeIf { it.isNotEmpty() } ?: "?"
+                Text(
+                    text = initials,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 )
+            }
+
+            AsyncImage(
+                request = ImageRequest(
+                    androidx.compose.ui.platform.LocalContext.current,
+                    authenticatedStorageItem(
+                        "contacts",
+                        "${dev.pranav.reconnect.data.remote.SupabaseAuthManager.client.id}/${contactId}/photo.jpg"
+                    ).asSketchUri()
+                ) {
+                    crossfade(true)
+                },
+                state = state,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
         }
     }
@@ -285,8 +322,9 @@ private fun CircleContactCard(
                     shadowElevation = 2.dp
                 ) {
                     ContactAvatar(
-                        photoUri = contact.photoUri,
+                        contactId = contact.id,
                         name = contact.name,
+                        seedColorArgb = contact.seedColorArgb,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

@@ -48,6 +48,7 @@ object SupabaseAuthManager {
 
     init {
         runBlocking { client.auth.loadFromStorage() }
+
         SingletonSketch.setSafe {
             Sketch.Builder(it).apply {
                 components {
@@ -107,6 +108,41 @@ object SupabaseAuthManager {
         }
     }
 
+    @OptIn(SupabaseExperimental::class)
+    suspend fun updateProfile(fullName: String, email: String, avatar: ByteArray?): Result<Unit> {
+        val configError = validateConfig()
+        if (configError != null) return Result.failure(configError)
+
+        return runCatching {
+            val user = client.auth.currentUserOrNull() ?: throw Exception("Not logged in")
+
+            client.auth.updateUser {
+                if (user.email != email) {
+                    this.email = email
+                }
+                data {
+                    put("full_name", fullName)
+                }
+
+            }
+
+            if (avatar != null) {
+                client.storage.from("avatars").upload("${user.id}/avatar.png", avatar) {
+                    upsert = true
+                }
+            }
+        }
+    }
+
+    suspend fun signOut(): Result<Unit> {
+        val configError = validateConfig()
+        if (configError != null) return Result.failure(configError)
+
+        return runCatching {
+            client.auth.signOut()
+        }
+    }
+
     private fun validateConfig(): IllegalStateException? {
         if (SUPABASE_URL.isBlank() || SUPABASE_KEY.isBlank()) {
             return IllegalStateException(
@@ -117,8 +153,19 @@ object SupabaseAuthManager {
     }
 }
 
+val supabase: SupabaseClient = SupabaseAuthManager.client
+
 val SupabaseClient.id: String
-    get() = auth.currentUserOrNull()!!.id
+    get() {
+        runBlocking {
+            if (auth.currentUserOrNull() == null) {
+                auth.awaitInitialization()
+                auth.refreshCurrentSession()
+            }
+        }
+
+        return auth.currentUserOrNull()!!.id
+    }
 
 val SupabaseClient.avatar: String
     get() = "$id/avatar.png"

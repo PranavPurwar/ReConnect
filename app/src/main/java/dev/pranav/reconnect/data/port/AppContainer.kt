@@ -34,7 +34,7 @@ object AppContainer {
         storageMetricsRecorder = metricsRecorder
 
         if (BuildConfig.FLAVOR == "playstoreSupabase") {
-            contactStore = SupabaseContactStore(SupabaseAuthManager.client)
+            contactStore = SupabaseContactStore(SupabaseAuthManager.client, appContext)
             momentStore = SupabaseMomentStore(SupabaseAuthManager.client)
         } else {
             val database = ReConnectDatabase.getInstance(appContext)

@@ -10,7 +10,5 @@ data class ContactFormData(
     val birthdayMonth: Int? = null,
     val birthdayDay: Int? = null,
     val birthdayYear: Int? = null,
-    val photoUri: String? = null,
     val seedColorArgb: Int? = null
 )
-

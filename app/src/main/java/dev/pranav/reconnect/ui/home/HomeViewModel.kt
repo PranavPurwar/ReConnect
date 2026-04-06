@@ -42,15 +42,26 @@ class HomeViewModel(
         initialValue = HomeUiState()
     )
 
-    fun addContact(form: ContactFormData) {
+    fun addContact(form: ContactFormData, photoUri: String?, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
-            contactStore.addContact(buildContact(form))
+            val contact = buildContact(form)
+            try {
+                contactStore.addContact(contact, photoUri)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            onComplete()
         }
     }
 
-    fun updateContact(contact: Contact) {
+    fun updateContact(contact: Contact, photoUri: String?, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
-            contactStore.updateContact(contact)
+            try {
+                contactStore.updateContact(contact, photoUri)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            onComplete()
         }
     }
 
@@ -67,7 +78,6 @@ class HomeViewModel(
             birthdayYear = form.birthdayYear,
             birthdayMonth = form.birthdayMonth,
             birthdayDay = form.birthdayDay,
-            photoUri = form.photoUri,
             seedColorArgb = form.seedColorArgb
         )
     }

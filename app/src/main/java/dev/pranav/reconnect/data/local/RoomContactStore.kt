@@ -17,11 +17,11 @@ class RoomContactStore(private val contactsDao: ContactDao): ContactStore {
         contactsDao.insertContacts(newContacts.map { it.toEntity() })
     }
 
-    override suspend fun addContact(contact: Contact) {
+    override suspend fun addContact(contact: Contact, avatarUri: String?) {
         contactsDao.insertContact(contact.toEntity())
     }
 
-    override suspend fun updateContact(contact: Contact) {
+    override suspend fun updateContact(contact: Contact, avatarUri: String?) {
         contactsDao.updateContact(contact.toEntity())
     }
 
@@ -33,4 +33,3 @@ class RoomContactStore(private val contactsDao: ContactDao): ContactStore {
         return contactsDao.findById(contactId)?.toModel()
     }
 }
-

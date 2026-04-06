@@ -1,5 +1,5 @@
 [versions]
-agp = "9.2.0-alpha05"
+agp = "9.2.0-alpha07"
 sketch = "4.4.0-beta02"
 supabase = "3.4.1"
 room = "2.8.4"

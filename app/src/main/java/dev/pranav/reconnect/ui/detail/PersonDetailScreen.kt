@@ -33,17 +33,22 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.PainterState
+import com.github.panpf.sketch.rememberAsyncImageState
+import com.github.panpf.sketch.request.ImageRequest
 import dev.pranav.reconnect.data.model.MomentCategory
 import dev.pranav.reconnect.data.model.PastMoment
+import dev.pranav.reconnect.data.remote.SupabaseAuthManager
+import dev.pranav.reconnect.data.remote.id
 import dev.pranav.reconnect.ui.theme.*
-import dev.pranav.reconnect.util.toBitmap
+import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.coil.asSketchUri
+import io.github.jan.supabase.storage.authenticatedStorageItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, SupabaseExperimental::class)
 @Composable
 fun PersonDetailScreen(
     contactId: String,
@@ -62,20 +67,16 @@ fun PersonDetailScreen(
     var showLogSheet by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
 
+    // Removed specific local bitmapping, using placeholder color
     val contactPhotoBitmap by produceState<android.graphics.Bitmap?>(
         initialValue = null,
-        key1 = contact?.photoUri,
+        key1 = contact?.id,
         key2 = contact?.seedColorArgb,
         key3 = context
     ) {
         if (contact?.seedColorArgb != null) {
             value = null
             return@produceState
-        }
-        value = withContext(Dispatchers.IO) {
-            contact?.photoUri?.let { uri ->
-                runCatching { uri.toUri().toBitmap(context) }.getOrNull()
-            }
         }
     }
 
@@ -203,32 +204,44 @@ fun PersonDetailScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Box(contentAlignment = Alignment.BottomEnd) {
+                        val imageState = rememberAsyncImageState()
+                        // Since PersonDetailScreen applies a SeedColorTheme dynamically to its content,
+                        // MaterialTheme.colorScheme already contains the seeded colors for this contact.
                         Surface(
                             modifier = Modifier
                                 .size(120.dp)
                                 .border(3.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            color = MaterialTheme.colorScheme.surfaceContainer
                         ) {
-                            if (contact.photoUri != null) {
+                            Box(contentAlignment = Alignment.Center) {
+                                if (imageState.painterState !is PainterState.Success) {
+                                    val initials = contact.name.split(" ").take(2)
+                                        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                                        .joinToString("").takeIf { it.isNotEmpty() } ?: "?"
+                                    Text(
+                                        text = initials,
+                                        style = MaterialTheme.typography.headlineLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
                                 AsyncImage(
-                                    uri = contact.photoUri,
+                                    request = ImageRequest(
+                                        LocalContext.current,
+                                        authenticatedStorageItem(
+                                            "contacts",
+                                            "${SupabaseAuthManager.client.id}/${contact.id}/photo.jpg"
+                                        ).asSketchUri()
+                                    ) { crossfade(true) },
+                                    state = imageState,
                                     contentDescription = contact.name,
                                     modifier = Modifier
                                         .size(120.dp)
                                         .clip(CircleShape),
                                     contentScale = ContentScale.Crop
                                 )
-                            } else {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = contact.name.split(" ").take(2)
-                                            .mapNotNull { it.firstOrNull() }.joinToString(""),
-                                        style = MaterialTheme.typography.headlineLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
                             }
                         }
                         if (contact.isActive) {
@@ -642,12 +655,17 @@ fun PersonDetailScreen(
                     }
                 }
             } else {
-                itemsIndexed(state.filteredMoments) { index, moment ->
+                itemsIndexed(
+                    items = state.filteredMoments,
+                    key = { _, moment -> moment.id }
+                ) { index, moment ->
                     PastMomentItem(
                         moment = moment,
                         isLast = index == state.filteredMoments.lastIndex,
                         onOpenGallery = onOpenGallery,
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 20.dp)
                     )
                 }
             }
@@ -765,8 +783,8 @@ private fun BirthdayReminderCard(daysUntilBirthday: Int, name: String, modifier:
 private fun PastMomentItem(
     moment: PastMoment,
     isLast: Boolean,
-    onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> }
 ) {
     val icon = when (moment.category) {
         MomentCategory.DINING -> Icons.Default.Restaurant

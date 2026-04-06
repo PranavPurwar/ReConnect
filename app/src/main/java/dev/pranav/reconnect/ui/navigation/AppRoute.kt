@@ -8,6 +8,8 @@ object AppRoute {
     const val ONBOARDING = "onboarding"
     const val PICKER = "picker"
     const val MAIN = "main"
+    const val SETTINGS = "settings"
+    const val EDIT_PROFILE = "edit_profile"
     const val PERSON_DETAIL = "detail/{contactId}"
     const val ADD_CONNECTION = "add?contactId={contactId}"
     const val GALLERY = "gallery"

@@ -31,18 +31,45 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.BitmapImage
+import com.github.panpf.sketch.PainterState
+import com.github.panpf.sketch.SingletonSketch
+import com.github.panpf.sketch.request.ImageRequest
 import dev.pranav.reconnect.data.model.Contact
 import dev.pranav.reconnect.data.model.ContactFormData
+import dev.pranav.reconnect.data.remote.SupabaseAuthManager
 import dev.pranav.reconnect.data.repository.SystemContactsDataSource
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
 import dev.pranav.reconnect.util.toBitmap
+import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.coil.asSketchUri
+import io.github.jan.supabase.storage.authenticatedStorageItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+
+private suspend fun loadRemoteBitmap(
+    context: android.content.Context,
+    contactId: String
+): android.graphics.Bitmap? {
+    return runCatching {
+        @OptIn(SupabaseExperimental::class)
+        val uri = authenticatedStorageItem(
+            "contacts",
+            "${SupabaseAuthManager.client.auth.currentSessionOrNull()?.user?.id}/$contactId/photo.jpg"
+        ).asSketchUri()
+
+        val request = ImageRequest(context, uri)
+        val result =
+            SupabaseAuthManager.client.let { SingletonSketch.get(context) }.execute(request)
+        (result.image as? BitmapImage)?.bitmap
+    }.getOrNull()
+}
 
 private val MorphedFabShape = RoundedCornerShape(topStart = 48.dp, topEnd = 16.dp, bottomEnd = 48.dp, bottomStart = 40.dp)
 private val relationships = listOf("Family", "Friend", "Colleague", "Other")
@@ -96,6 +123,8 @@ fun AddConnectionScreen(
     val isEditMode = existingContact != null
     val birthdayFormatter = remember { SimpleDateFormat("MMMM d", Locale.US) }
 
+    // Instead of initializing photoUri from contact, we derive the remote one for display
+    // but the local picking still stays in photoUri
     LaunchedEffect(existingContact?.id) {
         val contact = existingContact ?: return@LaunchedEffect
         if (didPrefillForContactId == contact.id) return@LaunchedEffect
@@ -105,7 +134,6 @@ fun AddConnectionScreen(
         phone = contact.phoneNumber
         selectedRelationship = contact.relationship.takeIf { it.isNotBlank() }
         notes = contact.notes
-        photoUri = contact.photoUri
         birthdayYear = contact.birthdayYear
         birthdayMonth = contact.birthdayMonth
         birthdayDay = contact.birthdayDay
@@ -120,12 +148,19 @@ fun AddConnectionScreen(
         mutableStateOf(existingContact?.seedColorArgb != null)
     }
 
-    LaunchedEffect(photoUri) {
+    LaunchedEffect(photoUri, existingContact?.id) {
         val fallbackSeedColor = existingContact?.seedColorArgb?.let(::Color)
             ?: provisionalSeedColorFromPhotoUri(photoUri)
+
         val decodedBitmap = withContext(Dispatchers.IO) {
-            decodePhotoBitmap(context, photoUri)
+            decodePhotoBitmap(context, photoUri) ?: existingContact?.id?.let {
+                loadRemoteBitmap(
+                    context,
+                    it
+                )
+            }
         }
+
         photoBitmap = decodedBitmap
         if (!isSeedColorCustom) {
             seedColor = fallbackSeedColor
@@ -202,28 +237,30 @@ fun AddConnectionScreen(
                                     birthdayYear = birthdayYear,
                                     birthdayMonth = birthdayMonth,
                                     birthdayDay = birthdayDay,
-                                    photoUri = photoUri,
                                     seedColorArgb = seedColor.toArgb()
-                                )
+                                ),
+                                photoUri = photoUri,
+                                onComplete = { onAdded() }
                             )
                         }
                     } else {
                         viewModel.addContact(
-                            ContactFormData(
+                            form = ContactFormData(
                                 name = name,
                                 phone = phone,
                                 title = title,
                                 relationship = selectedRelationship ?: "",
                                 notes = notes,
-                                birthdayYear = birthdayYear,
+                                interval = dev.pranav.reconnect.data.model.ReconnectInterval.MONTHLY,
                                 birthdayMonth = birthdayMonth,
                                 birthdayDay = birthdayDay,
-                                photoUri = photoUri,
+                                birthdayYear = birthdayYear,
                                 seedColorArgb = seedColor.toArgb()
-                            )
+                            ),
+                            photoUri = photoUri,
+                            onComplete = { onAdded() }
                         )
                     }
-                    onAdded()
                 },
                 canAdd = name.isNotBlank(),
                 isEditMode = isEditMode,
@@ -329,6 +366,51 @@ fun AddConnectionScreen(
                                             )
                                         )
                                 )
+                            } else if (existingContact != null) {
+                                val state = com.github.panpf.sketch.rememberAsyncImageState()
+                                val shape = RoundedCornerShape(
+                                    topStart = 52.dp,
+                                    topEnd = 34.dp,
+                                    bottomEnd = 54.dp,
+                                    bottomStart = 44.dp
+                                )
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(shape)
+                                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                                ) {
+                                    if (state.painterState !is PainterState.Success) {
+                                        val initials = name.split(" ").take(2)
+                                            .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                                            .joinToString("").takeIf { it.isNotEmpty() } ?: "?"
+                                        Text(
+                                            text = initials,
+                                            style = MaterialTheme.typography.headlineLarge.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        )
+                                    }
+
+                                    @OptIn(SupabaseExperimental::class)
+                                    val asyncRequest = ImageRequest(
+                                        LocalContext.current,
+                                        authenticatedStorageItem(
+                                            "contacts",
+                                            "${SupabaseAuthManager.client.auth.currentSessionOrNull()?.user?.id}/${existingContact.id}/photo.jpg"
+                                        ).asSketchUri()
+                                    ) { crossfade(true) }
+
+                                    AsyncImage(
+                                        request = asyncRequest,
+                                        state = state,
+                                        contentDescription = "Existing profile photo",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             } else {
                                 Icon(
                                     Icons.Default.AddAPhoto,
@@ -560,6 +642,9 @@ fun AddConnectionScreen(
 
     if (showBirthdayPicker) {
         BirthdayPickerDialog(
+            initialYear = birthdayYear,
+            initialMonth = birthdayMonth,
+            initialDay = birthdayDay,
             onDismiss = { showBirthdayPicker = false },
             onConfirm = { year, month, day ->
                 birthdayYear = year
@@ -662,9 +747,9 @@ private fun CustomSeedColorDialog(
     val hsv = remember(initialColor) {
         FloatArray(3).also { android.graphics.Color.colorToHSV(initialColor.toArgb(), it) }
     }
-    var hue by remember(initialColor) { mutableStateOf(hsv[0]) }
-    var saturation by remember(initialColor) { mutableStateOf(hsv[1]) }
-    var value by remember(initialColor) { mutableStateOf(hsv[2]) }
+    var hue by remember(initialColor) { mutableFloatStateOf(hsv[0]) }
+    var saturation by remember(initialColor) { mutableFloatStateOf(hsv[1]) }
+    var value by remember(initialColor) { mutableFloatStateOf(hsv[2]) }
     val selected = remember(hue, saturation, value) { Color.hsv(hue, saturation, value) }
 
     AlertDialog(
@@ -780,17 +865,36 @@ private fun RelationshipChips(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BirthdayPickerDialog(
+    initialYear: Int?,
+    initialMonth: Int?,
+    initialDay: Int?,
     onDismiss: () -> Unit,
     onConfirm: (year: Int, month: Int, day: Int) -> Unit
 ) {
-    val datePickerState = rememberDatePickerState()
+    val initialMillis = remember(initialYear, initialMonth, initialDay) {
+        if (initialYear != null && initialMonth != null && initialDay != null) {
+            val cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+                set(Calendar.YEAR, initialYear)
+                set(Calendar.MONTH, initialMonth - 1)
+                set(Calendar.DAY_OF_MONTH, initialDay)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            cal.timeInMillis
+        } else null
+    }
+
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val cal = Calendar.getInstance().apply { timeInMillis = millis }
+                        val cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                            .apply { timeInMillis = millis }
                         onConfirm(
                             cal.get(Calendar.YEAR),
                             cal.get(Calendar.MONTH) + 1,

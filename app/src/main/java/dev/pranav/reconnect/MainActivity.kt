@@ -4,10 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -40,6 +38,10 @@ import dev.pranav.reconnect.ui.journey.JourneyScreen
 import dev.pranav.reconnect.ui.navigation.*
 import dev.pranav.reconnect.ui.onboarding.OnboardingScreen
 import dev.pranav.reconnect.ui.picker.ContactPickerScreen
+import dev.pranav.reconnect.ui.settings.EditProfileScreen
+import dev.pranav.reconnect.ui.settings.EditProfileViewModel
+import dev.pranav.reconnect.ui.settings.SettingsScreen
+import dev.pranav.reconnect.ui.settings.SettingsViewModel
 import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.CreamLight
 import dev.pranav.reconnect.ui.theme.ReConnectTheme
@@ -81,13 +83,10 @@ class MainActivity : ComponentActivity() {
         val data = intent.data
         println("MainActivity: Received intent data: $data")
 
-        val isSupabaseLink = data?.scheme == "reconnect" && data?.host == "confirm"
+        val isSupabaseLink = data?.scheme == "reconnect" && data.host == "confirm"
 
         if (isSupabaseLink) {
             SupabaseAuthManager.handleDeepLink(intent)
-
-            // Verification UI is hidden from normal flow, so we don't navigate there here either.
-            // If the user has disabled email verification in Supabase, the account will be active immediately.
         }
     }
 }
@@ -227,6 +226,41 @@ fun ReConnectApp(onNavControllerReady: (NavController) -> Unit = {}) {
         }
 
         composable(
+            route = AppRoute.EDIT_PROFILE,
+            enterTransition = {
+                fadeIn(animationSpec = tween(250)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(250)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(250)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(250)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(250)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            }
+        ) {
+            val editProfileViewModel: EditProfileViewModel =
+                androidx.lifecycle.viewmodel.compose.viewModel()
+            EditProfileScreen(
+                viewModel = editProfileViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
             route = AppRoute.MAIN,
             enterTransition = {
                 fadeIn(animationSpec = tween(250)) + slideIntoContainer(
@@ -276,7 +310,31 @@ fun ReConnectApp(onNavControllerReady: (NavController) -> Unit = {}) {
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null
-            })
+            }),
+            enterTransition = {
+                fadeIn(animationSpec = tween(250)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(250)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(250)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(250)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(250)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            }
         ) { backStack ->
             AddConnectionScreen(
                 contactIdToEdit = backStack.arguments?.getString("contactId"),
@@ -344,6 +402,8 @@ fun ReConnectApp(onNavControllerReady: (NavController) -> Unit = {}) {
 
 @Composable
 private fun MainScreen(navController: NavController) {
+    val context = LocalContext.current
+    val sessionStore = remember(context) { AppSessionStore(context) }
     var selectedTab by rememberSaveable { mutableStateOf(AppDestination.HOME) }
 
     NavigationSuiteScaffold(
@@ -355,31 +415,53 @@ private fun MainScreen(navController: NavController) {
         ),
         navigationSuiteItems = {
             AppDestination.entries.forEach { dest ->
-                val resolvedTab = if (dest == AppDestination.SETTINGS) AppDestination.HOME else dest
                 item(
-                    selected = selectedTab == resolvedTab,
-                    onClick = { selectedTab = resolvedTab },
+                    selected = selectedTab == dest,
+                    onClick = { selectedTab = dest },
                     icon = { Icon(dest.icon, contentDescription = dest.label) },
                     label = { Text(dest.label) }
                 )
             }
         }
     ) {
-        when (selectedTab) {
-            AppDestination.CIRCLE -> SocialCircleScreen(
-                onContactClick = { id -> navController.navigate(AppRoute.personDetail(id)) },
-                onAddClick = { navController.navigate(AppRoute.addConnection(null)) }
-            )
-            AppDestination.HISTORY -> JourneyScreen(
-                onOpenGallery = { title, uris ->
-                    navController.openGallery(title, uris)
+        AnimatedContent(
+            targetState = selectedTab,
+            label = "MainTabs",
+            transitionSpec = {
+                fadeIn(animationSpec = tween(250)) togetherWith fadeOut(animationSpec = tween(250))
+            }
+        ) { targetTab ->
+            when (targetTab) {
+                AppDestination.CIRCLE -> SocialCircleScreen(
+                    onContactClick = { id -> navController.navigate(AppRoute.personDetail(id)) },
+                    onAddClick = { navController.navigate(AppRoute.addConnection(null)) }
+                )
+
+                AppDestination.HISTORY -> JourneyScreen(
+                    onOpenGallery = { title, uris ->
+                        navController.openGallery(title, uris)
+                    }
+                )
+
+                AppDestination.SETTINGS -> {
+                    val settingsViewModel = remember { SettingsViewModel(sessionStore) }
+                    SettingsScreen(
+                        viewModel = settingsViewModel,
+                        onEditProfileClick = { navController.navigate(AppRoute.EDIT_PROFILE) },
+                        onSignOutSuccess = {
+                            navController.navigate(AppRoute.LOGIN) {
+                                popUpTo(AppRoute.MAIN) { inclusive = true }
+                            }
+                        }
+                    )
                 }
-            )
-            else -> HomeScreen(
-                onContactClick = { id -> navController.navigate(AppRoute.personDetail(id)) },
-                onAddClick = { navController.navigate(AppRoute.addConnection(null)) },
-                onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE }
-            )
+
+                else -> HomeScreen(
+                    onContactClick = { id -> navController.navigate(AppRoute.personDetail(id)) },
+                    onAddClick = { navController.navigate(AppRoute.addConnection(null)) },
+                    onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE }
+                )
+            }
         }
     }
 }

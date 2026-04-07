@@ -14,11 +14,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager
+import dev.pranav.reconnect.core.storage.AuthState
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.theme.SansFontFamily
 import dev.pranav.reconnect.ui.theme.UltraFamily
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.delay
 
 @Composable
@@ -27,7 +26,7 @@ fun EmailVerificationScreen(
     onBackToLogin: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val sessionStatus by SupabaseAuthManager.client.auth.sessionStatus.collectAsState()
+    val authState by AppContainer.authStore.authState.collectAsState()
     var isVerifying by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -40,12 +39,10 @@ fun EmailVerificationScreen(
         }
     }
 
-    LaunchedEffect(sessionStatus) {
-        println("EmailVerificationScreen: Current Session Status: $sessionStatus")
-        if (sessionStatus is SessionStatus.Authenticated) {
-            println("EmailVerificationScreen: User authenticated! Navigating success.")
+    LaunchedEffect(authState) {
+        if (authState == AuthState.Authenticated) {
+            println("EmailVerificationScreen: Auth success. Navigating success.")
             isVerifying = false
-            delay(800) // Brief pause to show success
             onVerificationSuccess()
         }
     }
@@ -53,8 +50,9 @@ fun EmailVerificationScreen(
     // Explicitly check for session on start and periodically
     LaunchedEffect(Unit) {
         while (isVerifying) {
-            val session = SupabaseAuthManager.client.auth.currentSessionOrNull()
-            if (session != null) {
+            val session = AppContainer.authStore.getCurrentSession()
+            // The authStore will update its state if session exists
+            if (AppContainer.authStore.authState.value == AuthState.Authenticated) {
                 println("EmailVerificationScreen: Found existing session. Navigating success.")
                 isVerifying = false
                 onVerificationSuccess()

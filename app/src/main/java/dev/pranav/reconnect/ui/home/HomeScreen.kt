@@ -1,7 +1,6 @@
 package dev.pranav.reconnect.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,7 +9,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Coffee
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.rounded.AllInclusive
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,17 +32,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
-import com.github.panpf.sketch.request.ImageRequest
-import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.model.UpcomingEvent
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager
-import dev.pranav.reconnect.data.remote.id
+import dev.pranav.reconnect.core.model.Contact
+import dev.pranav.reconnect.core.model.UpcomingEvent
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.components.ScreenTitle
-import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
-import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.coil.asSketchUri
-import io.github.jan.supabase.storage.authenticatedStorageItem
 
 @Composable
 private fun TimelineReminderCard(
@@ -110,45 +107,32 @@ private fun HomeHeader() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Surface(
+        Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = GoldPrimary
+            color = IconBackground
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.BubbleChart, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(
+                        Icons.Rounded.AllInclusive,
+                        null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
             Text(
                 text = "ReConnect",
-                style = MaterialTheme.typography.titleLarge.copy(
+                style = MaterialTheme.typography.displaySmallEmphasized.copy(
                     fontFamily = UltraFamily,
-                    color = GoldPrimary,
-                    letterSpacing = (-1).sp
+                    color = IconBackground,
+                    letterSpacing = 1.sp
                 )
             )
         }
-
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Surface(modifier = Modifier.size(40.dp), shape = CircleShape, color = Color.LightGray.copy(0.2f)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Search, null, tint = CharcoalText)
-                }
-            }
-            Surface(
-                modifier = Modifier
-                    .size(40.dp)
-                    .border(2.dp, GoldPrimary, CircleShape),
-                shape = CircleShape
-            ) {
-                UserAvatarBadge(showBorder = false)
-            }
-        }
-    }
 }
 
 @Composable
@@ -445,8 +429,7 @@ private fun CatchUpCard(event: UpcomingEvent.CatchUp) {
             Text(
                 text = "${event.day}",
                 style = MaterialTheme.typography.headlineLarge.copy(
-                    fontFamily = UltraFamily,
-                    fontSize = 34.sp
+                    fontFamily = UltraFamily
                 ),
                 color = contentColor.copy(alpha = 0.6f)
             )
@@ -462,7 +445,7 @@ private fun CatchUpCard(event: UpcomingEvent.CatchUp) {
     }
 }
 
-@OptIn(SupabaseExperimental::class)
+
 @Composable
 private fun QuickCatchUpRow(
     contact: Contact,
@@ -479,7 +462,7 @@ private fun QuickCatchUpRow(
     ) {
         val state = rememberAsyncImageState()
         val seedColor = contact.seedColorArgb?.let { Color(it) } ?: DefaultSeedColor
-        val scheme = dev.pranav.reconnect.ui.theme.colorSchemeFromSeed(seedColor)
+        val scheme = colorSchemeFromSeed(seedColor)
 
         SeedColorTheme(colors = scheme) {
             Box(
@@ -495,7 +478,7 @@ private fun QuickCatchUpRow(
                         .takeIf { it.isNotEmpty() } ?: "?"
                     Text(
                         text = initials,
-                        style = MaterialTheme.typography.headlineMedium.copy(
+                        style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -503,13 +486,7 @@ private fun QuickCatchUpRow(
                 }
 
                 AsyncImage(
-                    request = ImageRequest(
-                        androidx.compose.ui.platform.LocalContext.current,
-                        authenticatedStorageItem(
-                            "contacts",
-                            "${SupabaseAuthManager.client.id}/${contact.id}/photo.jpg"
-                        ).asSketchUri()
-                    ) { crossfade(true) },
+                    uri = AppContainer.photoResolver.resolveContactPhoto(contact.id),
                     state = state,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),

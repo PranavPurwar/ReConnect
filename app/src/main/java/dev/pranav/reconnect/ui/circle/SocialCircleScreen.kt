@@ -26,15 +26,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
-import com.github.panpf.sketch.request.ImageRequest
-import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.remote.id
+import dev.pranav.reconnect.core.model.Contact
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
-import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.coil.asSketchUri
-import io.github.jan.supabase.storage.authenticatedStorageItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -241,7 +237,6 @@ private fun CategoryFilterRow(
     }
 }
 
-@OptIn(SupabaseExperimental::class)
 @Composable
 private fun ContactAvatar(
     contactId: String,
@@ -251,10 +246,10 @@ private fun ContactAvatar(
 ) {
     val state = rememberAsyncImageState()
     val seedColor =
-        seedColorArgb?.let { Color(it) } ?: dev.pranav.reconnect.ui.theme.DefaultSeedColor
-    val scheme = dev.pranav.reconnect.ui.theme.colorSchemeFromSeed(seedColor)
+        seedColorArgb?.let { Color(it) } ?: DefaultSeedColor
+    val scheme = colorSchemeFromSeed(seedColor)
 
-    dev.pranav.reconnect.ui.theme.SeedColorTheme(colors = scheme) {
+    SeedColorTheme(colors = scheme) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainer)
@@ -273,15 +268,7 @@ private fun ContactAvatar(
             }
 
             AsyncImage(
-                request = ImageRequest(
-                    androidx.compose.ui.platform.LocalContext.current,
-                    authenticatedStorageItem(
-                        "contacts",
-                        "${dev.pranav.reconnect.data.remote.SupabaseAuthManager.client.id}/${contactId}/photo.jpg"
-                    ).asSketchUri()
-                ) {
-                    crossfade(true)
-                },
+                uri = AppContainer.photoResolver.resolveContactPhoto(contactId),
                 state = state,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
@@ -294,6 +281,7 @@ private fun ContactAvatar(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CircleContactCard(
+    modifier: Modifier = Modifier,
     contact: Contact,
     status: String,
     tag: String,
@@ -301,7 +289,6 @@ private fun CircleContactCard(
     actionLabel: String = "Message",
     actionIcon: ImageVector = Icons.Default.ChatBubble,
     onCardClick: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),

@@ -27,12 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.theme.UltraFamily
 import dev.pranav.reconnect.ui.user.ActionButton
 import dev.pranav.reconnect.ui.user.CustomTextField
-import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.coil.asSketchUri
-import io.github.jan.supabase.storage.authenticatedStorageItem
 
 @Composable
 private fun EditProfileBackgroundOrbs(colorScheme: ColorScheme) {
@@ -67,7 +65,7 @@ private fun EditProfileLabelText(text: String) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, SupabaseExperimental::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
     viewModel: EditProfileViewModel,
@@ -75,14 +73,14 @@ fun EditProfileScreen(
 ) {
     val initialName by viewModel.initialName.collectAsStateWithLifecycle()
     val initialEmail by viewModel.initialEmail.collectAsStateWithLifecycle()
-    val currentAvatarUrl by viewModel.currentAvatarUrl.collectAsStateWithLifecycle()
     val updateResult by viewModel.updateResult.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val userId by viewModel.userId.collectAsStateWithLifecycle()
 
     var name by remember(initialName) { mutableStateOf(initialName) }
     var email by remember(initialEmail) { mutableStateOf(initialEmail) }
 
-    var avatarUri by remember { mutableStateOf<Uri?>(null) }
+    var avatarUri by remember { mutableStateOf(AppContainer.photoResolver.resolveUserAvatar(userId)) }
     var avatarBytes by remember { mutableStateOf<ByteArray?>(null) }
 
     val context = LocalContext.current
@@ -91,7 +89,7 @@ fun EditProfileScreen(
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        avatarUri = uri
+        avatarUri = uri.toString()
         if (uri != null) {
             avatarBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
         }
@@ -161,7 +159,7 @@ fun EditProfileScreen(
                     .clickable { photoPickerLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (avatarUri == null && currentAvatarUrl == null) {
+                if (avatarUri == null) {
                     Icon(
                         Icons.Default.CameraAlt,
                         contentDescription = "Upload Photo",
@@ -172,20 +170,13 @@ fun EditProfileScreen(
 
                 if (avatarUri != null) {
                     AsyncImage(
-                        uri = avatarUri.toString(),
+                        uri = avatarUri,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
-                } else if (currentAvatarUrl != null) {
-                    val publicOrAuthUri =
-                        authenticatedStorageItem("avatars", currentAvatarUrl!!).asSketchUri()
-                    AsyncImage(
-                        uri = publicOrAuthUri,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                } else {
+                    Spacer(Modifier.size(32.dp))
                 }
             }
 

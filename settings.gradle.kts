@@ -24,3 +24,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "ReConnect"
 include(":app")
+include(":core:model")
+include(":core:storage")
+include(":core:session")
+include(":data:local")
+include(":data:supabase")

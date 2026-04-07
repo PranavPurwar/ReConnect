@@ -26,16 +26,15 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.PainterState
+import com.github.panpf.sketch.rememberAsyncImageState
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.PlusJakartaSansFamily
-import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.coil.asSketchUri
-import io.github.jan.supabase.storage.authenticatedStorageItem
 
-@OptIn(SupabaseExperimental::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
@@ -48,7 +47,7 @@ fun SettingsScreen(
 
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
-    val userAvatar by viewModel.userAvatar.collectAsStateWithLifecycle()
+    val userId by viewModel.userId.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -66,6 +65,11 @@ fun SettingsScreen(
             }
         }
     }
+
+    val imageUri = AppContainer.photoResolver.resolveUserAvatar(userId)
+
+    val imageState = rememberAsyncImageState()
+    val isSuccess = imageState.painterState is PainterState.Success
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -90,7 +94,6 @@ fun SettingsScreen(
             }
 
             if (isLoginEnabled) {
-                // Profile Header Card
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -105,17 +108,7 @@ fun SettingsScreen(
                             .border(2.dp, GoldPrimary.copy(alpha = 0.5f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (userAvatar != null) {
-                            AsyncImage(
-                                uri = authenticatedStorageItem(
-                                    "avatars",
-                                    userAvatar!!
-                                ).asSketchUri(),
-                                contentDescription = "Profile Photo",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
+                        if (!isSuccess) {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = null,
@@ -123,6 +116,13 @@ fun SettingsScreen(
                                 modifier = Modifier.size(40.dp)
                             )
                         }
+                        AsyncImage(
+                            uri = imageUri,
+                            state = imageState,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

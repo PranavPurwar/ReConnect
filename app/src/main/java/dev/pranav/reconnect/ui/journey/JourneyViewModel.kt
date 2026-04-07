@@ -2,11 +2,11 @@ package dev.pranav.reconnect.ui.journey
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.pranav.reconnect.data.model.MomentCategory
-import dev.pranav.reconnect.data.model.PastMoment
+import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.core.model.PastMoment
+import dev.pranav.reconnect.core.storage.ContactStore
+import dev.pranav.reconnect.core.storage.MomentStore
 import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.port.ContactStore
-import dev.pranav.reconnect.data.port.MomentStore
 import kotlinx.coroutines.flow.*
 
 data class JourneyItem(
@@ -50,7 +50,7 @@ class JourneyViewModel(
     }
 
     private fun buildJourneyItems(
-        contacts: List<dev.pranav.reconnect.data.model.Contact>,
+        contacts: List<dev.pranav.reconnect.core.model.Contact>,
         moments: List<PastMoment>
     ): List<JourneyItem> {
         val contactMap = contacts.associateBy { it.id }

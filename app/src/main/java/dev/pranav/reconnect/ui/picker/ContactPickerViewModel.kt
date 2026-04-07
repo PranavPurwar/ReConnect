@@ -3,10 +3,10 @@ package dev.pranav.reconnect.ui.picker
 import android.content.ContentResolver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.model.ReconnectInterval
+import dev.pranav.reconnect.core.model.Contact
+import dev.pranav.reconnect.core.model.ReconnectInterval
+import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.port.ContactStore
 import dev.pranav.reconnect.data.repository.SystemContactsDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.lang.SecurityException
 
 data class ContactPickerUiState(
     val contacts: List<Contact> = emptyList(),

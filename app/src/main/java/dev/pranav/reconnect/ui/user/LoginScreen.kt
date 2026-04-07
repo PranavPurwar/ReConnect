@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.theme.SansFontFamily
 import dev.pranav.reconnect.ui.theme.UltraFamily
 import kotlinx.coroutines.launch
@@ -122,7 +122,7 @@ fun LoginScreen(
                     scope.launch {
                         isLoading = true
                         errorMessage = null
-                        val result = SupabaseAuthManager.signIn(email.trim(), password)
+                        val result = AppContainer.authStore.signIn(email.trim(), password)
                         isLoading = false
                         if (result.isSuccess) onLoginSuccess() else errorMessage =
                             result.exceptionOrNull()?.message
@@ -334,9 +334,9 @@ fun SignUpScreen(
                         scope.launch {
                             isLoading = true
                             errorMessage = null
-                            val result = SupabaseAuthManager.signUp(
+                            val result = AppContainer.authStore.signUp(
                                 email = email.trim(),
-                                password = password,
+                                pass = password,
                                 fullName = fullName.trim(),
                                 avatar = avatarBytes
                             )

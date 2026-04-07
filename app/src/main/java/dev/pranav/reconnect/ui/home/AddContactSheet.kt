@@ -9,8 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import dev.pranav.reconnect.data.model.ContactFormData
-import dev.pranav.reconnect.data.model.ReconnectInterval
+import dev.pranav.reconnect.core.model.ContactFormData
+import dev.pranav.reconnect.core.model.ReconnectInterval
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import java.text.DateFormatSymbols
 

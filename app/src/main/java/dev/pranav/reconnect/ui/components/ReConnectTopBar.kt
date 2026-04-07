@@ -20,15 +20,10 @@ import androidx.compose.ui.unit.sp
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
-import com.github.panpf.sketch.request.ComposableImageOptions
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager.client
-import dev.pranav.reconnect.data.remote.avatar
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.UltraFamily
-import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.coil.asSketchUri
-import io.github.jan.supabase.storage.authenticatedStorageItem
 
 @Composable
 fun ScreenTitle(
@@ -48,19 +43,16 @@ fun ScreenTitle(
     )
 }
 
-@OptIn(SupabaseExperimental::class)
 @Composable
 fun UserAvatarBadge(
     modifier: Modifier = Modifier,
     showBorder: Boolean = true
 ) {
-    val imageUri = authenticatedStorageItem("avatars", client.avatar).asSketchUri()
-
-    val imageState = rememberAsyncImageState(
-        ComposableImageOptions {
-            crossfade()
-        }
+    val imageUri = AppContainer.photoResolver.resolveUserAvatar(
+        AppContainer.authStore.currentUserId
     )
+
+    val imageState = rememberAsyncImageState()
     val isSuccess = imageState.painterState is PainterState.Success
 
     Box(
@@ -138,5 +130,3 @@ fun ReConnectTopBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
     )
 }
-
-

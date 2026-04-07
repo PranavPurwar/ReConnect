@@ -2,19 +2,15 @@ package dev.pranav.reconnect.ui.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.model.MomentCategory
-import dev.pranav.reconnect.data.model.PastMoment
-import dev.pranav.reconnect.data.port.AiInsightStore
+import dev.pranav.reconnect.core.model.Contact
+import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.core.model.PastMoment
+import dev.pranav.reconnect.core.storage.AiInsightStore
+import dev.pranav.reconnect.core.storage.AttachmentStore
+import dev.pranav.reconnect.core.storage.ContactStore
+import dev.pranav.reconnect.core.storage.MomentStore
 import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.port.AttachmentStore
-import dev.pranav.reconnect.data.port.ContactStore
-import dev.pranav.reconnect.data.port.MomentStore
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar

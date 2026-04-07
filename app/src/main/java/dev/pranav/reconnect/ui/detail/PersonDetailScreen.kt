@@ -35,20 +35,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
-import com.github.panpf.sketch.request.ImageRequest
-import dev.pranav.reconnect.data.model.MomentCategory
-import dev.pranav.reconnect.data.model.PastMoment
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager
-import dev.pranav.reconnect.data.remote.id
+import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.core.model.PastMoment
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.theme.*
-import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.coil.asSketchUri
-import io.github.jan.supabase.storage.authenticatedStorageItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, SupabaseExperimental::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonDetailScreen(
     contactId: String,
@@ -228,18 +223,10 @@ fun PersonDetailScreen(
                                 }
 
                                 AsyncImage(
-                                    request = ImageRequest(
-                                        LocalContext.current,
-                                        authenticatedStorageItem(
-                                            "contacts",
-                                            "${SupabaseAuthManager.client.id}/${contact.id}/photo.jpg"
-                                        ).asSketchUri()
-                                    ) { crossfade(true) },
+                                    uri = AppContainer.photoResolver.resolveContactPhoto(contact.id),
                                     state = imageState,
                                     contentDescription = contact.name,
-                                    modifier = Modifier
-                                        .size(120.dp)
-                                        .clip(CircleShape),
+                                    modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
                             }

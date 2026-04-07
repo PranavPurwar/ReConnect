@@ -1,10 +1,10 @@
 package dev.pranav.reconnect.ui.journey
 
-import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.model.MomentCategory
-import dev.pranav.reconnect.data.model.PastMoment
-import dev.pranav.reconnect.data.port.ContactStore
-import dev.pranav.reconnect.data.port.MomentStore
+import dev.pranav.reconnect.core.model.Contact
+import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.core.model.PastMoment
+import dev.pranav.reconnect.core.storage.ContactStore
+import dev.pranav.reconnect.core.storage.MomentStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.Assert.assertEquals

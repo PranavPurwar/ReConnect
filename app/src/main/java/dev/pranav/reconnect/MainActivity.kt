@@ -1,5 +1,6 @@
 package dev.pranav.reconnect
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,14 +21,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dev.pranav.reconnect.core.session.AppSessionStore
+import dev.pranav.reconnect.core.session.StartDestination
 import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager
-import dev.pranav.reconnect.data.session.AppSessionStore
 import dev.pranav.reconnect.ui.add.AddConnectionScreen
 import dev.pranav.reconnect.ui.circle.SocialCircleScreen
 import dev.pranav.reconnect.ui.detail.PersonDetailScreen
@@ -56,7 +58,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContainer.init(this)
-        SupabaseAuthManager.getCurrentSession()
+        AppContainer.authStore.getCurrentSession()
         enableEdgeToEdge()
         setContent {
             ReConnectTheme {
@@ -86,7 +88,7 @@ class MainActivity : ComponentActivity() {
         val isSupabaseLink = data?.scheme == "reconnect" && data.host == "confirm"
 
         if (isSupabaseLink) {
-            SupabaseAuthManager.handleDeepLink(intent)
+            AppContainer.authStore.handleDeepLink(intent)
         }
     }
 }
@@ -99,12 +101,20 @@ enum class AppDestination(val label: String, val icon: ImageVector) {
 }
 
 @Composable
-fun ReConnectApp(onNavControllerReady: (NavController) -> Unit = {}) {
+fun ReConnectApp(
+    intent: Intent? = null,
+    onNavControllerReady: (NavHostController) -> Unit = {}
+) {
     val context = LocalContext.current
     val sessionStore = remember(context) { AppSessionStore(context) }
-    val loginRequired = BuildConfig.ENABLE_LOGIN_GATE
-    val startDestination = remember(loginRequired) {
-        sessionStore.resolveStartDestination(loginRequired)
+
+    val startDest = remember {
+        val dest = sessionStore.resolveStartDestination(BuildConfig.ENABLE_LOGIN_GATE)
+        when (dest) {
+            StartDestination.LOGIN -> AppRoute.LOGIN
+            StartDestination.MAIN -> AppRoute.MAIN
+            StartDestination.ONBOARDING -> AppRoute.ONBOARDING
+        }
     }
 
     val navController = rememberNavController()
@@ -115,7 +125,7 @@ fun ReConnectApp(onNavControllerReady: (NavController) -> Unit = {}) {
 
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = startDest,
         enterTransition = {
             fadeIn(animationSpec = tween(250)) + slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Left,

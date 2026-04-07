@@ -25,7 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.panpf.sketch.AsyncImage
-import dev.pranav.reconnect.data.model.MomentCategory
+import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.MediumGray
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible

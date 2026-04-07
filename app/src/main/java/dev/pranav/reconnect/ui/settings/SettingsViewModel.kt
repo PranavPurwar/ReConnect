@@ -3,15 +3,12 @@ package dev.pranav.reconnect.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.BuildConfig
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager
-import dev.pranav.reconnect.data.remote.avatar
-import dev.pranav.reconnect.data.session.AppSessionStore
-import io.github.jan.supabase.auth.auth
+import dev.pranav.reconnect.core.session.AppSessionStore
+import dev.pranav.reconnect.data.port.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.jsonPrimitive
 
 class SettingsViewModel(
     private val sessionStore: AppSessionStore
@@ -29,8 +26,8 @@ class SettingsViewModel(
     private val _userEmail = MutableStateFlow("")
     val userEmail: StateFlow<String> = _userEmail.asStateFlow()
 
-    private val _userAvatar = MutableStateFlow<String?>(null)
-    val userAvatar: StateFlow<String?> = _userAvatar.asStateFlow()
+    private val _userId = MutableStateFlow("")
+    val userId: StateFlow<String> = _userId.asStateFlow()
 
     init {
         loadUserProfile()
@@ -39,13 +36,9 @@ class SettingsViewModel(
     fun loadUserProfile() {
         viewModelScope.launch {
             if (_isLoginEnabled.value) {
-                val user = SupabaseAuthManager.client.auth.currentUserOrNull()
-                user?.let {
-                    _userEmail.value = it.email ?: ""
-                    _userName.value = it.userMetadata?.get("full_name")?.jsonPrimitive?.content
-                        ?: "ReConnect User"
-                }
-                _userAvatar.value = SupabaseAuthManager.client.avatar
+                _userEmail.value = AppContainer.authStore.currentUserEmail ?: ""
+                _userName.value = AppContainer.authStore.currentUserFullName ?: "ReConnect User"
+                _userId.value = AppContainer.authStore.currentUserId ?: ""
             }
         }
     }
@@ -53,11 +46,13 @@ class SettingsViewModel(
     fun signOut() {
         viewModelScope.launch {
             if (_isLoginEnabled.value) {
-                val result = SupabaseAuthManager.signOut()
+                val result = AppContainer.authStore.signOut()
                 if (result.isSuccess) {
                     sessionStore.setLoginDone(false)
                 }
                 _signOutResult.value = result
+            } else {
+                _signOutResult.value = Result.success(Unit)
             }
         }
     }

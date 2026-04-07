@@ -2,6 +2,7 @@ package dev.pranav.reconnect.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+val IconBackground = Color(0xFFFFB300)
 val GoldPrimary = Color(0xFFD4A843)
 val GoldDark = Color(0xFFB8922F)
 val GoldLight = Color(0xFFE8C96A)

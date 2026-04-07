@@ -31,45 +31,23 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
-import com.github.panpf.sketch.BitmapImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.SingletonSketch
+import com.github.panpf.sketch.asDrawable
 import com.github.panpf.sketch.request.ImageRequest
-import dev.pranav.reconnect.data.model.Contact
-import dev.pranav.reconnect.data.model.ContactFormData
-import dev.pranav.reconnect.data.remote.SupabaseAuthManager
+import dev.pranav.reconnect.core.model.Contact
+import dev.pranav.reconnect.core.model.ContactFormData
+import dev.pranav.reconnect.core.model.ReconnectInterval
+import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.data.repository.SystemContactsDataSource
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
 import dev.pranav.reconnect.util.toBitmap
-import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.coil.asSketchUri
-import io.github.jan.supabase.storage.authenticatedStorageItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-
-private suspend fun loadRemoteBitmap(
-    context: android.content.Context,
-    contactId: String
-): android.graphics.Bitmap? {
-    return runCatching {
-        @OptIn(SupabaseExperimental::class)
-        val uri = authenticatedStorageItem(
-            "contacts",
-            "${SupabaseAuthManager.client.auth.currentSessionOrNull()?.user?.id}/$contactId/photo.jpg"
-        ).asSketchUri()
-
-        val request = ImageRequest(context, uri)
-        val result =
-            SupabaseAuthManager.client.let { SingletonSketch.get(context) }.execute(request)
-        (result.image as? BitmapImage)?.bitmap
-    }.getOrNull()
-}
 
 private val MorphedFabShape = RoundedCornerShape(topStart = 48.dp, topEnd = 16.dp, bottomEnd = 48.dp, bottomStart = 40.dp)
 private val relationships = listOf("Family", "Friend", "Colleague", "Other")
@@ -92,6 +70,17 @@ private fun provisionalSeedColorFromPhotoUri(photoUri: String?): Color {
     if (photoUri.isNullOrBlank()) return DefaultSeedColor
     val hue = ((photoUri.hashCode().toLong() and 0x7FFFFFFF) % 360L).toFloat()
     return Color.hsv(hue = hue, saturation = 0.42f, value = 0.82f)
+}
+
+private suspend fun loadRemoteBitmap(
+    context: android.content.Context,
+    contactId: String
+): android.graphics.Bitmap? {
+    val resolvedUri = AppContainer.photoResolver.resolveContactPhoto(contactId) ?: return null
+    val request = ImageRequest.Builder(context, uri = resolvedUri)
+        .build()
+    val result = SingletonSketch.get(context).execute(request)
+    return (result.image?.asDrawable() as? android.graphics.drawable.BitmapDrawable)?.bitmap
 }
 
 @Composable
@@ -121,7 +110,7 @@ fun AddConnectionScreen(
         contactIdToEdit?.let { id -> uiState.quickCatchUps.firstOrNull { it.first.id == id }?.first }
     }
     val isEditMode = existingContact != null
-    val birthdayFormatter = remember { SimpleDateFormat("MMMM d", Locale.US) }
+    val birthdayFormatter = remember { java.text.SimpleDateFormat("MMMM d", Locale.US) }
 
     // Instead of initializing photoUri from contact, we derive the remote one for display
     // but the local picking still stays in photoUri
@@ -152,7 +141,7 @@ fun AddConnectionScreen(
         val fallbackSeedColor = existingContact?.seedColorArgb?.let(::Color)
             ?: provisionalSeedColorFromPhotoUri(photoUri)
 
-        val decodedBitmap = withContext(Dispatchers.IO) {
+        val decodedBitmap = withContext(kotlinx.coroutines.Dispatchers.IO) {
             decodePhotoBitmap(context, photoUri) ?: existingContact?.id?.let {
                 loadRemoteBitmap(
                     context,
@@ -251,7 +240,7 @@ fun AddConnectionScreen(
                                 title = title,
                                 relationship = selectedRelationship ?: "",
                                 notes = notes,
-                                interval = dev.pranav.reconnect.data.model.ReconnectInterval.MONTHLY,
+                                interval = ReconnectInterval.MONTHLY,
                                 birthdayMonth = birthdayMonth,
                                 birthdayDay = birthdayDay,
                                 birthdayYear = birthdayYear,
@@ -382,31 +371,21 @@ fun AddConnectionScreen(
                                         .background(MaterialTheme.colorScheme.surfaceContainer)
                                 ) {
                                     if (state.painterState !is PainterState.Success) {
-                                        val initials = name.split(" ").take(2)
-                                            .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-                                            .joinToString("").takeIf { it.isNotEmpty() } ?: "?"
-                                        Text(
-                                            text = initials,
-                                            style = MaterialTheme.typography.headlineLarge.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        )
+                                        val initials =
+                                            existingContact.name.split(" ").take(2)
+                                                .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                                                .joinToString("")
+                                        Text(initials, color = CharcoalText)
                                     }
 
-                                    @OptIn(SupabaseExperimental::class)
-                                    val asyncRequest = ImageRequest(
-                                        LocalContext.current,
-                                        authenticatedStorageItem(
-                                            "contacts",
-                                            "${SupabaseAuthManager.client.auth.currentSessionOrNull()?.user?.id}/${existingContact.id}/photo.jpg"
-                                        ).asSketchUri()
-                                    ) { crossfade(true) }
+                                    val resolvedUri =
+                                        AppContainer.photoResolver.resolveContactPhoto(
+                                            existingContact.id
+                                        )
 
                                     AsyncImage(
-                                        request = asyncRequest,
-                                        state = state,
-                                        contentDescription = "Existing profile photo",
+                                        uri = resolvedUri,
+                                        contentDescription = null,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
                                     )

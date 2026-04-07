@@ -28,8 +28,8 @@ import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.ui.components.CurrentUserAvatar
 import dev.pranav.reconnect.ui.components.ScreenTitle
-import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,7 +170,7 @@ private fun CircleHeader() {
             shape = CircleShape,
             border = BorderStroke(2.dp, GoldPrimary)
         ) {
-            UserAvatarBadge(
+            CurrentUserAvatar(
                 modifier = Modifier.size(48.dp),
                 showBorder = false
             )

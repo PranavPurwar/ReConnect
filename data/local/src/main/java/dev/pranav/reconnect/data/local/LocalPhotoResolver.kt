@@ -10,7 +10,7 @@ class LocalPhotoResolver(private val context: Context): PhotoResolver {
         return if (file.exists()) file.absolutePath else null
     }
 
-    override fun resolveUserAvatar(id: String): String? {
+    override fun resolveUserAvatar(id: String?): String? {
         val file = File(context.filesDir, "avatars/avatar.png")
         return if (file.exists()) file.absolutePath else null
     }

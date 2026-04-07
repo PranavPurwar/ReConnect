@@ -35,8 +35,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.SubcomposeAsyncImage
 import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.ui.components.CurrentUserAvatar
 import dev.pranav.reconnect.ui.components.ScreenTitle
-import dev.pranav.reconnect.ui.components.UserAvatarBadge
 import dev.pranav.reconnect.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -91,7 +91,7 @@ fun JourneyScreen(
                             shape = CircleShape,
                             color = Color.LightGray
                         ) {
-                            UserAvatarBadge(
+                            CurrentUserAvatar(
                                 modifier = Modifier.size(48.dp),
                                 showBorder = false
                             )

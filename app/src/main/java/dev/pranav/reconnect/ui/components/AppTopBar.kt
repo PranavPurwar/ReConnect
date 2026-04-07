@@ -44,7 +44,7 @@ fun ScreenTitle(
 }
 
 @Composable
-fun UserAvatarBadge(
+fun CurrentUserAvatar(
     modifier: Modifier = Modifier,
     showBorder: Boolean = true
 ) {
@@ -90,7 +90,7 @@ fun UserAvatarBadge(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReConnectTopBar(
+fun AppTopBar(
     showLogo: Boolean = true,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {}

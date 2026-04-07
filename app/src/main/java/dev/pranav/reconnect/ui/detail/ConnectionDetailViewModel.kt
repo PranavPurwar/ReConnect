@@ -33,7 +33,7 @@ data class PersonDetailUiState(
     val aiPrepBullets: List<String> = emptyList()
 )
 
-class PersonDetailViewModel(
+class ConnectionDetailViewModel(
     contactStore: ContactStore = AppContainer.contactStore,
     momentStore: MomentStore = AppContainer.momentStore,
     attachmentStore: AttachmentStore = AppContainer.attachmentStore,
@@ -185,7 +185,8 @@ class PersonDetailViewModel(
             set(Calendar.MILLISECOND, 0)
             if (before(now)) add(Calendar.YEAR, 1)
         }
-        return TimeUnit.MILLISECONDS.toDays(bCal.timeInMillis - now.timeInMillis).toInt().coerceAtLeast(0)
+        return TimeUnit.MILLISECONDS.toDays(bCal.timeInMillis - now.timeInMillis).toInt()
+            .coerceAtLeast(0)
     }
 
     private fun deriveHealth(daysSince: Int?, momentCount: Int): RelationshipHealth = when {

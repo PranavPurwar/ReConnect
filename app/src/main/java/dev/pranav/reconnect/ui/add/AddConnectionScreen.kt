@@ -27,14 +27,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
-import com.github.panpf.sketch.SingletonSketch
-import com.github.panpf.sketch.asDrawable
-import com.github.panpf.sketch.request.ImageRequest
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ContactFormData
 import dev.pranav.reconnect.core.model.ReconnectInterval
@@ -42,8 +38,10 @@ import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.data.repository.SystemContactsDataSource
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
+import dev.pranav.reconnect.util.decodePhotoBitmap
+import dev.pranav.reconnect.util.loadRemoteBitmap
+import dev.pranav.reconnect.util.provisionalSeedColorFromPhotoUri
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
-import dev.pranav.reconnect.util.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -61,27 +59,6 @@ private val fallbackSeedColors = listOf(
     Color(0xFF43A047),
 )
 
-private fun decodePhotoBitmap(context: android.content.Context, photoUri: String?): android.graphics.Bitmap? {
-    if (photoUri.isNullOrBlank()) return null
-    return runCatching { photoUri.toUri().toBitmap(context) }.getOrNull()
-}
-
-private fun provisionalSeedColorFromPhotoUri(photoUri: String?): Color {
-    if (photoUri.isNullOrBlank()) return DefaultSeedColor
-    val hue = ((photoUri.hashCode().toLong() and 0x7FFFFFFF) % 360L).toFloat()
-    return Color.hsv(hue = hue, saturation = 0.42f, value = 0.82f)
-}
-
-private suspend fun loadRemoteBitmap(
-    context: android.content.Context,
-    contactId: String
-): android.graphics.Bitmap? {
-    val resolvedUri = AppContainer.photoResolver.resolveContactPhoto(contactId) ?: return null
-    val request = ImageRequest.Builder(context, uri = resolvedUri)
-        .build()
-    val result = SingletonSketch.get(context).execute(request)
-    return (result.image?.asDrawable() as? android.graphics.drawable.BitmapDrawable)?.bitmap
-}
 
 @Composable
 fun AddConnectionScreen(
@@ -91,19 +68,7 @@ fun AddConnectionScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    var name by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var selectedRelationship by remember { mutableStateOf<String?>(null) }
-    var notes by remember { mutableStateOf("") }
-    var photoUri by remember { mutableStateOf<String?>(null) }
-    var birthdayYear by remember { mutableStateOf<Int?>(null) }
-    var birthdayMonth by remember { mutableStateOf<Int?>(null) }
-    var birthdayDay by remember { mutableStateOf<Int?>(null) }
-    var showContactSearch by remember { mutableStateOf(false) }
-    var showBirthdayPicker by remember { mutableStateOf(false) }
-    var showColorPicker by remember { mutableStateOf(false) }
-    var didPrefillForContactId by remember(contactIdToEdit) { mutableStateOf<String?>(null) }
+    val state = remember { AddConnectionState() }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val existingContact = remember(contactIdToEdit, uiState.quickCatchUps) {
@@ -112,49 +77,36 @@ fun AddConnectionScreen(
     val isEditMode = existingContact != null
     val birthdayFormatter = remember { java.text.SimpleDateFormat("MMMM d", Locale.US) }
 
-    // Instead of initializing photoUri from contact, we derive the remote one for display
-    // but the local picking still stays in photoUri
     LaunchedEffect(existingContact?.id) {
         val contact = existingContact ?: return@LaunchedEffect
-        if (didPrefillForContactId == contact.id) return@LaunchedEffect
+        if (state.didPrefillForContactId == contact.id) return@LaunchedEffect
 
-        name = contact.name
-        title = contact.title
-        phone = contact.phoneNumber
-        selectedRelationship = contact.relationship.takeIf { it.isNotBlank() }
-        notes = contact.notes
-        birthdayYear = contact.birthdayYear
-        birthdayMonth = contact.birthdayMonth
-        birthdayDay = contact.birthdayDay
-        didPrefillForContactId = contact.id
+        state.name = contact.name
+        state.title = contact.title
+        state.phone = contact.phoneNumber
+        state.selectedRelationship = contact.relationship.takeIf { it.isNotBlank() }
+        state.notes = contact.notes
+        state.birthdayYear = contact.birthdayYear
+        state.birthdayMonth = contact.birthdayMonth
+        state.birthdayDay = contact.birthdayDay
+        state.didPrefillForContactId = contact.id
     }
 
-    var photoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    var seedColor by remember(existingContact?.id, photoUri) {
-        mutableStateOf(existingContact?.seedColorArgb?.let(::Color) ?: provisionalSeedColorFromPhotoUri(photoUri))
-    }
-    var isSeedColorCustom by remember(existingContact?.id) {
-        mutableStateOf(existingContact?.seedColorArgb != null)
-    }
-
-    LaunchedEffect(photoUri, existingContact?.id) {
+    LaunchedEffect(state.photoUri, existingContact?.id) {
         val fallbackSeedColor = existingContact?.seedColorArgb?.let(::Color)
-            ?: provisionalSeedColorFromPhotoUri(photoUri)
+            ?: provisionalSeedColorFromPhotoUri(state.photoUri)
 
-        val decodedBitmap = withContext(kotlinx.coroutines.Dispatchers.IO) {
-            decodePhotoBitmap(context, photoUri) ?: existingContact?.id?.let {
-                loadRemoteBitmap(
-                    context,
-                    it
-                )
+        val decodedBitmap = withContext(Dispatchers.IO) {
+            decodePhotoBitmap(context, state.photoUri) ?: existingContact?.id?.let {
+                loadRemoteBitmap(context, it)
             }
         }
 
-        photoBitmap = decodedBitmap
-        if (!isSeedColorCustom) {
-            seedColor = fallbackSeedColor
+        state.photoBitmap = decodedBitmap
+        if (!state.isSeedColorCustom) {
+            state.seedColor = fallbackSeedColor
             if (decodedBitmap != null) {
-                seedColor = extractSeedColorOrDefault(decodedBitmap, fallbackSeedColor)
+                state.seedColor = extractSeedColorOrDefault(decodedBitmap, fallbackSeedColor)
             }
         }
     }
@@ -164,16 +116,16 @@ fun AddConnectionScreen(
     ) { uri ->
         uri?.let {
             context.takePersistableReadPermissionIfPossible(it)
-            photoUri = it.toString()
+            state.photoUri = it.toString()
         }
     }
 
-    val expressiveScheme = remember(seedColor) {
-        colorSchemeFromSeed(seedColor)
+    val expressiveScheme = remember(state.seedColor) {
+        colorSchemeFromSeed(state.seedColor)
     }
-    val selectableSeedColors = remember(photoBitmap) {
+    val selectableSeedColors = remember(state.photoBitmap) {
         extractVibrantSeedColors(
-            bitmap = photoBitmap,
+            bitmap = state.photoBitmap,
             fallbackColors = fallbackSeedColors
         )
     }
@@ -218,40 +170,40 @@ fun AddConnectionScreen(
                         existingContact.let { contact ->
                             viewModel.updateContact(
                                 contact.copy(
-                                    name = name.trim(),
-                                    title = title.trim(),
-                                    phoneNumber = phone.trim(),
-                                    relationship = selectedRelationship.orEmpty().trim(),
-                                    notes = notes.trim(),
-                                    birthdayYear = birthdayYear,
-                                    birthdayMonth = birthdayMonth,
-                                    birthdayDay = birthdayDay,
-                                    seedColorArgb = seedColor.toArgb()
+                                    name = state.name.trim(),
+                                    title = state.title.trim(),
+                                    phoneNumber = state.phone.trim(),
+                                    relationship = state.selectedRelationship.orEmpty().trim(),
+                                    notes = state.notes.trim(),
+                                    birthdayYear = state.birthdayYear,
+                                    birthdayMonth = state.birthdayMonth,
+                                    birthdayDay = state.birthdayDay,
+                                    seedColorArgb = state.seedColor.toArgb()
                                 ),
-                                photoUri = photoUri,
+                                photoUri = state.photoUri,
                                 onComplete = { onAdded() }
                             )
                         }
                     } else {
                         viewModel.addContact(
                             form = ContactFormData(
-                                name = name,
-                                phone = phone,
-                                title = title,
-                                relationship = selectedRelationship ?: "",
-                                notes = notes,
+                                name = state.name,
+                                phone = state.phone,
+                                title = state.title,
+                                relationship = state.selectedRelationship ?: "",
+                                notes = state.notes,
                                 interval = ReconnectInterval.MONTHLY,
-                                birthdayMonth = birthdayMonth,
-                                birthdayDay = birthdayDay,
-                                birthdayYear = birthdayYear,
-                                seedColorArgb = seedColor.toArgb()
+                                birthdayMonth = state.birthdayMonth,
+                                birthdayDay = state.birthdayDay,
+                                birthdayYear = state.birthdayYear,
+                                seedColorArgb = state.seedColor.toArgb()
                             ),
-                            photoUri = photoUri,
+                            photoUri = state.photoUri,
                             onComplete = { onAdded() }
                         )
                     }
                 },
-                canAdd = name.isNotBlank(),
+                canAdd = state.name.isNotBlank(),
                 isEditMode = isEditMode,
                 expressiveScheme = expressiveScheme
             )
@@ -339,9 +291,9 @@ fun AddConnectionScreen(
                         modifier = Modifier.size(150.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            if (!photoUri.isNullOrBlank()) {
+                            if (!state.photoUri.isNullOrBlank()) {
                                 AsyncImage(
-                                    uri = photoUri,
+                                    uri = state.photoUri,
                                     contentDescription = "Profile photo",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
@@ -420,7 +372,7 @@ fun AddConnectionScreen(
 
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    text = if (photoUri.isNullOrBlank()) "Add Profile Picture" else "Update Profile Picture",
+                    text = if (state.photoUri.isNullOrBlank()) "Add Profile Picture" else "Update Profile Picture",
                     fontFamily = PlayfairFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
@@ -443,7 +395,7 @@ fun AddConnectionScreen(
                     verticalArrangement = Arrangement.spacedBy(22.dp)
                 ) {
                     Surface(
-                        onClick = { showContactSearch = true },
+                        onClick = { state.showContactSearch = true },
                         shape = CircleShape,
                         color = expressiveColors.syncChipContainer,
                         modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -466,41 +418,41 @@ fun AddConnectionScreen(
 
                     FormSection(label = "Full Name") {
                         GlassInputField(
-                            value = name,
-                            onValueChange = { name = it },
+                            value = state.name,
+                            onValueChange = { state.name = it },
                             placeholder = "Who are you connecting with?"
                         )
                     }
 
                     FormSection(label = "Title") {
                         GlassInputField(
-                            value = title,
-                            onValueChange = { title = it },
+                            value = state.title,
+                            onValueChange = { state.title = it },
                             placeholder = "Optional - e.g. Designer, Manager"
                         )
                     }
 
                     FormSection(label = "Phone") {
                         GlassInputField(
-                            value = phone,
-                            onValueChange = { phone = it },
+                            value = state.phone,
+                            onValueChange = { state.phone = it },
                             placeholder = "Optional - for quick reminders"
                         )
                     }
 
                     FormSection(label = "Birthday") {
                         val birthdayLabel =
-                            if (birthdayYear != null && birthdayMonth != null && birthdayDay != null) {
+                            if (state.birthdayYear != null && state.birthdayMonth != null && state.birthdayDay != null) {
                             val cal = Calendar.getInstance().apply {
-                                set(Calendar.YEAR, birthdayYear!!)
-                                set(Calendar.MONTH, birthdayMonth!! - 1)
-                                set(Calendar.DAY_OF_MONTH, birthdayDay!!)
+                                set(Calendar.YEAR, state.birthdayYear!!)
+                                set(Calendar.MONTH, state.birthdayMonth!! - 1)
+                                set(Calendar.DAY_OF_MONTH, state.birthdayDay!!)
                             }
                             birthdayFormatter.format(cal.time)
                         } else null
 
                         Surface(
-                            onClick = { showBirthdayPicker = true },
+                            onClick = { state.showBirthdayPicker = true },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
                             color = Color.White.copy(alpha = 0.44f)
@@ -531,8 +483,8 @@ fun AddConnectionScreen(
                                         modifier = Modifier
                                             .size(18.dp)
                                             .clickable {
-                                                birthdayYear = null; birthdayMonth =
-                                                null; birthdayDay = null
+                                                state.birthdayYear = null; state.birthdayMonth =
+                                                null; state.birthdayDay = null
                                             }
                                     )
                                 }
@@ -542,11 +494,12 @@ fun AddConnectionScreen(
 
                     FormSection(label = "Relationship Circle") {
                         RelationshipChips(
-                            selectedRelationship = selectedRelationship,
+                            selectedRelationship = state.selectedRelationship,
                             expressiveColors = expressiveColors,
                             expressiveScheme = expressiveScheme,
                             onRelationshipSelect = { rel ->
-                                selectedRelationship = if (selectedRelationship == rel) null else rel
+                                state.selectedRelationship =
+                                    if (state.selectedRelationship == rel) null else rel
                             }
                         )
                     }
@@ -554,25 +507,25 @@ fun AddConnectionScreen(
                     FormSection(label = "Theme Color") {
                         SeedColorSelector(
                             colors = selectableSeedColors,
-                            selectedColor = seedColor,
+                            selectedColor = state.seedColor,
                             onSelect = {
-                                seedColor = it
-                                isSeedColorCustom = true
+                                state.seedColor = it
+                                state.isSeedColorCustom = true
                             },
-                            onOpenCustomPicker = { showColorPicker = true },
+                            onOpenCustomPicker = { state.showColorPicker = true },
                             onUsePhotoColor = {
-                                val bitmap = photoBitmap ?: return@SeedColorSelector
-                                seedColor = extractSeedColorOrDefault(bitmap, seedColor)
-                                isSeedColorCustom = false
+                                val bitmap = state.photoBitmap ?: return@SeedColorSelector
+                                state.seedColor = extractSeedColorOrDefault(bitmap, state.seedColor)
+                                state.isSeedColorCustom = false
                             },
-                            canUsePhotoColor = photoBitmap != null
+                            canUsePhotoColor = state.photoBitmap != null
                         )
                     }
 
                     FormSection(label = "Memory Jogger") {
                         TextField(
-                            value = notes,
-                            onValueChange = { notes = it },
+                            value = state.notes,
+                            onValueChange = { state.notes = it },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(132.dp),
@@ -607,46 +560,46 @@ fun AddConnectionScreen(
     }
     }
 
-    if (showContactSearch) {
+    if (state.showContactSearch) {
         ContactSearchSheet(
-            onDismiss = { showContactSearch = false },
+            onDismiss = { state.showContactSearch = false },
             onContactPicked = { contact ->
-                name = contact.name
-                phone = contact.phoneNumber
-                photoUri = contact.photoUri
-                showContactSearch = false
+                state.name = contact.name
+                state.phone = contact.phoneNumber
+                state.photoUri = contact.photoUri
+                state.showContactSearch = false
             }
         )
     }
 
-    if (showBirthdayPicker) {
+    if (state.showBirthdayPicker) {
         BirthdayPickerDialog(
-            initialYear = birthdayYear,
-            initialMonth = birthdayMonth,
-            initialDay = birthdayDay,
-            onDismiss = { showBirthdayPicker = false },
+            initialYear = state.birthdayYear,
+            initialMonth = state.birthdayMonth,
+            initialDay = state.birthdayDay,
+            onDismiss = { state.showBirthdayPicker = false },
             onConfirm = { year, month, day ->
-                birthdayYear = year
-                birthdayMonth = month
-                birthdayDay = day
-                showBirthdayPicker = false
+                state.birthdayYear = year
+                state.birthdayMonth = month
+                state.birthdayDay = day
+                state.showBirthdayPicker = false
             }
         )
     }
 
-    if (showColorPicker) {
+    if (state.showColorPicker) {
         CustomSeedColorDialog(
-            initialColor = seedColor,
-            onDismiss = { showColorPicker = false },
+            initialColor = state.seedColor,
+            onDismiss = { state.showColorPicker = false },
             onConfirm = {
-                seedColor = it
-                isSeedColorCustom = true
-                showColorPicker = false
+                state.seedColor = it
+                state.isSeedColorCustom = true
+                state.showColorPicker = false
             }
         )
     }
 
-    val bitmap = photoBitmap
+    val bitmap = state.photoBitmap
     if (bitmap != null) {
         SeedColorTheme(bitmap = bitmap, content = screenContent)
     } else {

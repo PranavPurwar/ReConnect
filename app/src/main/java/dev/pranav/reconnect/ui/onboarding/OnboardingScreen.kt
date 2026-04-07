@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import dev.pranav.reconnect.ui.components.ReConnectTopBar
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -38,7 +38,7 @@ fun OnboardingScreen(
 
     Scaffold(
         topBar = {
-            ReConnectTopBar(
+            AppTopBar(
                 showLogo = false,
                 navigationIcon = {
                     IconButton(onClick = onSkip) {

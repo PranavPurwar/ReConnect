@@ -101,7 +101,7 @@ fun addConnectionExpressiveColors(scheme: ColorScheme): AddConnectionExpressiveC
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ReConnectTheme(content: @Composable () -> Unit) {
+fun AppTheme(content: @Composable () -> Unit) {
     MaterialExpressiveTheme(
         colorScheme = ReConnectColorScheme,
         typography = Typography,

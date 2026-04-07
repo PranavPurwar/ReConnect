@@ -32,7 +32,7 @@ import dev.pranav.reconnect.core.session.StartDestination
 import dev.pranav.reconnect.data.port.AppContainer
 import dev.pranav.reconnect.ui.add.AddConnectionScreen
 import dev.pranav.reconnect.ui.circle.SocialCircleScreen
-import dev.pranav.reconnect.ui.detail.PersonDetailScreen
+import dev.pranav.reconnect.ui.detail.ConnectionDetailScreen
 import dev.pranav.reconnect.ui.gallery.GalleryScreen
 import dev.pranav.reconnect.ui.gallery.ImagePreviewScreen
 import dev.pranav.reconnect.ui.home.HomeScreen
@@ -44,9 +44,9 @@ import dev.pranav.reconnect.ui.settings.EditProfileScreen
 import dev.pranav.reconnect.ui.settings.EditProfileViewModel
 import dev.pranav.reconnect.ui.settings.SettingsScreen
 import dev.pranav.reconnect.ui.settings.SettingsViewModel
+import dev.pranav.reconnect.ui.theme.AppTheme
 import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.CreamLight
-import dev.pranav.reconnect.ui.theme.ReConnectTheme
 import dev.pranav.reconnect.ui.user.EmailVerificationScreen
 import dev.pranav.reconnect.ui.user.LoginScreen
 import dev.pranav.reconnect.ui.user.SignUpScreen
@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
         AppContainer.authStore.getCurrentSession()
         enableEdgeToEdge()
         setContent {
-            ReConnectTheme {
+            AppTheme {
                 ReConnectApp { controller ->
                     navController = controller
                     pendingIntent?.let {
@@ -301,10 +301,10 @@ fun ReConnectApp(
         }
 
         composable(
-            route = AppRoute.PERSON_DETAIL,
+            route = AppRoute.CONNECTION_DETAIL,
             arguments = listOf(navArgument("contactId") { type = NavType.StringType })
         ) { backStack ->
-            PersonDetailScreen(
+            ConnectionDetailScreen(
                 contactId = backStack.arguments!!.getString("contactId")!!,
                 onBack = { navController.popBackStack() },
                 onEditDetails = { id -> navController.navigate(AppRoute.addConnection(id)) },
@@ -443,7 +443,7 @@ private fun MainScreen(navController: NavController) {
         ) { targetTab ->
             when (targetTab) {
                 AppDestination.CIRCLE -> SocialCircleScreen(
-                    onContactClick = { id -> navController.navigate(AppRoute.personDetail(id)) },
+                    onContactClick = { id -> navController.navigate(AppRoute.connectionDetail(id)) },
                     onAddClick = { navController.navigate(AppRoute.addConnection(null)) }
                 )
 
@@ -467,7 +467,7 @@ private fun MainScreen(navController: NavController) {
                 }
 
                 else -> HomeScreen(
-                    onContactClick = { id -> navController.navigate(AppRoute.personDetail(id)) },
+                    onContactClick = { id -> navController.navigate(AppRoute.connectionDetail(id)) },
                     onAddClick = { navController.navigate(AppRoute.addConnection(null)) },
                     onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE }
                 )

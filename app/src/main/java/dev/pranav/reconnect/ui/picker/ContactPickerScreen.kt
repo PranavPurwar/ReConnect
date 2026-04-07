@@ -35,7 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ReconnectInterval
-import dev.pranav.reconnect.ui.components.ReConnectTopBar
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 
@@ -70,7 +70,7 @@ fun ContactPickerScreen(
 
     Scaffold(
         topBar = {
-            ReConnectTopBar(
+            AppTopBar(
                 showLogo = false,
                 navigationIcon = {
                     IconButton(onClick = onSkip) {

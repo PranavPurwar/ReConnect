@@ -19,14 +19,11 @@ object FlavorConfig {
             val database = ReConnectDatabase.getInstance(context)
             contactStore = RoomContactStore(database.contactDao())
             momentStore = RoomMomentStore(database.momentDao())
-            attachmentStore = LocalAttachmentStore(context, metricsRecorder)
-            aiInsightStore = LocalAiInsightStore()
+            attachmentStore = FileAttachmentStore(context, metricsRecorder)
+            aiInsightStore = MockAiInsightStore()
             photoResolver = LocalPhotoResolver(context)
             authStore = LocalAuthStore()
 
-            runBlocking {
-                DatabaseSeeder.seedIfNeeded(contactStore, momentStore)
-            }
         }
     }
 }

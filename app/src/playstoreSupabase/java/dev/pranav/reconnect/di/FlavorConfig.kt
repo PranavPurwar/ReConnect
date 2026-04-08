@@ -17,7 +17,7 @@ object FlavorConfig {
             val client = SupabaseAuthManager.client
             authStore = SupabaseAuthStore(client)
             momentStore = SupabaseMomentStore(client)
-            aiInsightStore = LocalAiInsightStore()
+            aiInsightStore = MockAiInsightStore()
             attachmentStore = SupabaseAttachmentStore(client, context)
             contactStore = SupabaseContactStore(client, context)
             photoResolver = SupabasePhotoResolver(client)

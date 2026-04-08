@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class LocalAttachmentStore(
+class FileAttachmentStore(
     private val context: Context,
     private val metricsRecorder: StorageMetricsRecorder
 ) : AttachmentStore {

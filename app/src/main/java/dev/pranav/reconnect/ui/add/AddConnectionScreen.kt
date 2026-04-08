@@ -34,7 +34,7 @@ import com.github.panpf.sketch.PainterState
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ContactFormData
 import dev.pranav.reconnect.core.model.ReconnectInterval
-import dev.pranav.reconnect.core.storage.SystemContactsDataSource
+import dev.pranav.reconnect.core.storage.DeviceContactsDataSource
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
@@ -869,7 +869,7 @@ private fun ContactSearchSheet(
 
     LaunchedEffect(Unit) {
         val loaded = withContext(Dispatchers.IO) {
-            SystemContactsDataSource().getSystemContacts(context.contentResolver)
+            DeviceContactsDataSource().getSystemContacts(context.contentResolver)
         }
         contacts = loaded
         isLoading = false

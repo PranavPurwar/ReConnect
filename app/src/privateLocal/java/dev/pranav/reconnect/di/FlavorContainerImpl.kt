@@ -18,13 +18,10 @@ class LocalFlavorContainer: FlavorContainer {
         val database = ReConnectDatabase.getInstance(context)
         contactStore = RoomContactStore(database.contactDao())
         momentStore = RoomMomentStore(database.momentDao())
-        attachmentStore = LocalAttachmentStore(context, metricsRecorder)
-        aiInsightStore = LocalAiInsightStore()
+        attachmentStore = FileAttachmentStore(context, metricsRecorder)
+        aiInsightStore = MockAiInsightStore()
         photoResolver = dev.pranav.reconnect.data.local.LocalPhotoResolver(context)
         authStore = LocalAuthStore()
 
-        runBlocking {
-            DatabaseSeeder.seedIfNeeded(contactStore, momentStore)
-        }
     }
 }

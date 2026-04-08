@@ -4,7 +4,7 @@ import android.content.ContentResolver
 import android.provider.ContactsContract
 import dev.pranav.reconnect.core.model.Contact
 
-class SystemContactsDataSource {
+class DeviceContactsDataSource {
     fun getSystemContacts(contentResolver: ContentResolver): List<Contact> {
         val contacts = mutableListOf<Contact>()
         val seenIds = mutableSetOf<String>()

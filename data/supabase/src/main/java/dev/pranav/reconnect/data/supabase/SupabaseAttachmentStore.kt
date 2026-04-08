@@ -3,6 +3,7 @@ package dev.pranav.reconnect.data.supabase
 import android.content.Context
 import android.net.Uri
 import android.webkit.MimeTypeMap
+import androidx.core.net.toUri
 import dev.pranav.reconnect.core.model.MomentImage
 import dev.pranav.reconnect.core.storage.AttachmentStore
 import io.github.jan.supabase.SupabaseClient
@@ -26,7 +27,7 @@ class SupabaseAttachmentStore(
 
         for (item in sourceUris) {
             try {
-                val uri = Uri.parse(item.uri)
+                val uri = item.uri.toUri()
                 val extension = getFileExtension(context, uri) ?: "bin"
                 val path = "${user.id}/$momentId/${item.id}.$extension"
                 val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }

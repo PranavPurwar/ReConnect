@@ -16,8 +16,8 @@ class SupabaseFlavorContainer: FlavorContainer {
         val client = SupabaseAuthManager.client
         contactStore = SupabaseContactStore(client, context)
         momentStore = SupabaseMomentStore(client)
-        attachmentStore = LocalAttachmentStore(context, metricsRecorder)
-        aiInsightStore = LocalAiInsightStore()
+        attachmentStore = FileAttachmentStore(context, metricsRecorder)
+        aiInsightStore = MockAiInsightStore()
         photoResolver = SupabasePhotoResolver(client)
         authStore = SupabaseAuthStore(client)
     }

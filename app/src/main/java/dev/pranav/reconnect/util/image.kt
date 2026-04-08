@@ -6,7 +6,7 @@ import androidx.core.net.toUri
 import com.github.panpf.sketch.SingletonSketch
 import com.github.panpf.sketch.asDrawable
 import com.github.panpf.sketch.request.ImageRequest
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.DefaultSeedColor
 
 fun decodePhotoBitmap(context: Context, photoUri: String?): android.graphics.Bitmap? {

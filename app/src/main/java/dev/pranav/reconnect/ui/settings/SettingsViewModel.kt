@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.BuildConfig
 import dev.pranav.reconnect.core.session.AppSessionStore
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

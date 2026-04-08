@@ -1,12 +1,9 @@
-package dev.pranav.reconnect.data.local
+package dev.pranav.reconnect.core.storage
 
 import android.content.Context
 import android.net.Uri
-import dev.pranav.reconnect.core.model.MomentImage
-import dev.pranav.reconnect.core.storage.AttachmentStore
-import dev.pranav.reconnect.core.storage.StorageMetricsRecorder
-import dev.pranav.reconnect.core.storage.trackWrite
 import android.webkit.MimeTypeMap
+import dev.pranav.reconnect.core.model.MomentImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

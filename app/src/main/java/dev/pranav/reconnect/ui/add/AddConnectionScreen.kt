@@ -34,8 +34,8 @@ import com.github.panpf.sketch.PainterState
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ContactFormData
 import dev.pranav.reconnect.core.model.ReconnectInterval
-import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.repository.SystemContactsDataSource
+import dev.pranav.reconnect.core.storage.SystemContactsDataSource
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
 import dev.pranav.reconnect.util.decodePhotoBitmap
@@ -65,7 +65,7 @@ fun AddConnectionScreen(
     contactIdToEdit: String? = null,
     onBack: () -> Unit,
     onAdded: () -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val context = LocalContext.current
     val state = remember { AddConnectionState() }

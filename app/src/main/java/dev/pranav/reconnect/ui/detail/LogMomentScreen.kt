@@ -29,7 +29,7 @@ import androidx.compose.ui.zIndex
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.core.model.MomentImage
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.MediumGray
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
@@ -96,7 +96,9 @@ fun LogMomentScreen(
     BackHandler(onBack = { if (!isUploading) onDismiss() })
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().zIndex(10f),
+        modifier = Modifier
+            .fillMaxSize()
+            .zIndex(10f),
         topBar = {
             TopAppBar(
                 title = { Text("Log a Moment") },
@@ -365,7 +367,9 @@ fun LogMomentScreen(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 },
-                                modifier = Modifier.fillMaxWidth().height(40.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp),
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 maxLines = 1,
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -470,7 +474,9 @@ fun LogMomentScreen(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)) {
                     Text(
                         text = "Select Contacts",
                         style = MaterialTheme.typography.titleLarge,

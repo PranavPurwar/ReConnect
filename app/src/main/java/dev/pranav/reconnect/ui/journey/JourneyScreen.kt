@@ -35,10 +35,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.SubcomposeAsyncImage
 import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.CurrentUserAvatar
 import dev.pranav.reconnect.ui.components.ScreenTitle
-import dev.pranav.reconnect.ui.theme.*
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.ui.theme.CharcoalText
+import dev.pranav.reconnect.ui.theme.GoldPrimary
+import dev.pranav.reconnect.ui.theme.PlayfairFamily
+import dev.pranav.reconnect.ui.theme.SerifFontFamily
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -48,14 +51,14 @@ fun JourneyScreen(
     innerPadding: PaddingValues = PaddingValues(),
     onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
     onBackClick: () -> Unit = {},
-    viewModel: JourneyViewModel = viewModel()
+    viewModel: JourneyViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(CreamBackground),
+            .background(MaterialTheme.colorScheme.background),
         contentPadding = WindowInsets.statusBars.asPaddingValues()
     ) {
             item {

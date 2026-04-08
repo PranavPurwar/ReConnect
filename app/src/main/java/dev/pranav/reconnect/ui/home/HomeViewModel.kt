@@ -6,7 +6,7 @@ import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ContactFormData
 import dev.pranav.reconnect.core.model.UpcomingEvent
 import dev.pranav.reconnect.core.storage.ContactStore
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map

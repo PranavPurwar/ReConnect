@@ -27,7 +27,7 @@ import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.core.model.Contact
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.CurrentUserAvatar
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.*
@@ -38,7 +38,7 @@ fun SocialCircleScreen(
     onContactClick: (String) -> Unit,
     onAddClick: () -> Unit,
     innerPadding: PaddingValues = PaddingValues(),
-    viewModel: SocialCircleViewModel = viewModel()
+    viewModel: SocialCircleViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val contacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -46,7 +46,7 @@ fun SocialCircleScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = CreamBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddClick,

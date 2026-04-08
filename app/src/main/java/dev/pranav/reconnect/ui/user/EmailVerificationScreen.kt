@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.pranav.reconnect.core.storage.AuthState
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.SansFontFamily
 import dev.pranav.reconnect.ui.theme.UltraFamily
 import kotlinx.coroutines.delay

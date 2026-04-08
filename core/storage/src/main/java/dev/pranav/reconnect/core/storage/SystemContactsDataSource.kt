@@ -1,4 +1,4 @@
-package dev.pranav.reconnect.data.repository
+package dev.pranav.reconnect.core.storage
 
 import android.content.ContentResolver
 import android.provider.ContactsContract

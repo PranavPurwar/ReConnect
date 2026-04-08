@@ -22,7 +22,10 @@ import androidx.compose.ui.unit.dp
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
-import dev.pranav.reconnect.ui.theme.*
+import dev.pranav.reconnect.ui.theme.AmberCardStart
+import dev.pranav.reconnect.ui.theme.CharcoalText
+import dev.pranav.reconnect.ui.theme.GoldPrimary
+import dev.pranav.reconnect.ui.theme.MediumGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +62,7 @@ fun GalleryScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = CreamBackground.copy(alpha = 0.92f)
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.92f)
                 )
             )
         },
@@ -68,7 +71,14 @@ fun GalleryScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(CreamBackground, Color.White)))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.background,
+                            Color.White
+                        )
+                    )
+                )
         ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
@@ -92,7 +102,9 @@ fun GalleryScreen(
                             uri = uri,
                             contentDescription = null,
                             state = state,
-                            modifier = Modifier.fillMaxSize().background(AmberCardStart),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(AmberCardStart),
                             contentScale = ContentScale.Crop
                         )
                         if (state.painterState is PainterState.Error || state.painterState is PainterState.Loading) {

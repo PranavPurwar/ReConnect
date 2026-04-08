@@ -37,7 +37,7 @@ import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.core.model.PastMoment
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -51,7 +51,7 @@ fun ConnectionDetailScreen(
     innerPadding: PaddingValues = PaddingValues(),
     onEditDetails: (String) -> Unit = {},
     onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
-    viewModel: ConnectionDetailViewModel = viewModel()
+    viewModel: ConnectionDetailViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     LaunchedEffect(contactId) { viewModel.loadContact(contactId) }
 

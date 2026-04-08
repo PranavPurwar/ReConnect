@@ -50,7 +50,14 @@ fun OnboardingScreen(
         containerColor = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(CreamBackground, Color.White)))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.background,
+                        Color.White
+                    )
+                )
+            )
     ) { scaffoldPadding ->
         Column(
             modifier = Modifier

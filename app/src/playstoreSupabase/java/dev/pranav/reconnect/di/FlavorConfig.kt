@@ -1,8 +1,7 @@
-package dev.pranav.reconnect.data.port
+package dev.pranav.reconnect.di
 
 import android.content.Context
 import dev.pranav.reconnect.core.storage.*
-import dev.pranav.reconnect.data.local.LocalAiInsightStore
 import dev.pranav.reconnect.data.supabase.*
 
 object FlavorConfig {

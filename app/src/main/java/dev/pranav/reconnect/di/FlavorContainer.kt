@@ -1,4 +1,4 @@
-package dev.pranav.reconnect.data.port
+package dev.pranav.reconnect.di
 
 import android.content.Context
 import dev.pranav.reconnect.core.storage.*
@@ -13,6 +13,6 @@ interface FlavorContainer {
 
     fun init(
         context: Context,
-        metricsRecorder: dev.pranav.reconnect.core.storage.StorageMetricsRecorder
+        metricsRecorder: StorageMetricsRecorder
     )
 }

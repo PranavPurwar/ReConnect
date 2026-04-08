@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import java.net.URL
 
 fun Context.takePersistableReadPermissionIfPossible(uri: Uri) {
     if (uri.scheme != "content") return
@@ -18,7 +19,7 @@ fun Context.takePersistableReadPermissionIfPossible(uri: Uri) {
 fun Uri.toBitmap(context: Context): Bitmap? {
     return try {
         if (scheme == "http" || scheme == "https") {
-            java.net.URL(toString()).openStream().use { inputStream ->
+            URL(toString()).openStream().use { inputStream ->
                 BitmapFactory.decodeStream(inputStream)
             }
         } else {

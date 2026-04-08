@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id("reconnect.android.application")
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
@@ -7,12 +7,9 @@ plugins {
 
 android {
     namespace = "dev.pranav.reconnect"
-    compileSdk = 37
 
     defaultConfig {
         applicationId = "dev.pranav.reconnect"
-        minSdk = 26
-        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -39,10 +36,6 @@ android {
                 "proguard-rules.pro"
             )
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
         compose = true

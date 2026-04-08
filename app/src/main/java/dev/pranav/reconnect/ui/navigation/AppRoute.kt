@@ -1,24 +1,32 @@
 package dev.pranav.reconnect.ui.navigation
 
-import android.net.Uri
+import kotlinx.serialization.Serializable
 
-object AppRoute {
-    const val LOGIN = "login"
-    const val SIGNUP = "signup"
-    const val ONBOARDING = "onboarding"
-    const val PICKER = "picker"
-    const val MAIN = "main"
-    const val SETTINGS = "settings"
-    const val PRIVACY_POLICY = "privacy"
-    const val EDIT_PROFILE = "edit_profile"
-    const val CONNECTION_DETAIL = "detail/{contactId}"
-    const val ADD_CONNECTION = "add?contactId={contactId}"
-    const val GALLERY = "gallery"
-    const val IMAGE_PREVIEW = "imagePreview/{index}"
-    const val VERIFY_EMAIL = "verify-email"
-
-    fun connectionDetail(contactId: String) = "detail/${Uri.encode(contactId)}"
-    fun addConnection(contactId: String?) =
-        if (contactId.isNullOrBlank()) "add" else "add?contactId=${Uri.encode(contactId)}"
-    fun imagePreview(index: Int) = "imagePreview/$index"
+sealed class AppRoute {
+    @Serializable
+    data object Login
+    @Serializable
+    data object SignUp
+    @Serializable
+    data object VerifyEmail
+    @Serializable
+    data object Onboarding
+    @Serializable
+    data object Picker
+    @Serializable
+    data object Main
+    @Serializable
+    data object Settings
+    @Serializable
+    data object PrivacyPolicy
+    @Serializable
+    data object EditProfile
+    @Serializable
+    data class ConnectionDetail(val contactId: String)
+    @Serializable
+    data class AddConnection(val contactId: String? = null)
+    @Serializable
+    data object Gallery
+    @Serializable
+    data class ImagePreview(val index: Int)
 }

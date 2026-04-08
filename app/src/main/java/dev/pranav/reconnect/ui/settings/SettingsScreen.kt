@@ -25,10 +25,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.CharcoalText
-import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.PlusJakartaSansFamily
 
@@ -70,7 +69,8 @@ fun SettingsScreen(
 
     Box(modifier = Modifier
         .fillMaxSize()
-        .background(CreamBackground)) {
+        .background(MaterialTheme.colorScheme.background)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

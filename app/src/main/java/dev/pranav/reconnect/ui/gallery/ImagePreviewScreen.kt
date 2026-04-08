@@ -26,10 +26,7 @@ import com.github.panpf.sketch.request.ComposableImageOptions
 import com.github.panpf.zoomimage.SketchZoomAsyncImage
 import com.github.panpf.zoomimage.rememberSketchZoomState
 import dev.pranav.reconnect.ui.theme.CharcoalText
-import dev.pranav.reconnect.ui.theme.CreamBackground
-import dev.pranav.reconnect.ui.theme.CreamLight
 import dev.pranav.reconnect.ui.theme.GoldPrimary
-import androidx.core.net.toUri
 
 @Composable
 fun ImagePreviewScreen(
@@ -42,7 +39,7 @@ fun ImagePreviewScreen(
     val pagerState = rememberPagerState(initialPage = safeIndex) { imageUris.size }
 
     fun isVideoUri(uriString: String): Boolean {
-        val uri = uriString.toUri()
+        val uri = android.net.Uri.parse(uriString)
         val mimeType = if (uri.scheme == android.content.ContentResolver.SCHEME_CONTENT) {
             context.contentResolver.getType(uri)
         } else {
@@ -60,7 +57,7 @@ fun ImagePreviewScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CreamBackground)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         HorizontalPager(
             state = pagerState,
@@ -134,7 +131,7 @@ fun ImagePreviewScreen(
         ) {
             Surface(
                 shape = CircleShape,
-                color = CreamLight.copy(alpha = 0.88f),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
                 shadowElevation = 2.dp,
                 modifier = Modifier.size(44.dp)
             ) {
@@ -149,7 +146,7 @@ fun ImagePreviewScreen(
             if (imageUris.size > 1) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = CreamLight.copy(alpha = 0.88f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
                     shadowElevation = 2.dp
                 ) {
                     Text(

@@ -34,7 +34,7 @@ import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.UpcomingEvent
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.*
 
@@ -141,7 +141,7 @@ fun HomeScreen(
     onAddClick: () -> Unit,
     onViewAllCatchUpsClick: () -> Unit,
     innerPadding: PaddingValues = PaddingValues(),
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val featuredBirthdayId = (state.upcomingEvents.firstOrNull() as? UpcomingEvent.Birthday)?.contactId
@@ -149,7 +149,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CreamBackground)
+            .background(MaterialTheme.colorScheme.background)
             .padding(bottom = innerPadding.calculateBottomPadding())
     ) {
         Column(modifier = Modifier.fillMaxSize()) {

@@ -10,7 +10,7 @@ import dev.pranav.reconnect.core.storage.AiInsightStore
 import dev.pranav.reconnect.core.storage.AttachmentStore
 import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.core.storage.MomentStore
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat

@@ -36,7 +36,6 @@ import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ReconnectInterval
 import dev.pranav.reconnect.ui.components.AppTopBar
-import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,7 +43,7 @@ import dev.pranav.reconnect.ui.theme.GoldPrimary
 fun ContactPickerScreen(
     onContinue: () -> Unit,
     onSkip: () -> Unit,
-    viewModel: ContactPickerViewModel = viewModel()
+    viewModel: ContactPickerViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -82,7 +81,14 @@ fun ContactPickerScreen(
         containerColor = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(CreamBackground, Color.White)))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.background,
+                        Color.White
+                    )
+                )
+            )
     ) { scaffoldPadding ->
         Column(
             modifier = Modifier

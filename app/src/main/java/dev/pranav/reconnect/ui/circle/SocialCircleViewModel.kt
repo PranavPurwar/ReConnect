@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.storage.ContactStore
-import dev.pranav.reconnect.data.port.AppContainer
+import dev.pranav.reconnect.di.AppContainer
 import kotlinx.coroutines.flow.*
 
 class SocialCircleViewModel(

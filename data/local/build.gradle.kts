@@ -1,19 +1,10 @@
 plugins {
-    alias(libs.plugins.android.library)
+    id("reconnect.android.library")
     alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "dev.pranav.reconnect.data.local"
-    compileSdk = 37
-
-    defaultConfig {
-        minSdk = 26
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
 }
 
 dependencies {

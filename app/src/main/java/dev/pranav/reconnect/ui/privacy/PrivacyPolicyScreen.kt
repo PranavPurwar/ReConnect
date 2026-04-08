@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.GppGood
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -29,7 +28,7 @@ fun PrivacyPolicyScreen(
     onBack: () -> Unit
 ) {
     Scaffold(
-        containerColor = CreamBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -47,7 +46,7 @@ fun PrivacyPolicyScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = CreamBackground
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
@@ -93,7 +92,7 @@ fun PrivacyPolicyScreen(
 
             // Detailed Policy Section
             Surface(
-                color = CreamLight,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {

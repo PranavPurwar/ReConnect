@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ReconnectInterval
 import dev.pranav.reconnect.core.storage.ContactStore
-import dev.pranav.reconnect.data.port.AppContainer
-import dev.pranav.reconnect.data.repository.SystemContactsDataSource
+import dev.pranav.reconnect.core.storage.SystemContactsDataSource
+import dev.pranav.reconnect.di.AppContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

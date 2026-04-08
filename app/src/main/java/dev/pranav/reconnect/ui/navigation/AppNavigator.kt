@@ -11,7 +11,7 @@ object NavPayloadKeys {
 fun NavController.openGallery(title: String, uris: List<String>) {
     currentBackStackEntry?.savedStateHandle?.set(NavPayloadKeys.GALLERY_TITLE, title)
     currentBackStackEntry?.savedStateHandle?.set(NavPayloadKeys.GALLERY_URIS, ArrayList(uris))
-    navigate(AppRoute.GALLERY)
+    navigate(AppRoute.Gallery)
 }
 
 fun NavController.galleryPayload(): Pair<String, ArrayList<String>> {
@@ -23,7 +23,7 @@ fun NavController.galleryPayload(): Pair<String, ArrayList<String>> {
 
 fun NavController.openImagePreview(index: Int, uris: ArrayList<String>) {
     currentBackStackEntry?.savedStateHandle?.set(NavPayloadKeys.PREVIEW_URIS, uris)
-    navigate(AppRoute.imagePreview(index))
+    navigate(AppRoute.ImagePreview(index))
 }
 
 fun NavController.previewPayload(): ArrayList<String> {

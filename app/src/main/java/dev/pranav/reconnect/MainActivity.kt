@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -40,6 +41,7 @@ import dev.pranav.reconnect.ui.journey.JourneyScreen
 import dev.pranav.reconnect.ui.navigation.*
 import dev.pranav.reconnect.ui.onboarding.OnboardingScreen
 import dev.pranav.reconnect.ui.picker.ContactPickerScreen
+import dev.pranav.reconnect.ui.privacy.PrivacyPolicyScreen
 import dev.pranav.reconnect.ui.settings.EditProfileScreen
 import dev.pranav.reconnect.ui.settings.EditProfileViewModel
 import dev.pranav.reconnect.ui.settings.SettingsScreen
@@ -52,7 +54,7 @@ import dev.pranav.reconnect.ui.user.LoginScreen
 import dev.pranav.reconnect.ui.user.SignUpScreen
 
 class MainActivity : ComponentActivity() {
-    private var pendingIntent: android.content.Intent? = null
+    private var pendingIntent: Intent? = null
     private var navController: NavController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,12 +78,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onNewIntent(intent: android.content.Intent) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)
     }
 
-    private fun handleIntent(intent: android.content.Intent) {
+    private fun handleIntent(intent: Intent) {
         val data = intent.data
         println("MainActivity: Received intent data: $data")
 
@@ -102,14 +104,13 @@ enum class AppDestination(val label: String, val icon: ImageVector) {
 
 @Composable
 fun ReConnectApp(
-    intent: Intent? = null,
     onNavControllerReady: (NavHostController) -> Unit = {}
 ) {
     val context = LocalContext.current
     val sessionStore = remember(context) { AppSessionStore(context) }
 
     val startDest = remember {
-        val dest = sessionStore.resolveStartDestination(BuildConfig.ENABLE_LOGIN_GATE)
+        val dest = sessionStore.resolveStartDestination(true)
         when (dest) {
             StartDestination.LOGIN -> AppRoute.LOGIN
             StartDestination.MAIN -> AppRoute.MAIN
@@ -262,8 +263,7 @@ fun ReConnectApp(
                 )
             }
         ) {
-            val editProfileViewModel: EditProfileViewModel =
-                androidx.lifecycle.viewmodel.compose.viewModel()
+            val editProfileViewModel: EditProfileViewModel = viewModel()
             EditProfileScreen(
                 viewModel = editProfileViewModel,
                 onBack = { navController.popBackStack() }
@@ -407,6 +407,38 @@ fun ReConnectApp(
                 onBack = { navController.popBackStack() }
             )
         }
+
+        composable(
+            route = AppRoute.PRIVACY_POLICY,
+            enterTransition = {
+                fadeIn(animationSpec = tween(250)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(250)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(250)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(250)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(250)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(250)
+                )
+            }
+        ) {
+            PrivacyPolicyScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }
 
@@ -462,7 +494,8 @@ private fun MainScreen(navController: NavController) {
                             navController.navigate(AppRoute.LOGIN) {
                                 popUpTo(AppRoute.MAIN) { inclusive = true }
                             }
-                        }
+                        },
+                        onPrivacyPolicyClick = { navController.navigate(AppRoute.PRIVACY_POLICY) }
                     )
                 }
 

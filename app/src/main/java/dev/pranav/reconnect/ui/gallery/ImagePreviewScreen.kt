@@ -1,5 +1,6 @@
 package dev.pranav.reconnect.ui.gallery
 
+import android.webkit.MimeTypeMap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -12,17 +13,23 @@ import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.panpf.sketch.PainterState
+import com.github.panpf.sketch.rememberAsyncImageState
+import com.github.panpf.sketch.request.ComposableImageOptions
 import com.github.panpf.zoomimage.SketchZoomAsyncImage
 import com.github.panpf.zoomimage.rememberSketchZoomState
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.CreamBackground
 import dev.pranav.reconnect.ui.theme.CreamLight
 import dev.pranav.reconnect.ui.theme.GoldPrimary
+import androidx.core.net.toUri
 
 @Composable
 fun ImagePreviewScreen(
@@ -30,8 +37,25 @@ fun ImagePreviewScreen(
     initialIndex: Int,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val safeIndex = initialIndex.coerceIn(0, (imageUris.size - 1).coerceAtLeast(0))
     val pagerState = rememberPagerState(initialPage = safeIndex) { imageUris.size }
+
+    fun isVideoUri(uriString: String): Boolean {
+        val uri = uriString.toUri()
+        val mimeType = if (uri.scheme == android.content.ContentResolver.SCHEME_CONTENT) {
+            context.contentResolver.getType(uri)
+        } else {
+            val extension = MimeTypeMap.getFileExtensionFromUrl(uriString)
+            if (extension.isNotEmpty()) {
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
+            } else null
+        }
+        return mimeType?.startsWith("video/") == true ||
+            uriString.endsWith(".mp4", true) ||
+            uriString.endsWith(".mov", true) ||
+            uriString.endsWith(".webm", true)
+    }
 
     Box(
         modifier = Modifier
@@ -45,37 +69,55 @@ fun ImagePreviewScreen(
             userScrollEnabled = true
         ) { page ->
             val uri = imageUris[page]
-            val isReal = uri.startsWith("content://") || uri.startsWith("file://") || uri.startsWith("http")
+            val isVideo = remember(uri) { isVideoUri(uri) }
 
-            // Each page needs its own zoom state
-            val zoomState = rememberSketchZoomState()
+            if (isVideo) {
+                // Determine if this is the currently active page to auto-play or not
+                val isCurrentPage = pagerState.currentPage == page
+                VideoPlayer(
+                    uri = uri,
+                    modifier = Modifier.fillMaxSize(),
+                    playWhenReady = isCurrentPage && !pagerState.isScrollInProgress
+                )
+            } else {
+                val state = rememberAsyncImageState(ComposableImageOptions {
+                    crossfade()
+                })
 
-            // Reset zoom when the user scrolls away from this page
-            LaunchedEffect(pagerState.isScrollInProgress) {
-                if (pagerState.isScrollInProgress) {
-                    zoomState.zoomable.reset()
+                // Each page needs its own zoom state
+                val zoomState = rememberSketchZoomState()
+
+                // Reset zoom when the user scrolls away from this page
+                LaunchedEffect(pagerState.isScrollInProgress) {
+                    if (pagerState.isScrollInProgress) {
+                        zoomState.zoomable.reset()
+                    }
                 }
-            }
 
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isReal) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     SketchZoomAsyncImage(
                         uri = uri,
                         contentDescription = "Image preview",
                         zoomState = zoomState,
-                        modifier = Modifier.fillMaxSize(),
+                        state = state,
+                        modifier = if (state.painterState is PainterState.Success) {
+                            Modifier.fillMaxSize()
+                        } else {
+                            Modifier.wrapContentSize()
+                        },
                         contentScale = ContentScale.Fit,
                     )
-                } else {
-                    Icon(
-                        Icons.Default.Photo,
-                        contentDescription = null,
-                        tint = GoldPrimary.copy(alpha = 0.4f),
-                        modifier = Modifier.size(80.dp)
-                    )
+                    if (state.painterState !is PainterState.Success) {
+                        Icon(
+                            Icons.Default.Photo,
+                            contentDescription = null,
+                            tint = GoldPrimary.copy(alpha = 0.4f),
+                            modifier = Modifier.size(80.dp)
+                        )
+                    }
                 }
             }
         }
@@ -100,7 +142,6 @@ fun ImagePreviewScreen(
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = CharcoalText
                     )
                 }
             }

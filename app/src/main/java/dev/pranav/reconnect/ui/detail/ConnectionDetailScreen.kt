@@ -762,10 +762,23 @@ fun ConnectionDetailScreen(
         }
 
         if (showLogSheet) {
-            LogMomentSheet(
+            LogMomentScreen(
+                initialContactId = contactId,
                 onDismiss = { showLogSheet = false },
-                onSave = { title, description, category, imageUris ->
-                    viewModel.logMoment(contactId, title, description, category, imageUris)
+                onSave = { title, description, category, images, isCoreMemory, wasPresent, groupName, locationMood, momentId, additionalContactIds ->
+                    viewModel.logMoment(
+                        contactId = contactId,
+                        title = title,
+                        description = description,
+                        category = category,
+                        images = images,
+                        isCoreMemory = isCoreMemory,
+                        wasPresent = wasPresent,
+                        groupName = groupName,
+                        locationMood = locationMood,
+                        momentId = momentId,
+                        additionalContactIds = additionalContactIds
+                    )
                     showLogSheet = false
                 }
             )
@@ -950,26 +963,38 @@ private fun PastMomentItem(
                     moment.title,
                     style = MaterialTheme.typography.titleLarge.copy(fontFamily = SerifFontFamily)
                 )
-                if (moment.imageUris.isNotEmpty()) {
+                if (moment.images.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     LazyRow(
                         modifier = Modifier.height(80.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(moment.imageUris) { uri ->
+                        items(moment.images) { image ->
+                            val resolvedUri =
+                                AppContainer.photoResolver.resolveMomentPhoto(image.uri)
                             Box(
                                 modifier = Modifier
                                     .size(width = 100.dp, height = 80.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .clickable { onOpenGallery(moment.title, moment.imageUris) }
+                                    .clickable {
+                                        onOpenGallery(
+                                            moment.title,
+                                            moment.images.map {
+                                                AppContainer.photoResolver.resolveMomentPhoto(it.uri)
+                                            })
+                                    }
                             ) {
-                                ImageThumbnailPlaceholder(uri)
+                                ImageThumbnailPlaceholder(resolvedUri)
                             }
                         }
                     }
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
-                        onClick = { onOpenGallery(moment.title, moment.imageUris) },
+                        onClick = {
+                            onOpenGallery(
+                                moment.title,
+                                moment.images.map { AppContainer.photoResolver.resolveMomentPhoto(it.uri) })
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
@@ -981,7 +1006,7 @@ private fun PastMomentItem(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            if (moment.imageUris.size == 1) "View Photo" else "View ${moment.imageUris.size} Photos",
+                            if (moment.images.size == 1) "View Photo" else "View ${moment.images.size} Photos",
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -1001,12 +1026,13 @@ private fun PastMomentItem(
 
 @Composable
 private fun ImageThumbnailPlaceholder(uri: String) {
-    val isRealUri =
-        uri.startsWith("content://") || uri.startsWith("file://") || uri.startsWith("http")
-    if (isRealUri) {
+    val state = rememberAsyncImageState()
+
+    if (state.painterState !is PainterState.Error) {
         AsyncImage(
             uri = uri,
             contentDescription = null,
+            state = state,
             modifier = Modifier
                 .size(width = 100.dp, height = 80.dp)
                 .clip(RoundedCornerShape(12.dp)),

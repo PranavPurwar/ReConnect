@@ -16,7 +16,11 @@ class SupabasePhotoResolver(private val client: SupabaseClient): PhotoResolver {
     }
 
     override fun resolveMomentPhoto(uri: String): String {
-        return uri
+        return if (!uri.startsWith("http")) {
+            authenticatedStorageItem("moments", uri).asSketchUri()
+        } else {
+            uri
+        }
     }
 
     override fun resolveUserAvatar(id: String?): String {

@@ -70,7 +70,7 @@ inline fun <T> StorageMetricsRecorder.trackRead(
     }
 }
 
-suspend inline fun <T> StorageMetricsRecorder.trackWrite(
+inline fun <T> StorageMetricsRecorder.trackWrite(
     name: String,
     block: () -> T
 ): T {

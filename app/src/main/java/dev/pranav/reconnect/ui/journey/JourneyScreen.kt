@@ -38,6 +38,7 @@ import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.ui.components.CurrentUserAvatar
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.*
+import dev.pranav.reconnect.data.port.AppContainer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -244,11 +245,11 @@ private fun TimelineEntry(
                     )
                 }
 
-                if (item.moment.imageUris.isNotEmpty()) {
+                if (item.moment.images.isNotEmpty()) {
                     Spacer(Modifier.height(16.dp))
                     ImageGrid(
-                        uris = item.moment.imageUris,
-                        onClick = { onOpenGallery(item.moment.title, item.moment.imageUris) }
+                        uris = item.moment.images.map { AppContainer.photoResolver.resolveMomentPhoto(it.uri) },
+                        onClick = { onOpenGallery(item.moment.title, item.moment.images.map { AppContainer.photoResolver.resolveMomentPhoto(it.uri) }) }
                     )
                 }
             }

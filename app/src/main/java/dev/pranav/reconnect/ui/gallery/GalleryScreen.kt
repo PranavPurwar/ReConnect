@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.PainterState
+import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +80,7 @@ fun GalleryScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 itemsIndexed(imageUris) { index, uri ->
-                    val isReal = uri.startsWith("content://") || uri.startsWith("file://") || uri.startsWith("http")
+                    val state = rememberAsyncImageState()
                     Box(
                         modifier = Modifier
                             .aspectRatio(1f)
@@ -86,14 +88,14 @@ fun GalleryScreen(
                             .clickable { onImageClick(index) },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (isReal) {
-                            AsyncImage(
-                                uri = uri,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
+                        AsyncImage(
+                            uri = uri,
+                            contentDescription = null,
+                            state = state,
+                            modifier = Modifier.fillMaxSize().background(AmberCardStart),
+                            contentScale = ContentScale.Crop
+                        )
+                        if (state.painterState is PainterState.Error || state.painterState is PainterState.Loading) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()

@@ -2,8 +2,9 @@ package dev.pranav.reconnect.data.local.db
 
 import androidx.room.TypeConverter
 import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.core.model.MomentImage
 import dev.pranav.reconnect.core.model.ReconnectInterval
-import org.json.JSONArray
+import kotlinx.serialization.json.Json
 
 class RoomConverters {
     @TypeConverter
@@ -21,16 +22,22 @@ class RoomConverters {
         runCatching { MomentCategory.valueOf(value) }.getOrDefault(MomentCategory.GENERAL)
 
     @TypeConverter
-    fun imageUrisToJson(value: List<String>): String {
-        val array = JSONArray()
-        value.forEach { array.put(it) }
-        return array.toString()
+    fun stringListToJson(value: List<String>): String {
+        return Json.encodeToString(value)
     }
 
     @TypeConverter
-    fun imageUrisFromJson(value: String): List<String> {
-        val array = runCatching { JSONArray(value) }.getOrNull() ?: return emptyList()
-        return (0 until array.length()).map { index -> array.optString(index) }
+    fun stringListFromJson(value: String): List<String> {
+        return runCatching { Json.decodeFromString<List<String>>(value) }.getOrDefault(emptyList())
+    }
+
+    @TypeConverter
+    fun imagesToJson(value: List<MomentImage>): String {
+        return Json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun imagesFromJson(value: String): List<MomentImage> {
+        return runCatching { Json.decodeFromString<List<MomentImage>>(value) }.getOrDefault(emptyList())
     }
 }
-

@@ -1,6 +1,5 @@
 package dev.pranav.reconnect.ui.settings
 
-import android.content.Intent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,11 +18,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
@@ -39,9 +36,9 @@ import dev.pranav.reconnect.ui.theme.PlusJakartaSansFamily
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onEditProfileClick: () -> Unit,
-    onSignOutSuccess: () -> Unit
+    onSignOutSuccess: () -> Unit,
+    onPrivacyPolicyClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val isLoginEnabled by viewModel.isLoginEnabled.collectAsStateWithLifecycle()
     val signOutResult by viewModel.signOutResult.collectAsStateWithLifecycle()
 
@@ -200,11 +197,7 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Policy,
                     title = "Privacy Policy",
-                    onClick = {
-                        val uri = "https://example.com/privacy".toUri()
-                        val intent = Intent(Intent.ACTION_VIEW, uri)
-                        context.startActivity(intent)
-                    }
+                    onClick = onPrivacyPolicyClick
                 )
             }
 

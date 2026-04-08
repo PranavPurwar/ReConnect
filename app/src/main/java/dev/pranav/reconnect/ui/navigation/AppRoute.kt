@@ -9,6 +9,7 @@ object AppRoute {
     const val PICKER = "picker"
     const val MAIN = "main"
     const val SETTINGS = "settings"
+    const val PRIVACY_POLICY = "privacy"
     const val EDIT_PROFILE = "edit_profile"
     const val CONNECTION_DETAIL = "detail/{contactId}"
     const val ADD_CONNECTION = "add?contactId={contactId}"

@@ -42,7 +42,11 @@ fun MomentEntity.toModel(): PastMoment = PastMoment(
     description = description,
     dateEpochMs = dateEpochMs,
     category = category,
-    imageUris = imageUris,
+    images = images,
+    isCoreMemory = isCoreMemory,
+    wasPresent = wasPresent,
+    groupName = groupName,
+    locationMood = locationMood,
     createdAtEpochMs = createdAtEpochMs
 )
 
@@ -53,6 +57,10 @@ fun PastMoment.toEntity(): MomentEntity = MomentEntity(
     description = description,
     dateEpochMs = dateEpochMs,
     category = category,
-    imageUris = imageUris,
+    images = images,
+    isCoreMemory = isCoreMemory,
+    wasPresent = wasPresent,
+    groupName = groupName,
+    locationMood = locationMood,
     createdAtEpochMs = createdAtEpochMs
 )

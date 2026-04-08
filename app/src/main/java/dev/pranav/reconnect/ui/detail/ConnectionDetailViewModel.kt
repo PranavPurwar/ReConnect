@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.MomentCategory
+import dev.pranav.reconnect.core.model.MomentImage
 import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.core.storage.AiInsightStore
 import dev.pranav.reconnect.core.storage.AttachmentStore
@@ -119,26 +120,35 @@ class ConnectionDetailViewModel(
         title: String,
         description: String,
         category: MomentCategory,
-        imageUris: List<String> = emptyList()
+        images: List<MomentImage> = emptyList(),
+        isCoreMemory: Boolean = false,
+        wasPresent: Boolean = true,
+        groupName: String? = null,
+        locationMood: String? = null,
+        momentId: String = UUID.randomUUID().toString(),
+        additionalContactIds: List<String> = emptyList()
     ) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
-            val momentId = UUID.randomUUID().toString()
-            val persistedUris = _attachmentStore.persistMomentAttachments(
-                contactId = contactId,
-                momentId = momentId,
-                sourceUris = imageUris
-            )
+
+            val combinedIds = buildSet {
+                add(contactId)
+                addAll(additionalContactIds)
+            }.toList()
 
             _momentStore.addMoment(
                 PastMoment(
                     id = momentId,
-                    contactIds = listOf(contactId),
+                    contactIds = combinedIds,
                     title = title,
                     description = description,
                     dateEpochMs = now,
                     category = category,
-                    imageUris = persistedUris,
+                    images = images,
+                    isCoreMemory = isCoreMemory,
+                    wasPresent = wasPresent,
+                    groupName = groupName,
+                    locationMood = locationMood,
                     createdAtEpochMs = now
                 )
             )

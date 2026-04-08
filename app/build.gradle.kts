@@ -48,9 +48,17 @@ android {
         compose = true
         buildConfig = true
     }
+
+}
+
+composeCompiler {
+    stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("app/stability_config.conf"))
 }
 
 dependencies {
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+
     implementation(project(":core:model"))
     implementation(project(":core:storage"))
     implementation(project(":core:session"))
@@ -80,6 +88,8 @@ dependencies {
 
     implementation(libs.sketch.compose)
     implementation(libs.sketch.compose.resources)
+    implementation(libs.sketch.extensions.compose)
+    implementation(libs.sketch.extensions.compose.resources)
     implementation(libs.sketch.http)
     implementation(libs.sketch.video)
     implementation(libs.sketch.zoom)

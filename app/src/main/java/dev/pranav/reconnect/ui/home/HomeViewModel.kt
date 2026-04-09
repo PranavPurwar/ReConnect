@@ -17,7 +17,8 @@ import java.util.UUID
 
 data class HomeUiState(
     val upcomingEvents: List<UpcomingEvent> = emptyList(),
-    val quickCatchUps: List<Pair<Contact, String>> = emptyList()
+    val quickCatchUps: List<Pair<Contact, String>> = emptyList(),
+    val isLoading: Boolean = false
 )
 class HomeViewModel(
     private val contactStore: ContactStore = AppContainer.contactStore
@@ -25,12 +26,13 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = contactStore.contacts.map { contacts ->
         HomeUiState(
             upcomingEvents = EventProvider.deriveEvents(contacts, limit = 5).map { it.event },
-            quickCatchUps = contacts.map { it to "Reconnect · ${it.reconnectInterval.label}" }
+            quickCatchUps = contacts.map { it to "Reconnect · ${it.reconnectInterval.label}" },
+            isLoading = false
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = HomeUiState()
+        initialValue = HomeUiState(isLoading = true)
     )
     fun addContact(form: ContactFormData, photoUri: String?, onComplete: () -> Unit = {}) {
         viewModelScope.launch {

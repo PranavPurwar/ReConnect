@@ -11,6 +11,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import dev.pranav.reconnect.MainScreen
 import dev.pranav.reconnect.core.session.AppSessionStore
@@ -24,6 +25,8 @@ import dev.pranav.reconnect.ui.picker.ContactPickerScreen
 import dev.pranav.reconnect.ui.privacy.PrivacyPolicyScreen
 import dev.pranav.reconnect.ui.settings.EditProfileScreen
 import dev.pranav.reconnect.ui.settings.EditProfileViewModel
+import dev.pranav.reconnect.ui.settings.NotificationSettingsScreen
+import dev.pranav.reconnect.ui.settings.SettingsViewModel
 import dev.pranav.reconnect.ui.user.EmailVerificationScreen
 import dev.pranav.reconnect.ui.user.LoginScreen
 import dev.pranav.reconnect.ui.user.SignUpScreen
@@ -161,7 +164,11 @@ fun ReConnectNavGraph(
             MainScreen(navController)
         }
 
-        composable<AppRoute.ConnectionDetail> { backStack ->
+        composable<AppRoute.ConnectionDetail>(
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "reconnect://contact/{contactId}" }
+            )
+        ) { backStack ->
             val route = backStack.toRoute<AppRoute.ConnectionDetail>()
             ConnectionDetailScreen(
                 contactId = route.contactId,
@@ -206,6 +213,14 @@ fun ReConnectNavGraph(
 
         composable<AppRoute.PrivacyPolicy> {
             PrivacyPolicyScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<AppRoute.NotificationSettings> {
+            val settingsViewModel = remember { SettingsViewModel(sessionStore) }
+            NotificationSettingsScreen(
+                viewModel = settingsViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

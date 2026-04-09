@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -36,7 +37,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onEditProfileClick: () -> Unit,
     onSignOutSuccess: () -> Unit,
-    onPrivacyPolicyClick: () -> Unit
+    onPrivacyPolicyClick: () -> Unit,
+    onNotificationsSettingsClick: () -> Unit,
 ) {
     val isLoginEnabled by viewModel.isLoginEnabled.collectAsStateWithLifecycle()
     val signOutResult by viewModel.signOutResult.collectAsStateWithLifecycle()
@@ -187,9 +189,7 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Notifications,
                     title = "Notifications",
-                    onClick = {
-                        // TODO: Add screen
-                    }
+                    onClick = onNotificationsSettingsClick
                 )
             }
 
@@ -268,7 +268,8 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
 fun SettingsItem(
     icon: ImageVector,
     title: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    trailingContent: (@Composable () -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -299,10 +300,16 @@ fun SettingsItem(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
         )
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-        )
+
+        if (trailingContent != null) {
+            trailingContent()
+        } else {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+        }
     }
 }

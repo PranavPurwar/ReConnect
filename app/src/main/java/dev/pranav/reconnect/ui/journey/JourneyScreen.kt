@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -49,7 +48,6 @@ import java.util.Locale
 @Composable
 fun JourneyScreen(
     onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
-    onBackClick: () -> Unit = {},
     viewModel: JourneyViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,16 +74,16 @@ fun JourneyScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            onClick = onBackClick,
-                            shape = CircleShape,
-                            color = GoldPrimary.copy(alpha = 0.1f),
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GoldPrimary)
-                            }
-                        }
+                        //Surface(
+                        //    onClick = onBackClick,
+                        //    shape = CircleShape,
+                        //    color = GoldPrimary.copy(alpha = 0.1f),
+                        //    modifier = Modifier.size(48.dp)
+                        //) {
+                        //    Box(contentAlignment = Alignment.Center) {
+                        //        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GoldPrimary)
+                        //    }
+                        //}
 
                         Surface(
                             modifier = Modifier

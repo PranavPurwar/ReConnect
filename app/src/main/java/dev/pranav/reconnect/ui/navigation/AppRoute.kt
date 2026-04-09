@@ -18,6 +18,9 @@ sealed class AppRoute {
     @Serializable
     data object Settings
     @Serializable
+    data object NotificationSettings
+
+    @Serializable
     data object PrivacyPolicy
     @Serializable
     data object EditProfile

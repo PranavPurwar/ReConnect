@@ -71,6 +71,8 @@ fun LogMomentScreen(
 
     var isUploading by remember { mutableStateOf(false) }
     var uploadErrors by remember { mutableStateOf<List<MomentImage>>(emptyList()) }
+    var successfulUploads by remember { mutableStateOf<List<MomentImage>>(emptyList()) }
+    var currentMomentId by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val attachmentStore = remember { AppContainer.attachmentStore }
     val contactStore = remember { AppContainer.contactStore }
@@ -407,9 +409,11 @@ fun LogMomentScreen(
                         scope.launch {
                             isUploading = true
                             uploadErrors = emptyList()
+                            successfulUploads = emptyList()
 
                             val momentId =
                                 UUID.randomUUID().toString() // Generate upfront for AttachmentStore
+                            currentMomentId = momentId
                             val successfulImages = mutableListOf<MomentImage>()
                             val failedImages = mutableListOf<MomentImage>()
 
@@ -433,6 +437,7 @@ fun LogMomentScreen(
                             if (failedImages.isNotEmpty()) {
                                 isUploading = false
                                 uploadErrors = failedImages
+                                successfulUploads = successfulImages
                             } else {
                                 onSave(
                                     title,
@@ -553,20 +558,20 @@ fun LogMomentScreen(
                 text = { Text("${uploadErrors.size} photos failed to upload. Log anyway without them?") },
                 confirmButton = {
                     TextButton(onClick = {
-                        // Re-generate since we didn't store the current one in outer scope, or just create new
-                        val successfulImages = selectedImages.filter { it !in uploadErrors }
                         onSave(
                             title,
                             description,
                             category,
-                            successfulImages,
+                            successfulUploads,
                             isCoreMemory,
                             wasPresent,
                             groupName.takeIf { it.isNotBlank() },
                             locationMood.takeIf { it.isNotBlank() },
-                            UUID.randomUUID().toString(), // New ID for skipping
+                            currentMomentId,
                             selectedContactIds.toList()
                         )
+                        uploadErrors = emptyList()
+                        successfulUploads = emptyList()
                     }) {
                         Text("Log Anyway")
                     }

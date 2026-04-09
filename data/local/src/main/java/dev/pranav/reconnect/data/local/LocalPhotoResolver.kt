@@ -18,4 +18,8 @@ class LocalPhotoResolver(private val context: Context): PhotoResolver {
     override fun resolveMomentPhoto(uri: String): String {
         return uri
     }
+
+    override suspend fun resolveVideo(uri: String): String {
+        return uri
+    }
 }

@@ -4,7 +4,6 @@ import android.content.Context
 import dev.pranav.reconnect.core.storage.*
 import dev.pranav.reconnect.data.local.*
 import dev.pranav.reconnect.data.local.db.ReConnectDatabase
-import kotlinx.coroutines.runBlocking
 
 object FlavorConfig {
     fun createContainer(): FlavorContainer = object: FlavorContainer {

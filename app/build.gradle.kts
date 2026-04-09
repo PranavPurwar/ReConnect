@@ -18,11 +18,11 @@ android {
 
     flavorDimensions += "backend"
     productFlavors {
-        create("privateLocal") {
+        create("local") {
             dimension = "backend"
             buildConfigField("boolean", "ENABLE_LOGIN_GATE", "false")
         }
-        create("playstoreSupabase") {
+        create("supabase") {
             dimension = "backend"
             buildConfigField("boolean", "ENABLE_LOGIN_GATE", "true")
         }
@@ -52,12 +52,14 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
 
+    implementation(libs.zoomable)
+
     implementation(project(":core:model"))
     implementation(project(":core:storage"))
     implementation(project(":core:session"))
 
-    "privateLocalImplementation"(project(":data:local"))
-    "playstoreSupabaseImplementation"(project(":data:supabase"))
+    "localImplementation"(project(":data:local"))
+    "supabaseImplementation"(project(":data:supabase"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -41,6 +41,7 @@ fun ImagePreviewScreen(
 
     fun isVideoUri(uriString: String): Boolean {
         val uri = uriString.toUri()
+        val path = uri.path ?: uriString
         val mimeType = if (uri.scheme == android.content.ContentResolver.SCHEME_CONTENT) {
             context.contentResolver.getType(uri)
         } else {
@@ -50,9 +51,9 @@ fun ImagePreviewScreen(
             } else null
         }
         return mimeType?.startsWith("video/") == true ||
-            uriString.endsWith(".mp4", true) ||
-            uriString.endsWith(".mov", true) ||
-            uriString.endsWith(".webm", true)
+                path.endsWith(".mp4", true) ||
+                path.endsWith(".mov", true) ||
+                path.endsWith(".webm", true)
     }
 
     Box(

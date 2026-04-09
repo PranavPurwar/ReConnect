@@ -414,10 +414,14 @@ fun ConnectionDetailScreen(
                         Button(
                             onClick = {
                                 if (contact.phoneNumber.isNotBlank()) {
+                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+
+                                        putExtra(Intent.EXTRA_TEXT, "Thinking of you!")
+                                        putExtra("address", contact.phoneNumber)
+                                    }
                                     context.startActivity(
-                                        Intent(Intent.ACTION_SENDTO).apply {
-                                            data = "smsto:${contact.phoneNumber}".toUri()
-                                        }
+                                        Intent.createChooser(sendIntent, "Connect via...")
                                     )
                                 }
                             },
@@ -551,37 +555,37 @@ fun ConnectionDetailScreen(
                                     modifier = Modifier.padding(vertical = 16.dp),
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                                 )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.AutoAwesome,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        "AI PREP",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        letterSpacing = 1.sp
-                                    )
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.secondary
-                                    ) {
-                                        Text(
-                                            "PRO",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSecondary,
-                                            modifier = Modifier.padding(
-                                                horizontal = 6.dp,
-                                                vertical = 2.dp
-                                            )
-                                        )
-                                    }
-                                }
+                                //Row(
+                                //    verticalAlignment = Alignment.CenterVertically,
+                                //    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                //) {
+                                //Icon(
+                                //    Icons.Default.AutoAwesome,
+                                //    contentDescription = null,
+                                //    modifier = Modifier.size(16.dp),
+                                //    tint = MaterialTheme.colorScheme.primary
+                                //)
+                                //Text(
+                                //    "AI PREP",
+                                //    style = MaterialTheme.typography.labelLarge,
+                                //    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                //    letterSpacing = 1.sp
+                                //)
+                                //Surface(
+                                //    shape = RoundedCornerShape(4.dp),
+                                //    color = MaterialTheme.colorScheme.secondary
+                                //) {
+                                //    Text(
+                                //        "PRO",
+                                //        style = MaterialTheme.typography.labelSmall,
+                                //        color = MaterialTheme.colorScheme.onSecondary,
+                                //        modifier = Modifier.padding(
+                                //            horizontal = 6.dp,
+                                //            vertical = 2.dp
+                                //        )
+                                //    )
+                                //}
+                                //}
                                 Spacer(Modifier.height(10.dp))
                                 state.aiPrepBullets.forEach { bullet ->
                                     Row(
@@ -645,22 +649,11 @@ fun ConnectionDetailScreen(
                             .fillMaxWidth()
                             .padding(top = 32.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Past Moments", style = MaterialTheme.typography.headlineMedium)
-                            Spacer(Modifier.weight(1f))
-                            if (state.filteredMoments.isNotEmpty()) {
-                                Text(
-                                    "${state.filteredMoments.size} logged",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        Text(
+                            "Past Moments",
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            style = MaterialTheme.typography.headlineMedium
+                        )
                         Spacer(Modifier.height(12.dp))
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -710,8 +703,8 @@ fun ConnectionDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 20.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            shape = RoundedCornerShape(20.dp)
                         ) {
                             Column(
                                 modifier = Modifier

@@ -25,6 +25,7 @@ data class PersonDetailUiState(
     val contact: Contact? = null,
     val toDiscuss: String = "",
     val nextTalkDate: String = "",
+    val nextTalkDateEpochMs: Long? = null,
     val pastMoments: List<PastMoment> = emptyList(),
     val filteredMoments: List<PastMoment> = emptyList(),
     val selectedCategory: MomentCategory? = null,
@@ -68,10 +69,12 @@ class ConnectionDetailViewModel(
         val daysUntilBirthday = contact?.let { calculateDaysUntilBirthday(it) }
         val relationshipHealth = deriveHealth(daysSinceLastContact, contactMoments.size)
         val aiPrepBullets = generateAiPrepBullets(contact, contactMoments, _aiInsightStore)
+        val nextTalkDateInfo = contact?.let { calculateNextTalkDate(it.reconnectInterval.days) }
 
         PersonDetailUiState(
             contact = contact,
-            nextTalkDate = contact?.let { calculateNextTalkDate(it.reconnectInterval.days) } ?: "",
+            nextTalkDate = nextTalkDateInfo?.first ?: "",
+            nextTalkDateEpochMs = nextTalkDateInfo?.second,
             toDiscuss = contactMoments.firstOrNull()?.title
                 ?: "Tap 'Log Moment' to start tracking your conversations.",
             pastMoments = contactMoments,
@@ -126,32 +129,46 @@ class ConnectionDetailViewModel(
         groupName: String? = null,
         locationMood: String? = null,
         momentId: String = UUID.randomUUID().toString(),
-        additionalContactIds: List<String> = emptyList()
+        additionalContactIds: List<String> = emptyList(),
+        dateEpochMs: Long = System.currentTimeMillis(),
+        isUpdate: Boolean = false
     ) {
         viewModelScope.launch {
-            val now = System.currentTimeMillis()
-
             val combinedIds = buildSet {
                 add(contactId)
                 addAll(additionalContactIds)
             }.toList()
 
-            _momentStore.addMoment(
-                PastMoment(
-                    id = momentId,
-                    contactIds = combinedIds,
-                    title = title,
-                    description = description,
-                    dateEpochMs = now,
-                    category = category,
-                    images = images,
-                    isCoreMemory = isCoreMemory,
-                    wasPresent = wasPresent,
-                    groupName = groupName,
-                    locationMood = locationMood,
-                    createdAtEpochMs = now
-                )
+            val existingCreatedAt = if (isUpdate) {
+                _momentStore.moments.first().find { it.id == momentId }?.createdAtEpochMs
+            } else null
+
+            val moment = PastMoment(
+                id = momentId,
+                contactIds = combinedIds,
+                title = title,
+                description = description,
+                dateEpochMs = dateEpochMs,
+                category = category,
+                images = images,
+                isCoreMemory = isCoreMemory,
+                wasPresent = wasPresent,
+                groupName = groupName,
+                locationMood = locationMood,
+                createdAtEpochMs = existingCreatedAt ?: System.currentTimeMillis()
             )
+
+            if (isUpdate) {
+                _momentStore.updateMoment(moment)
+            } else {
+                _momentStore.addMoment(moment)
+            }
+        }
+    }
+
+    fun deleteMoment(momentId: String) {
+        viewModelScope.launch {
+            _momentStore.deleteMoment(momentId)
         }
     }
 
@@ -164,7 +181,10 @@ class ConnectionDetailViewModel(
             "Catch up on: ${moments.first().title}",
             "Ask how things have been since you last spoke",
             "Share something new happening in your life"
-        ) else emptyList()
+        ) else listOf(
+            "Ask how things have been since you last spoke",
+            "Share something new happening in your life"
+        )
 
         return if (contact != null) {
             runCatching {
@@ -175,11 +195,11 @@ class ConnectionDetailViewModel(
         }
     }
 
-    private fun calculateNextTalkDate(days: Int): String {
+    private fun calculateNextTalkDate(days: Int): Pair<String, Long> {
         val cal = Calendar.getInstance().also { it.add(Calendar.DAY_OF_YEAR, days) }
         val dayName = SimpleDateFormat("EEEE", Locale.getDefault()).format(cal.time)
         val date = SimpleDateFormat("MMM d", Locale.getDefault()).format(cal.time)
-        return "$dayName, $date"
+        return Pair("$dayName, $date", cal.timeInMillis)
     }
 
     private fun calculateDaysUntilBirthday(contact: Contact): Int? {

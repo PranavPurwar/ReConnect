@@ -10,7 +10,8 @@ sealed class UpcomingEvent {
         val age: Int,
         val day: Int,
         val month: String,
-        val note: String
+        val note: String,
+        val seedColorArgb: Int? = null
     ) : UpcomingEvent()
 
     data class CatchUp(
@@ -28,4 +29,3 @@ sealed class UpcomingEvent {
         val actionLabel: String
     ) : UpcomingEvent()
 }
-

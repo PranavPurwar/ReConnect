@@ -28,7 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -60,6 +59,7 @@ fun ConnectionDetailScreen(
     val persistedSeedColor = contact?.seedColorArgb?.let(::Color) ?: DefaultSeedColor
     val context = LocalContext.current
     var showLogSheet by remember { mutableStateOf(false) }
+    var momentToEdit by remember { mutableStateOf<PastMoment?>(null) }
     var showMoreMenu by remember { mutableStateOf(false) }
 
     // Removed specific local bitmapping, using placeholder color
@@ -617,6 +617,30 @@ fun ConnectionDetailScreen(
                                                 android.provider.CalendarContract.Events.DESCRIPTION,
                                                 "ReConnect reminder — ${state.nextTalkDate}"
                                             )
+                                            contact.seedColorArgb?.let {
+                                                putExtra(
+                                                    android.provider.CalendarContract.Events.EVENT_COLOR,
+                                                    it
+                                                )
+                                            }
+                                            if (contact.phoneNumber.isNotBlank()) {
+                                                putExtra(
+                                                    Intent.EXTRA_PHONE_NUMBER,
+                                                    contact.phoneNumber
+                                                )
+                                            } else {
+                                                putExtra(Intent.EXTRA_EMAIL, contact.name)
+                                            }
+                                            state.nextTalkDateEpochMs?.let {
+                                                putExtra(
+                                                    android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                    it
+                                                )
+                                                putExtra(
+                                                    android.provider.CalendarContract.EXTRA_EVENT_ALL_DAY,
+                                                    true
+                                                )
+                                            }
                                         }
                                         context.startActivity(intent)
                                     },
@@ -747,7 +771,14 @@ fun ConnectionDetailScreen(
                             onOpenGallery = onOpenGallery,
                             modifier = Modifier
                                 .animateItem()
-                                .padding(horizontal = 20.dp)
+                                .padding(horizontal = 20.dp),
+                            onEditMoment = { moment ->
+                                momentToEdit = moment
+                                showLogSheet = true
+                            },
+                            onDeleteMoment = { id ->
+                                viewModel.deleteMoment(id)
+                            }
                         )
                     }
                 }
@@ -757,8 +788,12 @@ fun ConnectionDetailScreen(
         if (showLogSheet) {
             LogMomentScreen(
                 initialContactId = contactId,
-                onDismiss = { showLogSheet = false },
-                onSave = { title, description, category, images, isCoreMemory, wasPresent, groupName, locationMood, momentId, additionalContactIds ->
+                initialMoment = momentToEdit,
+                onDismiss = {
+                    showLogSheet = false
+                    momentToEdit = null
+                },
+                onSave = { title, description, category, images, isCoreMemory, wasPresent, groupName, locationMood, momentId, additionalContactIds, dateEpochMs ->
                     viewModel.logMoment(
                         contactId = contactId,
                         title = title,
@@ -770,9 +805,12 @@ fun ConnectionDetailScreen(
                         groupName = groupName,
                         locationMood = locationMood,
                         momentId = momentId,
-                        additionalContactIds = additionalContactIds
+                        additionalContactIds = additionalContactIds,
+                        dateEpochMs = dateEpochMs,
+                        isUpdate = momentToEdit != null
                     )
                     showLogSheet = false
+                    momentToEdit = null
                 }
             )
         }
@@ -883,7 +921,9 @@ private fun PastMomentItem(
     moment: PastMoment,
     isLast: Boolean,
     modifier: Modifier = Modifier,
-    onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> }
+    onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
+    onEditMoment: (PastMoment) -> Unit = {},
+    onDeleteMoment: (String) -> Unit = {}
 ) {
     val icon = when (moment.category) {
         MomentCategory.DINING -> Icons.Default.Restaurant
@@ -902,6 +942,8 @@ private fun PastMomentItem(
         val fmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
         fmt.format(Date(moment.dateEpochMs))
     }
+
+    var showMenu by remember { mutableStateOf(false) }
 
     Row(
         modifier = modifier
@@ -946,11 +988,59 @@ private fun PastMomentItem(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    dateLabel,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        dateLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit") },
+                                onClick = {
+                                    showMenu = false
+                                    onEditMoment(moment)
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Edit, contentDescription = null)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete") },
+                                onClick = {
+                                    showMenu = false
+                                    onDeleteMoment(moment.id)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     moment.title,

@@ -1,7 +1,10 @@
 [versions]
 agp = "9.2.0-alpha07"
+gradle = "9.2.0-alpha07"
+kotlinGradlePlugin = "2.3.20"
+kotlinxCoroutinesCore = "1.10.2"
 sketch = "4.4.0-beta02"
-supabase = "3.4.1"
+supabase = "3.5.0"
 room = "2.8.4"
 ksp = "2.3.6"
 coreKtx = "1.18.0"
@@ -16,12 +19,15 @@ navigationCompose = "2.10.0-alpha02"
 paletteKtx = "1.0.0"
 uiTextGoogleFonts = "1.11.0-beta02"
 serialization = "1.10.0"
-coroutines = "1.10.2"
-ktor = "3.4.1"
-media3 = "1.5.0"
+ktor = "3.4.2"
+media3 = "1.10.0"
 
 [libraries]
 
+gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesCore" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }
 supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt" }
 supabase-sketch = { module = "io.github.jan-tennert.supabase:sketch-integration" }
@@ -64,13 +70,11 @@ androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", versi
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

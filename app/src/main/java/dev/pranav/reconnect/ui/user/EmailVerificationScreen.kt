@@ -50,8 +50,6 @@ fun EmailVerificationScreen(
     // Explicitly check for session on start and periodically
     LaunchedEffect(Unit) {
         while (isVerifying) {
-            val session = AppContainer.authStore.getCurrentSession()
-            // The authStore will update its state if session exists
             if (AppContainer.authStore.authState.value == AuthState.Authenticated) {
                 println("EmailVerificationScreen: Found existing session. Navigating success.")
                 isVerifying = false

@@ -55,6 +55,6 @@ class FileAttachmentStore(
             val mimeTypeMap = MimeTypeMap.getSingleton()
             return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri))
         }
-        return MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(java.io.File(uri.path ?: "")).toString())
+        return MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(File(uri.path ?: "")).toString())
     }
 }

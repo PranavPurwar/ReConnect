@@ -3,7 +3,6 @@ package dev.pranav.reconnect.ui.theme
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.toArgb
 import androidx.palette.graphics.Palette
 import kotlin.math.abs
 

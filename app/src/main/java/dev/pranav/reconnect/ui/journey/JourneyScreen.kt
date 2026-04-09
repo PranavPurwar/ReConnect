@@ -48,7 +48,6 @@ import java.util.Locale
 
 @Composable
 fun JourneyScreen(
-    innerPadding: PaddingValues = PaddingValues(),
     onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
     onBackClick: () -> Unit = {},
     viewModel: JourneyViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
@@ -135,8 +134,8 @@ fun JourneyScreen(
             if (state.filteredItems.isEmpty()) {
                 item {
                     EmptyJourneyState(
-                        categoryName = state.selectedCategory?.displayName()?.lowercase(),
-                        modifier = Modifier.animateItem()
+                        Modifier.animateItem(),
+                        state.selectedCategory?.displayName()?.lowercase(),
                     )
                 }
             } else {
@@ -166,9 +165,6 @@ private fun TimelineEntry(
 ) {
     val dotColor = item.moment.category.dotColor()
     val dateLabel = remember(item.moment.dateEpochMs) {
-        // Equivalent to previous dateLabel format
-        // SampleSeedDataSource used rough strings "LAST WEEK".
-        // But logic changed to epochMs. So use date format.
         val fmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
         fmt.format(Date(item.moment.dateEpochMs)).uppercase()
     }
@@ -356,8 +352,8 @@ fun JourneyFilterChip(
 
 @Composable
 private fun EmptyJourneyState(
-    categoryName: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier,
+    categoryName: String? = null
 ) {
     Box(
         modifier = modifier

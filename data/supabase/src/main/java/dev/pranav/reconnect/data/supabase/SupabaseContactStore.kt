@@ -1,7 +1,7 @@
 package dev.pranav.reconnect.data.supabase
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.storage.ContactStore
 import io.github.jan.supabase.SupabaseClient
@@ -77,8 +77,8 @@ class SupabaseContactStore(
         val path = "${user.id}/$contactId/photo.jpg"
 
         try {
-            val uri = Uri.parse(uriStr)
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            val bytes =
+                context.contentResolver.openInputStream(uriStr.toUri())?.use { it.readBytes() }
                 ?: return
 
             client.storage.from("contacts").upload(path, bytes) {

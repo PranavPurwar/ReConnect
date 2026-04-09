@@ -112,7 +112,7 @@ object SupabaseAuthManager {
         if (configError != null) return Result.failure(configError)
 
         return runCatching {
-            val user = client.auth.currentUserOrNull() ?: throw Exception("Not logged in")
+            val user = client.auth.currentUserOrNull() ?: throw kotlin.Exception("Not logged in")
 
             client.auth.updateUser {
                 if (user.email != email) {
@@ -143,15 +143,13 @@ object SupabaseAuthManager {
 
     private fun validateConfig(): IllegalStateException? {
         if (SUPABASE_URL.isBlank() || SUPABASE_KEY.isBlank()) {
-            return IllegalStateException(
+            return kotlin.IllegalStateException(
                 "Supabase config is missing. Set URL and KEY in SupabaseAuthManager."
             )
         }
         return null
     }
 }
-
-val supabase: SupabaseClient = SupabaseAuthManager.client
 
 val SupabaseClient.id: String
     get() {

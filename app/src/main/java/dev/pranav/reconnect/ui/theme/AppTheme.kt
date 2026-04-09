@@ -52,7 +52,6 @@ data class AddConnectionExpressiveColors(
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Suppress("unused")
 fun colorSchemeFromSeed(seedColor: Color = DefaultSeedColor): ColorScheme {
     val harmonizedSeedColor = lerp(DefaultSeedColor, seedColor, 0.88f)
     val primary = lerp(Color.White, harmonizedSeedColor, 0.82f)
@@ -86,7 +85,6 @@ fun colorSchemeFromSeed(seedColor: Color = DefaultSeedColor): ColorScheme {
     )
 }
 
-@Suppress("unused")
 fun addConnectionExpressiveColors(scheme: ColorScheme): AddConnectionExpressiveColors {
     return AddConnectionExpressiveColors(
         avatarContainer = scheme.primary.copy(alpha = 0.16f),
@@ -112,7 +110,6 @@ fun AppTheme(content: @Composable () -> Unit) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-@Suppress("unused")
 fun SeedColorTheme(colors: ColorScheme, content: @Composable () -> Unit) {
     MaterialExpressiveTheme(
         colorScheme = colors,

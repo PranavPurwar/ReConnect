@@ -3,6 +3,7 @@ import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 
+@Suppress("UnusedReceiverParameter")
 internal fun Project.configureKotlinAndroid(
     commonExtension: Any,
 ) {

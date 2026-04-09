@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import com.github.panpf.sketch.request.ComposableImageOptions
@@ -39,7 +40,7 @@ fun ImagePreviewScreen(
     val pagerState = rememberPagerState(initialPage = safeIndex) { imageUris.size }
 
     fun isVideoUri(uriString: String): Boolean {
-        val uri = android.net.Uri.parse(uriString)
+        val uri = uriString.toUri()
         val mimeType = if (uri.scheme == android.content.ContentResolver.SCHEME_CONTENT) {
             context.contentResolver.getType(uri)
         } else {

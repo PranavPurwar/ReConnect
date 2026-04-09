@@ -137,18 +137,51 @@ class SupabaseMomentStore(private val client: SupabaseClient): MomentStore {
             }
             client.postgrest["moment_contacts"].insert(contactInserts)
         }
+
+        refreshTrigger.tryEmit(Unit)
+    }
+
+    override suspend fun updateMoment(moment: PastMoment) {
+        val momentUpdate = MomentInsert(
+            id = moment.id,
+            title = moment.title,
+            description = moment.description,
+            dateEpochMs = moment.dateEpochMs,
+            category = moment.category,
+            images = moment.images,
+            isCoreMemory = moment.isCoreMemory,
+            wasPresent = moment.wasPresent,
+            groupName = moment.groupName,
+            locationMood = moment.locationMood,
+            createdAtEpochMs = moment.createdAtEpochMs
+        )
+        client.postgrest["moments"].update(momentUpdate) {
+            filter { eq("id", moment.id) }
+        }
+
+        client.postgrest["moment_contacts"].delete {
+            filter { eq("moment_id", moment.id) }
+        }
+
+        if (moment.contactIds.isNotEmpty()) {
+            val contactInserts = moment.contactIds.map { contactId ->
+                MomentContactInsert(momentId = moment.id, contactId = contactId)
+            }
+            client.postgrest["moment_contacts"].insert(contactInserts)
+        }
+
+        refreshTrigger.tryEmit(Unit)
+    }
+
+    override suspend fun deleteMoment(momentId: String) {
+        client.postgrest["moments"].delete {
+            filter { eq("id", momentId) }
+        }
         refreshTrigger.tryEmit(Unit)
     }
 
     override suspend fun getMomentsFor(contactId: String): List<PastMoment> {
-        return client.postgrest["moments"]
-            .select(columns = Columns.list("*, moment_contacts!inner(contact_id)")) {
-                filter {
-                    eq("moment_contacts.contact_id", contactId)
-                }
-            }
-            .decodeList<MomentSupabase>()
-            .map { it.toDomain() }
+        return moments.first().filter { it.contactIds.contains(contactId) }
     }
 
     override suspend fun deleteMomentsForContact(contactId: String) {

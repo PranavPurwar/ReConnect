@@ -17,7 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.shareIn
 
 class SupabaseContactStore(
     private val client: SupabaseClient,
@@ -30,10 +30,10 @@ class SupabaseContactStore(
     override val contacts: Flow<List<Contact>> = client.from("contacts")
         .selectAsFlow(Contact::id)
         .map { it }
-        .stateIn(
+        .shareIn(
             scope = storeScope,
             started = SharingStarted.Lazily,
-            initialValue = emptyList()
+            replay = 1
         )
 
     override suspend fun addContacts(newContacts: List<Contact>) {

@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,6 +30,7 @@ import androidx.compose.ui.zIndex
 import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.core.model.MomentImage
+import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.MediumGray
@@ -42,6 +44,7 @@ private const val MAX_IMAGES = 100
 @Composable
 fun LogMomentScreen(
     initialContactId: String? = null,
+    initialMoment: PastMoment? = null,
     onDismiss: () -> Unit,
     onSave: (
         title: String,
@@ -53,26 +56,44 @@ fun LogMomentScreen(
         groupName: String?,
         locationMood: String?,
         momentId: String,
-        contactIds: List<String>
+        contactIds: List<String>,
+        dateEpochMs: Long
     ) -> Unit
 ) {
     val context = LocalContext.current
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf(MomentCategory.GENERAL) }
-    var selectedImages by remember { mutableStateOf(emptyList<MomentImage>()) }
-    var isCoreMemory by remember { mutableStateOf(false) }
-    var wasPresent by remember { mutableStateOf(true) }
-    var groupName by remember { mutableStateOf("") }
-    var locationMood by remember { mutableStateOf("") }
-    var selectedContactIds by remember(initialContactId) {
-        mutableStateOf(initialContactId?.let { setOf(it) } ?: emptySet())
+    var title by remember { mutableStateOf(initialMoment?.title ?: "") }
+    var description by remember { mutableStateOf(initialMoment?.description ?: "") }
+    var category by remember { mutableStateOf(initialMoment?.category ?: MomentCategory.GENERAL) }
+    var selectedImages by remember {
+        mutableStateOf(
+            initialMoment?.images ?: emptyList<MomentImage>()
+        )
+    }
+    var isCoreMemory by remember { mutableStateOf(initialMoment?.isCoreMemory ?: false) }
+    var wasPresent by remember { mutableStateOf(initialMoment?.wasPresent ?: true) }
+    var groupName by remember { mutableStateOf(initialMoment?.groupName ?: "") }
+    var locationMood by remember { mutableStateOf(initialMoment?.locationMood ?: "") }
+    var selectedContactIds by remember(initialContactId, initialMoment) {
+        mutableStateOf(
+            if (initialMoment != null) {
+                initialMoment.contactIds.toSet()
+            } else {
+                initialContactId?.let { setOf(it) } ?: emptySet()
+            }
+        )
     }
 
     var isUploading by remember { mutableStateOf(false) }
     var uploadErrors by remember { mutableStateOf<List<MomentImage>>(emptyList()) }
     var successfulUploads by remember { mutableStateOf<List<MomentImage>>(emptyList()) }
     var currentMomentId by remember { mutableStateOf("") }
+    var selectedDateMs by remember {
+        mutableStateOf(
+            initialMoment?.dateEpochMs ?: System.currentTimeMillis()
+        )
+    }
+    var showDatePicker by remember { mutableStateOf(false) }
+
     val scope = rememberCoroutineScope()
     val attachmentStore = remember { AppContainer.attachmentStore }
     val contactStore = remember { AppContainer.contactStore }
@@ -80,6 +101,7 @@ fun LogMomentScreen(
 
     val allContacts by contactStore.contacts.collectAsState(initial = emptyList())
     var showContactSheet by remember { mutableStateOf(false) }
+    var imageForCaption by remember { mutableStateOf<MomentImage?>(null) }
 
     val imagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(MAX_IMAGES)
@@ -96,6 +118,24 @@ fun LogMomentScreen(
     }
 
     BackHandler(onBack = { if (!isUploading) onDismiss() })
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMs)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selectedDateMs = it }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -134,6 +174,34 @@ fun LogMomentScreen(
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
                 singleLine = true
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { showDatePicker = true }
+                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val formattedDate = remember(selectedDateMs) {
+                    java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.US)
+                        .format(java.util.Date(selectedDateMs))
+                }
+                Column {
+                    Text("Date", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = formattedDate,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = "Select Date",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -270,12 +338,11 @@ fun LogMomentScreen(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Notes (optional)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 10,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
-                maxLines = 5
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary)
             )
 
             Text("Category", style = MaterialTheme.typography.labelLarge)
@@ -319,67 +386,61 @@ fun LogMomentScreen(
             if (selectedImages.isNotEmpty()) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.height(140.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     items(selectedImages, key = { it.id }) { image ->
-                        Column(modifier = Modifier.width(120.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                            ) {
-                                val finalUri = if (image.uri.startsWith("content://")) image.uri else photoResolver.resolveMomentPhoto(image.uri)
-                                AsyncImage(
-                                    uri = finalUri,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
+                        Box(
+                            modifier = Modifier
+                                .width(130.dp)
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { imageForCaption = image }
+                        ) {
+                            val finalUri =
+                                if (image.uri.startsWith("content://")) image.uri else photoResolver.resolveMomentPhoto(
+                                    image.uri
                                 )
-                                IconButton(
-                                    onClick = {
-                                        selectedImages = selectedImages.filter { it.id != image.id }
-                                    },
+                            AsyncImage(
+                                uri = finalUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            if (!image.caption.isNullOrBlank()) {
+                                Box(
                                     modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.Black.copy(alpha = 0.5f))
+                                        .align(Alignment.BottomStart)
+                                        .fillMaxWidth()
+                                        .background(Color.Black.copy(alpha = 0.4f))
+                                        .padding(horizontal = 8.dp, vertical = 6.dp)
                                 ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Remove",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(14.dp)
+                                    Text(
+                                        text = image.caption!!,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White,
+                                        maxLines = 1,
                                     )
                                 }
                             }
-                            Spacer(Modifier.height(4.dp))
-                            OutlinedTextField(
-                                value = image.caption ?: "",
-                                onValueChange = { newCaption ->
-                                    if (newCaption.length <= 50) {
-                                        selectedImages = selectedImages.map {
-                                            if (it.id == image.id) it.copy(caption = newCaption) else it
-                                        }
-                                    }
-                                },
-                                placeholder = {
-                                    Text(
-                                        "Caption...",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
+
+                            IconButton(
+                                onClick = {
+                                    selectedImages = selectedImages.filter { it.id != image.id }
                                 },
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(40.dp),
-                                textStyle = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GoldPrimary,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedContainerColor = Color.Transparent
+                                    .align(Alignment.TopEnd)
+                                    .padding(4.dp)
+                                    .size(24.dp)
+                            ) {
+                                // Design modification: Using light shadow and no background instead of a grey background square
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Remove",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp) // Removed clipping and black background
                                 )
-                            )
+                            }
                         }
                     }
                 }
@@ -411,16 +472,19 @@ fun LogMomentScreen(
                             uploadErrors = emptyList()
                             successfulUploads = emptyList()
 
-                            val momentId =
-                                UUID.randomUUID().toString() // Generate upfront for AttachmentStore
+                            val momentId = initialMoment?.id ?: UUID.randomUUID().toString()
                             currentMomentId = momentId
                             val successfulImages = mutableListOf<MomentImage>()
                             val failedImages = mutableListOf<MomentImage>()
 
                             for (img in selectedImages) {
+                                if (!img.uri.startsWith("content://")) {
+                                    successfulImages.add(img)
+                                    continue
+                                }
                                 try {
                                     val up = attachmentStore.persistMomentAttachments(
-                                        contactId = "N/A", // Actually unused by SupabaseAttachmentStore
+                                        contactId = "N/A",
                                         momentId = momentId,
                                         sourceUris = listOf(img)
                                     )
@@ -429,7 +493,7 @@ fun LogMomentScreen(
                                     } else {
                                         failedImages.add(img)
                                     }
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     failedImages.add(img)
                                 }
                             }
@@ -449,7 +513,8 @@ fun LogMomentScreen(
                                     groupName.takeIf { it.isNotBlank() },
                                     locationMood.takeIf { it.isNotBlank() },
                                     momentId,
-                                    selectedContactIds.toList()
+                                    selectedContactIds.toList(),
+                                    selectedDateMs
                                 )
                             }
                         }
@@ -551,6 +616,56 @@ fun LogMomentScreen(
             }
         }
 
+        if (imageForCaption != null) {
+            val currentImage = imageForCaption!!
+            ModalBottomSheet(
+                onDismissRequest = { imageForCaption = null },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp, top = 8.dp)
+                ) {
+                    Text(
+                        text = "Photo Caption",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    OutlinedTextField(
+                        value = currentImage.caption ?: "",
+                        onValueChange = { newCaption ->
+                            if (newCaption.length <= 150) {
+                                selectedImages = selectedImages.map {
+                                    if (it.id == currentImage.id) it.copy(caption = newCaption) else it
+                                }
+                                imageForCaption = imageForCaption?.copy(caption = newCaption)
+                            }
+                        },
+                        placeholder = { Text("Write something about this photo...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 6,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary)
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { imageForCaption = null },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary)
+                    ) {
+                        Text("Done")
+                    }
+                }
+            }
+        }
+
         if (uploadErrors.isNotEmpty()) {
             AlertDialog(
                 onDismissRequest = { uploadErrors = emptyList() },
@@ -568,7 +683,8 @@ fun LogMomentScreen(
                             groupName.takeIf { it.isNotBlank() },
                             locationMood.takeIf { it.isNotBlank() },
                             currentMomentId,
-                            selectedContactIds.toList()
+                            selectedContactIds.toList(),
+                            selectedDateMs
                         )
                         uploadErrors = emptyList()
                         successfulUploads = emptyList()

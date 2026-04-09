@@ -55,7 +55,8 @@ object EventProvider {
                             age = 0,
                             day = contact.birthdayDay!!,
                             month = monthName,
-                            note = ""
+                            note = "",
+                            seedColorArgb = contact.seedColorArgb
                         ),
                         timeInMillis = bCal.timeInMillis,
                         daysAway = daysAway
@@ -95,4 +96,3 @@ object EventProvider {
             .take(limit)
     }
 }
-

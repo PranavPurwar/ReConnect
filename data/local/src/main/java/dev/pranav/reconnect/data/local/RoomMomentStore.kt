@@ -17,6 +17,17 @@ class RoomMomentStore(private val momentDao: MomentDao): MomentStore {
         momentDao.insertMoment(moment.toEntity())
     }
 
+    override suspend fun updateMoment(moment: PastMoment) {
+        momentDao.updateMoment(moment.toEntity())
+    }
+
+    override suspend fun deleteMoment(momentId: String) {
+        val existing = momentDao.getAllMoments().find { it.id == momentId }
+        if (existing != null) {
+            momentDao.deleteMoment(existing)
+        }
+    }
+
     override suspend fun getMomentsFor(contactId: String): List<PastMoment> {
         return momentDao.getAllMoments()
             .map { it.toModel() }

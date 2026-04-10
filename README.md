@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="icon.svg" width="240" />
+  <img src="icon.svg" width="140" />
 
   <h1>ReConnect</h1>
 

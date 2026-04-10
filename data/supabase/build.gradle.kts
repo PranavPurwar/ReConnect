@@ -1,12 +1,10 @@
 import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     id("reconnect.android.library")
     alias(libs.plugins.kotlin.serialization)
 }
-
-import java . util . Properties
-        import java . io . FileInputStream
 
 android {
     namespace = "dev.pranav.reconnect.data.supabase"

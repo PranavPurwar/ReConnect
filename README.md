@@ -30,6 +30,33 @@ Track shared moments, save event photos, and get reminders to stay in touch.
 
 ---
 
+
+## Screenshots
+
+<p align="center">
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/01.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/02.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/03.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/04.png' width='20%'>
+</p>
+
+<p align="center">
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/05.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/06.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/07.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/08.png' width='20%'>
+</p>
+
+<p align="center">
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/09.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/10.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/11.png' width='20%'>
+  <img src='fastlane/metadata/android/en-US/images/phoneScreenshots/12.png' width='20%'>
+</p>
+
+---
+
+
 ## What ReConnect is (and isn’t)
 
 - Not a social media platform  

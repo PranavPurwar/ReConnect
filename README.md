@@ -3,138 +3,136 @@
 
   <h1>ReConnect</h1>
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](#license)
+  <p><i>Stay close to people — without feeds, followers, or distractions.</i></p>
 
-
+  <p>
+    <img src="https://img.shields.io/github/stars/PranavPurwar/ReConnect?style=for-the-badge" />
+    <img src="https://img.shields.io/github/forks/PranavPurwar/ReConnect?style=for-the-badge" />
+    <img src="https://img.shields.io/github/issues/PranavPurwar/ReConnect?style=for-the-badge" />
+  </p>
 </div>
 
-ReConnect is an open-source Android app designed to help you stay in touch with the people who
-matter most. Manage your relationships, set custom reconnect intervals, track meaningful past
-moments, and stay on top of upcoming events—all wrapped in a beautiful and expressive Material You
-design.
+---
 
-**Offline-first • Secure Cloud Sync • No ads**
+ReConnect is an open-source Android app to help you stay close to the people who matter.
+
+Track shared moments, save event photos, and get reminders to stay in touch.
 
 ---
 
-## Features
+## TL;DR
 
-- Smart contact management for personal relationships
-- Customisable "Reconnect Intervals" to remind you when it's time to reach out
-- Track past moments and memories with your contacts
-- Upcoming event reminders (birthdays, anniversaries, and more)
-- Offline-first architecture with seamless and secure cloud sync via Supabase
-- Clean, intuitive layout using modern Android technologies and Material 3 Expressive design
+- Stay in touch with people using reminders  
+- Log real-life moments (meetups, trips, etc.)  
+- Attach photos to events  
+- Works for individuals and groups  
+- Optional cloud sync or fully local mode  
 
 ---
 
-## Why ReConnect?
+## What ReConnect is (and isn’t)
 
-Unlike other personal CRM apps filled with paywalls, subscriptions, and complex business features,
-ReConnect is completely free and open source.
+- Not a social media platform  
+- Not a messaging app  
+- Not a productivity CRM  
 
-It focuses purely on personal relationships, providing
-a beautiful experience with no artificial limitations, helping you build and maintain stronger
-connections with friends and family.
+ReConnect helps you maintain real-world connections over time.
+
+---
+
+## What You Can Do
+
+### 🤝 Staying in Touch
+- Add people and define reconnect intervals  
+- Get reminders if it’s been a while since you last interacted  
+
+### 📸 Moments & Memories
+- Create moments for meetups, trips, or hangouts  
+- Attach photos to moments  
+- Support for both one-on-one and group moments  
+
+### 🕓 Timeline & Events
+- View past interactions and shared moments over time  
+- Track birthdays, anniversaries, and other important dates  
+
+### ☁️ Sync & Variants
+- Cloud sync via Supabase for backups and multi-device access  
+- Local-only variant available for fully on-device usage  
+
+---
+
+## Example
+
+You meet friends for dinner.
+
+- Create a moment  
+- Add everyone who was there  
+- Attach photos  
+- Set how often to stay in touch  
+
+If time passes without interaction, ReConnect reminds you — so people don’t slowly fade out of your life.
 
 ---
 
 ## Getting Started
 
-> The app is currently in early testing.  
-> Join the Discord server for bug reports and contributions.
+> The app is in early testing. Join the Discord server for bug reports and contributions.
+> 
+> https://discord.gg/46wCMRVAre
 
-[![Support Server](https://img.shields.io/discord/1206980670405083216.svg?label=Discord&logo=Discord&colorB=CF7E5B&style=for-the-badge)](https://discord.gg/46wCMRVAre)
-
----
-
-### Download
-
-Download builds from:  
+### Download  
 https://github.com/PranavPurwar/ReConnect/actions
 
----
-
 ### First Launch
-
-Create your profile and start adding contacts.  
-Define how often you want to reconnect with them.
-
----
+- Create your profile  
+- Add people  
+- Define reconnect intervals  
 
 ### Variants
 
-- **local**  
-  Runs entirely on-device.  
-  No sync support, no summaries.
-
-- **supabase**  
-  Syncs your data securely to the cloud.  
-  Your data is never sold to any third party.
+| Variant   | Description |
+|----------|------------|
+| local     | Fully on-device, no sync |
+| supabase  | Cloud sync, backups, multi-device |
 
 ---
 
-### Cloud & AI
+## Cloud & AI
 
-Some AI features are planned for the cloud variant:
-- text suggestions based on past moments  
-- relationship indicators  
+- Free sync with limited media storage  
+- Paid tiers may include:
+  - additional storage  
+  - AI-based features (planned)  
 
-The cloud variant will remain free for sync, with:
-- limited cloud storage for media attached to moments (photos, etc.)  
-- no AI features in the free tier  
-
-Paid tiers may be introduced for:
-- additional cloud storage for media attached to moments  
-- AI features  
-
-This is necessary to sustain server, database, and compute (AI) costs.
+This helps sustain server, database, and compute costs.
 
 ---
 
-## Support Development
+## Support
 
-If ReConnect has been helpful to you, please consider supporting its development with a small
-donation. Every contribution matters.
+If you find ReConnect useful, consider supporting development:
 
-**Open Collective:** https://opencollective.com/invokevirtual
+> Open Collective supports cards, bank transfers, and more  
 
-**Bitcoin (BTC):** `bc1q3eesyfn7lhql4c2khv56cyvw2374zkhe7r97hz`
+https://opencollective.com/invokevirtual
 
-**Ethereum (ETH):** `0xD80A8D6E0fa433A8bDFC2D3F325159Db70605816`
+> UPI and crypto options are also available
 
-**Monero (XMR):**
-`848dAWBVk8GMaoRHg6HUP5CbkpY9pJra1KNQAo9yJ6vbJLFsjFD8ZHkGpi6FhVY7rsD4U9iR7brk64eknsC3bS7tV9JRU4f`
-
-**Solana (SOL):** `7FxTAJLmhXFp6wxVbUTpf8jDmzEX1CKVMdE8oLPNQvyb`
-
-**Litecoin (LTC):** `ltc1q3pqyj5ge5rdmqr00w03x4tlhm6rhcc6wrfyx8k`
-
-**UPI (India):** `pranavpurwar@fam`
+https://pranavpurwar.github.io/donate.html
 
 ---
 
 ## License
 
-ReConnect is licensed under the **GNU General Public License v3.0 (GPLv3)** with **Additional Terms
-under Section 7**.
+ReConnect is licensed under the **GNU General Public License v3.0 (GPLv3)** with **Additional Terms under Section 7**.
 
-We welcome forks and learning from the ReConnect codebase! To maintain the project's heritage and
-ensure that contributors receive fair acknowledgment, all modified or redistributed versions are
-required to include clear, user-facing attribution in accordance with GPLv3 Section 7(b).
+### Mandatory Attribution
 
-### Mandatory Prominent Attribution
+Any modified or redistributed version **must** include visible, user-facing attribution:
 
-As an Additional Term under Section 7(b) of the GPLv3, any derivative work, fork, published replica,
-or redistribution of this software **must** include a prominent, unremovable attribution.
-
-The attribution **must**:
-
-1. Clearly state: *"Based on the original open-source project ReConnect by Pranav Purwar."*
-2. Be highly visible to the end-user within the app's primary user interface (for example,
-   permanently visible in the main "Settings" or "About" screen, not hidden away in a secondary
-   legal text file).
-3. Include a direct, clickable URL back to this original exact GitHub repository.
+- "Based on the original open-source project ReConnect by Pranav Purwar."  
+- Clearly visible in the app UI  
+- Include a link to the original repository  
 
 ### Trademark & Branding
 
@@ -174,4 +172,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ---
 
-Thank you for using ReConnect! Together, we can build stronger relationships.
+Stay in touch. That’s all it’s about.

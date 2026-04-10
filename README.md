@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app/src/main/ic_launcher-playstore.png" width="200" />
+  <img src="icon.png" width="200" />
 
   <h1>ReConnect</h1>
 
@@ -38,17 +38,10 @@ connections with friends and family.
 
 ## Getting Started
 
-Download from [GitHub Releases](https://github.com/PranavPurwar/ReConnect/releases).
+Download from [GitHub Actions](https://github.com/PranavPurwar/ReConnect/actions).
 
 On first launch, you can create your profile and start adding contacts, defining how often you want
 to reconnect with them.
-
----
-
-## Help Translate
-
-ReConnect is available in multiple languages. Help make it accessible to more people by contributing
-translations on [Weblate](https://hosted.weblate.org/engage/reconnect/).
 
 ---
 
@@ -72,7 +65,7 @@ donation. Every contribution matters.
 
 **UPI (India):** `pranavpurwar@fam`
 
-<img src="upi.jpeg" width="200" />
+<img src="https://github.com/aload0/Reef/blob/main/upi.jpeg?raw=true" width="200" />
 
 ---
 
@@ -81,10 +74,9 @@ donation. Every contribution matters.
 ReConnect is licensed under the **GNU General Public License v3.0 (GPLv3)** with **Additional Terms
 under Section 7**.
 
-To strictly comply with F-Droid's required open-source guidelines, we cannot legally ban commercial
-forks. However, to explicitly prevent clones from silently taking credit and surpassing the original
-without acknowledging the source, we enforce a strict UI attribution policy explicitly permitted
-under GPLv3 Section 7(b).
+We welcome forks and learning from the ReConnect codebase! To maintain the project's heritage and
+ensure that contributors receive fair acknowledgment, all modified or redistributed versions are
+required to include clear, user-facing attribution in accordance with GPLv3 Section 7(b).
 
 ### Mandatory Prominent Attribution
 
@@ -114,7 +106,7 @@ strictly protected trademarks of Pranav Purwar.
 ```text
 GNU General Public License v3.0 (with Section 7 Additional Terms)
 
-Copyright (c) 2023-2026 Pranav Purwar
+Copyright (c) 2026 Pranav Purwar
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

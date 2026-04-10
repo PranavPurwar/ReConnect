@@ -1,10 +1,35 @@
+import java.io.FileInputStream
+
 plugins {
     id("reconnect.android.library")
     alias(libs.plugins.kotlin.serialization)
 }
 
+import java . util . Properties
+        import java . io . FileInputStream
+
 android {
     namespace = "dev.pranav.reconnect.data.supabase"
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        FileInputStream(localPropertiesFile).use { localProperties.load(it) }
+    }
+
+    val supabaseUrl = localProperties.getProperty("SUPABASE_URL") ?: System.getenv("SUPABASE_URL")
+    ?: project.findProperty("SUPABASE_URL")?.toString() ?: ""
+    val supabaseKey = localProperties.getProperty("SUPABASE_KEY") ?: System.getenv("SUPABASE_KEY")
+    ?: project.findProperty("SUPABASE_KEY")?.toString() ?: ""
+
+    defaultConfig {
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
+    }
 }
 
 dependencies {

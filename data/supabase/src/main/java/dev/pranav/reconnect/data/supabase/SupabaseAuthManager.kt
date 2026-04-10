@@ -21,9 +21,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 object SupabaseAuthManager {
-    private const val SUPABASE_URL = "https://kxjpijwezjnrqyfktbhr.supabase.co"
-    private const val SUPABASE_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4anBpandlempucnF5Zmt0YmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTg0NjIsImV4cCI6MjA4OTEzNDQ2Mn0.8CNi2Loz5K7QAibmbDjtdlN63RbPXwEsew25OoWT3eA"
+    private val SUPABASE_URL = BuildConfig.SUPABASE_URL
+    private val SUPABASE_KEY = BuildConfig.SUPABASE_KEY
 
     @OptIn(SupabaseExperimental::class)
     val client by lazy {

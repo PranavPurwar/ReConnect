@@ -1,9 +1,10 @@
 <div align="center">
-  <img src="icon.svg" width="200" style="border-radius: 25%;" />
+  <img src="icon.svg" width="240" />
 
   <h1>ReConnect</h1>
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](#license)
+
 
 </div>
 
@@ -12,7 +13,7 @@ matter most. Manage your relationships, set custom reconnect intervals, track me
 moments, and stay on top of upcoming events—all wrapped in a beautiful and expressive Material You
 design.
 
-**Offline-first • Secure Cloud Sync • No ads • Completely free**
+**Offline-first • Secure Cloud Sync • No ads**
 
 ---
 
@@ -30,7 +31,9 @@ design.
 ## Why ReConnect?
 
 Unlike other personal CRM apps filled with paywalls, subscriptions, and complex business features,
-ReConnect is completely free and open source. It focuses purely on personal relationships, providing
+ReConnect is completely free and open source.
+
+It focuses purely on personal relationships, providing
 a beautiful experience with no artificial limitations, helping you build and maintain stronger
 connections with friends and family.
 
@@ -38,10 +41,54 @@ connections with friends and family.
 
 ## Getting Started
 
-Download from [GitHub Actions](https://github.com/PranavPurwar/ReConnect/actions).
+> The app is currently in early testing.  
+> Join the Discord server for bug reports and contributions.
 
-On first launch, you can create your profile and start adding contacts, defining how often you want
-to reconnect with them.
+[![Support Server](https://img.shields.io/discord/1206980670405083216.svg?label=Discord&logo=Discord&colorB=CF7E5B&style=for-the-badge)](https://discord.gg/46wCMRVAre)
+
+---
+
+### Download
+
+Download builds from:  
+https://github.com/PranavPurwar/ReConnect/actions
+
+---
+
+### First Launch
+
+Create your profile and start adding contacts.  
+Define how often you want to reconnect with them.
+
+---
+
+### Variants
+
+- **local**  
+  Runs entirely on-device.  
+  No sync support, no summaries.
+
+- **supabase**  
+  Syncs your data securely to the cloud.  
+  Your data is never sold to any third party.
+
+---
+
+### Cloud & AI
+
+Some AI features are planned for the cloud variant:
+- text suggestions based on past moments  
+- relationship indicators  
+
+The cloud variant will remain free for sync, with:
+- limited cloud storage for media attached to moments (photos, etc.)  
+- no AI features in the free tier  
+
+Paid tiers may be introduced for:
+- additional cloud storage for media attached to moments  
+- AI features  
+
+This is necessary to sustain server, database, and compute (AI) costs.
 
 ---
 
@@ -64,8 +111,6 @@ donation. Every contribution matters.
 **Litecoin (LTC):** `ltc1q3pqyj5ge5rdmqr00w03x4tlhm6rhcc6wrfyx8k`
 
 **UPI (India):** `pranavpurwar@fam`
-
-<img src="https://github.com/aload0/Reef/blob/main/upi.jpeg?raw=true" width="200" />
 
 ---
 

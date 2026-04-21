@@ -26,7 +26,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.withContext
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.nio.ByteBuffer
 import kotlin.math.max
 import kotlin.math.min
@@ -155,8 +157,8 @@ public object ImageCompressor {
             progress = progress,
         )
 
-        // Preserve EXIF for JPEG if requested
-        if (options.keepExif && finalFormat == CompressFormat.JPEG) {
+        // Preserve EXIF if requested
+        if (options.keepExif) {
             runCatching { copyExif(context, source, outFile) }
         }
 
@@ -168,7 +170,7 @@ public object ImageCompressor {
     }
 
     private fun ensureParent(file: File) {
-        if (!file.parentFile.exists()) file.parentFile.mkdirs()
+        if (!file.parentFile!!.exists()) file.parentFile!!.mkdirs()
     }
 
     internal fun computeTargetSize(
@@ -226,9 +228,7 @@ public object ImageCompressor {
                 BitmapFactory.Options().apply {
                     inSampleSize = sampleSize
                     inPreferredConfig = Bitmap.Config.ARGB_8888
-                    if (Build.VERSION.SDK_INT >= 26) {
-                        inPreferredColorSpace = colorSpace.toAndroid()
-                    }
+                    inPreferredColorSpace = colorSpace.toAndroid()
                 }
 
             when (source) {
@@ -308,7 +308,7 @@ public object ImageCompressor {
         progress: ProgressEmitter?,
     ) {
         if (options.maxBytes == null) {
-            FileOutputStream(outFile).use { fos ->
+            outFile.outputStream().use { fos ->
                 srcBitmap.compress(format.toAndroid(options), options.quality.coerceIn(0, 100), fos)
             }
             return
@@ -334,7 +334,7 @@ public object ImageCompressor {
             val bytes = baos.toByteArray()
 
             if (bytes.size.toLong() <= options.maxBytes) {
-                BufferedOutputStream(FileOutputStream(outFile)).use { it.write(bytes) }
+                outFile.outputStream().buffered().use { it.write(bytes) }
                 if (current !== srcBitmap) current.recycle()
                 return
             }
@@ -345,7 +345,7 @@ public object ImageCompressor {
                 val newW = (width * 0.85f).roundToInt().coerceAtLeast(minEdge)
                 val newH = (height * 0.85f).roundToInt().coerceAtLeast(minEdge)
                 if (newW == width && newH == height) {
-                    BufferedOutputStream(FileOutputStream(outFile)).use { it.write(bytes) }
+                    outFile.outputStream().buffered().use { it.write(bytes) }
                     if (current !== srcBitmap) current.recycle()
                     return
                 }
@@ -359,7 +359,7 @@ public object ImageCompressor {
             iteration++
         }
 
-        FileOutputStream(outFile).use { fos ->
+        outFile.outputStream().use { fos ->
             current.compress(format.toAndroid(options), quality, fos)
         }
         if (current !== srcBitmap) current.recycle()
@@ -392,7 +392,7 @@ public object ImageCompressor {
                 ExifInterface.TAG_WHITE_BALANCE,
                 ExifInterface.TAG_F_NUMBER,
                 ExifInterface.TAG_EXPOSURE_TIME,
-                ExifInterface.TAG_ISO_SPEED_RATINGS,
+                ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY,
                 ExifInterface.TAG_FOCAL_LENGTH,
                 ExifInterface.TAG_GPS_LATITUDE,
                 ExifInterface.TAG_GPS_LATITUDE_REF,

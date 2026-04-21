@@ -33,6 +33,7 @@ android {
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:storage"))
+    implementation(project(":tiny-compressor-ktx"))
 
     api(platform(libs.supabase.bom))
     api(libs.supabase.auth)

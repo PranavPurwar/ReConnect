@@ -1,6 +1,8 @@
 [versions]
-agp = "9.2.0-alpha07"
-gradle = "9.2.0-alpha07"
+agp = "9.1.1"
+annotation = "1.10.0"
+exifinterface = "1.4.2"
+gradle = "9.3.0-alpha01"
 kotlinGradlePlugin = "2.3.20"
 kotlinxCoroutinesCore = "1.10.2"
 sketch = "4.4.0"
@@ -23,6 +25,8 @@ work = "2.11.2"
 
 [libraries]
 
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesCore" }

@@ -41,7 +41,7 @@ object NotificationHelper {
         notificationId: Int,
         title: String,
         content: String,
-        contactId: String
+        contactId: String? = null
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(
@@ -52,13 +52,16 @@ object NotificationHelper {
             return
         }
 
-        // Deep link to explicitly open ConnectionDetail for this contact
-        val intent = Intent(
-            Intent.ACTION_VIEW,
-            Uri.parse("reconnect://contact/$contactId"),
-            context,
-            MainActivity::class.java
-        )
+        val intent = if (!contactId.isNullOrBlank()) {
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("reconnect://contact/$contactId"),
+                context,
+                MainActivity::class.java
+            )
+        } else {
+            Intent(context, MainActivity::class.java)
+        }
 
         val pendingIntent = PendingIntent.getActivity(
             context,

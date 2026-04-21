@@ -9,6 +9,7 @@ private const val KEY_LOGIN_DONE = "login_done"
 private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
 private const val KEY_NOTIFY_BIRTHDAYS = "notify_birthdays"
 private const val KEY_NOTIFY_CATCHUPS = "notify_catchups"
+private const val KEY_NOTIFY_MEMORIES = "notify_memories"
 private const val KEY_REMINDER_FREQUENCY = "reminder_frequency"
 
 enum class StartDestination {
@@ -59,6 +60,12 @@ class AppSessionStore(context: Context) {
 
     fun setNotifyCatchUps(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_NOTIFY_CATCHUPS, enabled) }
+    }
+
+    fun isNotifyMemoriesEnabled(): Boolean = prefs.getBoolean(KEY_NOTIFY_MEMORIES, true)
+
+    fun setNotifyMemories(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_NOTIFY_MEMORIES, enabled) }
     }
 
     fun getReminderFrequency(): ReminderFrequency {

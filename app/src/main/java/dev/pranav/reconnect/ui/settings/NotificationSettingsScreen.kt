@@ -28,6 +28,7 @@ fun NotificationSettingsScreen(
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
     val notifyBirthdays by viewModel.notifyBirthdays.collectAsStateWithLifecycle()
     val notifyCatchUps by viewModel.notifyCatchUps.collectAsStateWithLifecycle()
+    val notifyMemories by viewModel.notifyMemories.collectAsStateWithLifecycle()
     val reminderFrequency by viewModel.reminderFrequency.collectAsStateWithLifecycle()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -106,6 +107,21 @@ fun NotificationSettingsScreen(
                             Switch(
                                 checked = notifyCatchUps,
                                 onCheckedChange = { viewModel.toggleNotifyCatchUps(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = GoldPrimary
+                                )
+                            )
+                        }
+                    )
+                    SettingsItem(
+                        icon = Icons.Default.History,
+                        title = "Memories",
+                        onClick = { viewModel.toggleNotifyMemories(!notifyMemories) },
+                        trailingContent = {
+                            Switch(
+                                checked = notifyMemories,
+                                onCheckedChange = { viewModel.toggleNotifyMemories(it) },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = GoldPrimary

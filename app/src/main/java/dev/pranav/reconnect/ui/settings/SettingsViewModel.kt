@@ -27,6 +27,9 @@ class SettingsViewModel(
     private val _notifyCatchUps = MutableStateFlow(sessionStore.isNotifyCatchUpsEnabled())
     val notifyCatchUps: StateFlow<Boolean> = _notifyCatchUps.asStateFlow()
 
+    private val _notifyMemories = MutableStateFlow(sessionStore.isNotifyMemoriesEnabled())
+    val notifyMemories: StateFlow<Boolean> = _notifyMemories.asStateFlow()
+
     private val _reminderFrequency = MutableStateFlow(sessionStore.getReminderFrequency())
     val reminderFrequency: StateFlow<ReminderFrequency> = _reminderFrequency.asStateFlow()
 
@@ -69,6 +72,11 @@ class SettingsViewModel(
     fun toggleNotifyCatchUps(enabled: Boolean) {
         sessionStore.setNotifyCatchUps(enabled)
         _notifyCatchUps.value = enabled
+    }
+
+    fun toggleNotifyMemories(enabled: Boolean) {
+        sessionStore.setNotifyMemories(enabled)
+        _notifyMemories.value = enabled
     }
 
     fun updateReminderFrequency(frequency: ReminderFrequency) {

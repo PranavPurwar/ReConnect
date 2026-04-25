@@ -30,15 +30,6 @@ fun EmailVerificationScreen(
     var isVerifying by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Start a timer for verification
-    var verificationTimeMs by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(isVerifying) {
-        while (isVerifying) {
-            delay(100)
-            verificationTimeMs += 100
-        }
-    }
-
     LaunchedEffect(authState) {
         if (authState == AuthState.Authenticated) {
             println("EmailVerificationScreen: Auth success. Navigating success.")
@@ -47,21 +38,8 @@ fun EmailVerificationScreen(
         }
     }
 
-    // Explicitly check for session on start and periodically
-    LaunchedEffect(Unit) {
-        while (isVerifying) {
-            if (AppContainer.authStore.authState.value == AuthState.Authenticated) {
-                println("EmailVerificationScreen: Found existing session. Navigating success.")
-                isVerifying = false
-                onVerificationSuccess()
-                break
-            }
-            delay(1000) // Check every second as fallback
-        }
-    }
-
-    // Timeout if verification takes too long (extended to 20s for slow networks)
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isVerifying) {
+        if (!isVerifying) return@LaunchedEffect
         delay(20000)
         if (isVerifying) {
             println("EmailVerificationScreen: Verification timed out after 20s")
@@ -77,7 +55,8 @@ fun EmailVerificationScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .statusBarsPadding()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {

@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.di.AppContainer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.debounce
 
+@kotlinx.coroutines.FlowPreview
 class SocialCircleViewModel(
     contactStore: ContactStore = AppContainer.contactStore
 ): ViewModel() {
@@ -19,13 +22,13 @@ class SocialCircleViewModel(
 
     val filteredContacts: StateFlow<List<Contact>> = combine(
         contactStore.contacts,
-        _searchQuery,
+        _searchQuery.debounce(150L),
         _selectedCategory
     ) { contacts, query, category ->
         applyFilters(contacts, query, category)
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
 

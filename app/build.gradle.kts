@@ -25,6 +25,8 @@ android {
         create("supabase") {
             dimension = "backend"
             buildConfigField("boolean", "ENABLE_LOGIN_GATE", "true")
+
+            isDefault = true
         }
     }
 

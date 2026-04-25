@@ -151,7 +151,7 @@ fun SettingsScreen(
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = CharcoalText,
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
                         border = BorderStroke(
                             1.dp,
@@ -256,7 +256,7 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
                     RoundedCornerShape(24.dp)
                 )
                 .clip(RoundedCornerShape(24.dp))
-                .background(Color.White),
+                .background(MaterialTheme.colorScheme.surface),
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             content()

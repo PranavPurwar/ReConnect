@@ -9,11 +9,10 @@ import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.core.storage.DeviceContactsDataSource
 import dev.pranav.reconnect.di.AppContainer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 data class ContactPickerUiState(
     val contacts: List<Contact> = emptyList(),
@@ -23,9 +22,6 @@ data class ContactPickerUiState(
     val searchQuery: String = "",
     val needsContactsPermission: Boolean = false
 ) {
-    val filteredContacts: List<Contact>
-        get() = filterContacts(contacts, searchQuery)
-
     val selectedCount: Int get() = selectedIds.size
 
     companion object {
@@ -43,6 +39,21 @@ class ContactPickerViewModel(
 
     private val _contactStore = contactStore
     private val _uiState = MutableStateFlow(ContactPickerUiState())
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    @OptIn(FlowPreview::class)
+    val filteredContacts: StateFlow<List<Contact>> = combine(
+        _uiState.map { it.contacts },
+        _searchQuery.debounce(150L.milliseconds)
+    ) { contacts, query ->
+        ContactPickerUiState.filterContacts(contacts, query)
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     val uiState: StateFlow<ContactPickerUiState> = _uiState.asStateFlow()
 
     fun loadContacts(contentResolver: ContentResolver) {
@@ -91,6 +102,7 @@ class ContactPickerViewModel(
     }
 
     fun updateSearch(query: String) {
+        _searchQuery.value = query
         _uiState.update { it.copy(searchQuery = query) }
     }
 
@@ -104,14 +116,14 @@ class ContactPickerViewModel(
                     isImportant = true
                 )
             }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _contactStore.addContacts(selected)
         }
     }
 
     fun importSelected() {
         val selected = _uiState.value.contacts.filter { it.id in _uiState.value.selectedIds }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _contactStore.addContacts(
                 selected.map {
                     it.copy(

@@ -8,8 +8,10 @@ import dev.pranav.reconnect.core.model.EventProvider
 import dev.pranav.reconnect.core.model.UpcomingEvent
 import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.di.AppContainer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,9 +31,9 @@ class HomeViewModel(
             quickCatchUps = contacts.map { it to "Reconnect · ${it.reconnectInterval.label}" },
             isLoading = false
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = HomeUiState(isLoading = true)
     )
     fun addContact(form: ContactFormData, photoUri: String?, onComplete: () -> Unit = {}) {

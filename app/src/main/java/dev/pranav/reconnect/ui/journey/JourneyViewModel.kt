@@ -7,6 +7,7 @@ import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.core.storage.MomentStore
 import dev.pranav.reconnect.di.AppContainer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 
 data class JourneyItem(
@@ -16,7 +17,8 @@ data class JourneyItem(
 
 data class JourneyUiState(
     val filteredItems: List<JourneyItem> = emptyList(),
-    val selectedCategory: MomentCategory? = null
+    val selectedCategory: MomentCategory? = null,
+    val isLoading: Boolean = true
 )
 
 class JourneyViewModel(
@@ -37,11 +39,12 @@ class JourneyViewModel(
                 items = allItems,
                 selectedCategory = selectedCategory
             ),
-            selectedCategory = selectedCategory
+            selectedCategory = selectedCategory,
+            isLoading = false
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = JourneyUiState()
     )
 

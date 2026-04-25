@@ -380,7 +380,7 @@ public object ImageCompressor {
                     }
 
                 is Source.Bytes -> ExifInterface(ByteArrayInputStream(source.bytes))
-            } ?: return
+            }
 
         val dstExif = ExifInterface(outFile.absolutePath)
         val tags =

@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -42,6 +43,9 @@ import dev.pranav.reconnect.ui.journey.JourneyScreen
 import dev.pranav.reconnect.ui.navigation.AppRoute
 import dev.pranav.reconnect.ui.navigation.ReConnectNavGraph
 import dev.pranav.reconnect.ui.navigation.openGallery
+import dev.pranav.reconnect.ui.circle.SocialCircleViewModel
+import dev.pranav.reconnect.ui.home.HomeViewModel
+import dev.pranav.reconnect.ui.journey.JourneyViewModel
 import dev.pranav.reconnect.ui.settings.SettingsScreen
 import dev.pranav.reconnect.ui.settings.SettingsViewModel
 import dev.pranav.reconnect.ui.theme.AppTheme
@@ -154,6 +158,10 @@ fun ReConnectApp(
 fun MainScreen(navController: NavController) {
     val context = LocalContext.current
     val sessionStore = remember(context) { AppSessionStore(context) }
+    val homeViewModel: HomeViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
+    val socialCircleViewModel: SocialCircleViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
+    val journeyViewModel: JourneyViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
+    val settingsViewModel = remember { SettingsViewModel(sessionStore) }
     var selectedTab by rememberSaveable { mutableStateOf(AppDestination.HOME) }
 
     NavigationSuiteScaffold(
@@ -184,17 +192,18 @@ fun MainScreen(navController: NavController) {
             when (targetTab) {
                 AppDestination.CIRCLE -> SocialCircleScreen(
                     onContactClick = { id -> navController.navigate(AppRoute.ConnectionDetail(id)) },
-                    onAddClick = { navController.navigate(AppRoute.AddConnection(null)) }
+                    onAddClick = { navController.navigate(AppRoute.AddConnection(null)) },
+                    viewModel = socialCircleViewModel
                 )
 
                 AppDestination.HISTORY -> JourneyScreen(
                     onOpenGallery = { title, uris ->
                         navController.openGallery(title, uris)
-                    }
+                    },
+                    viewModel = journeyViewModel
                 )
 
                 AppDestination.SETTINGS -> {
-                    val settingsViewModel = remember { SettingsViewModel(sessionStore) }
                     SettingsScreen(
                         viewModel = settingsViewModel,
                         onEditProfileClick = { navController.navigate(AppRoute.EditProfile) },
@@ -211,7 +220,8 @@ fun MainScreen(navController: NavController) {
                 else -> HomeScreen(
                     onContactClick = { id -> navController.navigate(AppRoute.ConnectionDetail(id)) },
                     onAddClick = { navController.navigate(AppRoute.AddConnection(null)) },
-                    onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE }
+                    onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE },
+                    viewModel = homeViewModel
                 )
             }
         }

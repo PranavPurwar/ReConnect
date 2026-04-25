@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.SansFontFamily
 import dev.pranav.reconnect.ui.theme.UltraFamily
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,7 +56,7 @@ fun LoginScreen(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(60.dp))
@@ -116,7 +118,9 @@ fun LoginScreen(
                     scope.launch {
                         isLoading = true
                         errorMessage = null
-                        val result = AppContainer.authStore.signIn(email.trim(), password)
+                        val result = withContext(Dispatchers.IO) {
+                            AppContainer.authStore.signIn(email.trim(), password)
+                        }
                         isLoading = false
                         if (result.isSuccess) onLoginSuccess() else errorMessage =
                             result.exceptionOrNull()?.message
@@ -163,8 +167,11 @@ internal fun ActionButton(text: String, isLoading: Boolean, enabled: Boolean, on
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp),
-        shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)
+        shape = RoundedCornerShape(20.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colorScheme.primary,
+            contentColor = colorScheme.onPrimary
+        )
     ) {
         if (isLoading) CircularProgressIndicator(
             Modifier.size(24.dp),

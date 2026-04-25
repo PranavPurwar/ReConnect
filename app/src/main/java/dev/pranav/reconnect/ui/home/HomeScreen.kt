@@ -210,80 +210,85 @@ fun HomeScreen(
             .padding(bottom = innerPadding.calculateBottomPadding())
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(
-                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                    bottom = 100.dp
-                )
-            ) {
-                item {
-                    HomeHeader()
+            Spacer(Modifier.statusBarsPadding())
+            HomeHeader()
+
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ContainedLoadingIndicator()
                 }
-
-                if (state.isLoading) {
-                    // Do not show empty state while loading
-                } else if (isEmpty) {
-                    item {
-                        EmptyHomeState()
-                    }
-                } else {
-                    if (birthdayEvents.isNotEmpty()) {
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 100.dp)
+                ) {
+                    if (isEmpty) {
                         item {
-                            SectionHeader(title = "Upcoming Birthdays")
-                            val pagerState = rememberPagerState(pageCount = { birthdayEvents.size })
-                            HorizontalPager(
-                                state = pagerState,
-                                contentPadding = PaddingValues(horizontal = 24.dp),
-                                pageSpacing = 12.dp,
-                                modifier = Modifier.fillMaxWidth()
-                            ) { page ->
-                                val event = birthdayEvents[page]
-                                BirthdayBashCard(event, onContactClick)
-                            }
+                            EmptyHomeState()
                         }
-                    }
-
-                    if (connectionEvents.isNotEmpty()) {
-                        item {
-                            SectionHeader(title = "To Reconnect")
-                            val pagerState =
-                                rememberPagerState(pageCount = { connectionEvents.size })
-                            HorizontalPager(
-                                state = pagerState,
-                                contentPadding = PaddingValues(horizontal = 24.dp),
-                                pageSpacing = 12.dp,
-                                modifier = Modifier.fillMaxWidth()
-                            ) { page ->
-                                when (val event = connectionEvents[page]) {
-                                    is UpcomingEvent.CatchUp -> CatchUpCard(event)
-                                    is UpcomingEvent.TimelineReminder -> TimelineReminderCard(
-                                        event,
-                                        onContactClick
-                                    )
-
-                                    else -> {}
+                    } else {
+                        if (birthdayEvents.isNotEmpty()) {
+                            item {
+                                SectionHeader(title = "Upcoming Birthdays")
+                                val pagerState = rememberPagerState(pageCount = { birthdayEvents.size })
+                                HorizontalPager(
+                                    state = pagerState,
+                                    contentPadding = PaddingValues(horizontal = 24.dp),
+                                    pageSpacing = 12.dp,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { page ->
+                                    val event = birthdayEvents[page]
+                                    BirthdayBashCard(event, onContactClick)
                                 }
                             }
-                            Spacer(Modifier.height(16.dp))
-                        }
-                    }
-
-                    if (state.quickCatchUps.isNotEmpty()) {
-                        item {
-                            QuickCatchUpsHeader(onViewAllClick = onViewAllCatchUpsClick)
                         }
 
-                        items(
-                            items = state.quickCatchUps.take(5),
-                            key = { pair -> pair.first.id }
-                        ) { (contact, subtitle) ->
-                            QuickCatchUpRow(
-                                contact = contact,
-                                subtitle = subtitle,
-                                onClick = onContactClick,
-                                modifier = Modifier.animateItem()
-                            )
+                        if (connectionEvents.isNotEmpty()) {
+                            item {
+                                SectionHeader(title = "To Reconnect")
+                                val pagerState =
+                                    rememberPagerState(pageCount = { connectionEvents.size })
+                                HorizontalPager(
+                                    state = pagerState,
+                                    contentPadding = PaddingValues(horizontal = 24.dp),
+                                    pageSpacing = 12.dp,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { page ->
+                                    when (val event = connectionEvents[page]) {
+                                        is UpcomingEvent.CatchUp -> CatchUpCard(event)
+                                        is UpcomingEvent.TimelineReminder -> TimelineReminderCard(
+                                            event,
+                                            onContactClick
+                                        )
+
+                                        else -> {}
+                                    }
+                                }
+                                Spacer(Modifier.height(16.dp))
+                            }
+                        }
+
+                        if (state.quickCatchUps.isNotEmpty()) {
+                            item {
+                                QuickCatchUpsHeader(onViewAllClick = onViewAllCatchUpsClick)
+                            }
+
+                            items(
+                                items = state.quickCatchUps.take(5),
+                                key = { pair -> pair.first.id }
+                            ) { (contact, subtitle) ->
+                                QuickCatchUpRow(
+                                    contact = contact,
+                                    subtitle = subtitle,
+                                    onClick = onContactClick,
+                                    modifier = Modifier.animateItem()
+                                )
+                            }
                         }
                     }
                 }
@@ -302,17 +307,6 @@ fun HomeScreen(
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Add Contact", fontWeight = FontWeight.Bold)
-        }
-
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                ContainedLoadingIndicator()
-            }
         }
     }
 }

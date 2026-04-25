@@ -11,6 +11,7 @@ import dev.pranav.reconnect.core.storage.AttachmentStore
 import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.core.storage.MomentStore
 import dev.pranav.reconnect.di.AppContainer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -85,7 +86,7 @@ class ConnectionDetailViewModel(
             daysSinceLastContact = daysSinceLastContact,
             aiPrepBullets = aiPrepBullets
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = PersonDetailUiState()

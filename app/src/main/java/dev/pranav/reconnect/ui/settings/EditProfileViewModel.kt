@@ -3,10 +3,12 @@ package dev.pranav.reconnect.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.di.AppContainer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class EditProfileViewModel: ViewModel() {
 
@@ -41,7 +43,9 @@ class EditProfileViewModel: ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             _updateResult.value = null
-            val result = AppContainer.authStore.updateProfile(fullName, email, avatarBytes)
+            val result = withContext(Dispatchers.IO) {
+                AppContainer.authStore.updateProfile(fullName, email, avatarBytes)
+            }
             _isLoading.value = false
             _updateResult.value = result
         }

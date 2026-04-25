@@ -69,6 +69,7 @@ fun AddConnectionScreen(
 ) {
     val context = LocalContext.current
     val state = remember { AddConnectionState() }
+    var isSaving by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val existingContact = remember(contactIdToEdit, uiState.quickCatchUps) {
@@ -166,6 +167,7 @@ fun AddConnectionScreen(
         bottomBar = {
             AddConnectionFooter(
                 onAdd = {
+                    isSaving = true
                     if (isEditMode) {
                         existingContact.let { contact ->
                             viewModel.updateContact(
@@ -181,7 +183,10 @@ fun AddConnectionScreen(
                                     seedColorArgb = state.seedColor.toArgb()
                                 ),
                                 photoUri = state.photoUri,
-                                onComplete = { onAdded() }
+                                onComplete = {
+                                    isSaving = false
+                                    onAdded()
+                                }
                             )
                         }
                     } else {
@@ -199,12 +204,16 @@ fun AddConnectionScreen(
                                 seedColorArgb = state.seedColor.toArgb()
                             ),
                             photoUri = state.photoUri,
-                            onComplete = { onAdded() }
+                            onComplete = {
+                                isSaving = false
+                                onAdded()
+                            }
                         )
                     }
                 },
-                canAdd = state.name.isNotBlank(),
+                canAdd = state.name.isNotBlank() && !isSaving,
                 isEditMode = isEditMode,
+                isSaving = isSaving,
                 expressiveScheme = expressiveScheme
             )
         }
@@ -605,6 +614,17 @@ fun AddConnectionScreen(
     } else {
         SeedColorTheme(colors = expressiveScheme, content = screenContent)
     }
+
+    if (isSaving) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.35f)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -875,9 +895,11 @@ private fun ContactSearchSheet(
         isLoading = false
     }
 
-    val filtered = remember(query, contacts) {
-        if (query.isBlank()) contacts
-        else contacts.filter { it.name.contains(query, ignoreCase = true) }
+    val filtered by remember {
+        derivedStateOf {
+            if (query.isBlank()) contacts
+            else contacts.filter { it.name.contains(query, ignoreCase = true) }
+        }
     }
 
     ModalBottomSheet(
@@ -1040,6 +1062,7 @@ private fun AddConnectionFooter(
     onAdd: () -> Unit,
     canAdd: Boolean,
     isEditMode: Boolean,
+    isSaving: Boolean,
     expressiveScheme: ColorScheme
 ) {
     Surface(
@@ -1057,7 +1080,7 @@ private fun AddConnectionFooter(
         ) {
             Button(
                 onClick = onAdd,
-                enabled = canAdd,
+                enabled = canAdd && !isSaving,
                 modifier = Modifier
                     .weight(1f)
                     .height(68.dp),
@@ -1070,19 +1093,27 @@ private fun AddConnectionFooter(
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
             ) {
-                Icon(
-                    if (isEditMode) Icons.Default.Save else Icons.Default.PersonAdd,
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    if (isEditMode) "SAVE DETAILS" else "ADD TO CIRCLE",
-                    fontFamily = UltraFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 17.sp,
-                    letterSpacing = 1.sp
-                )
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        if (isEditMode) Icons.Default.Save else Icons.Default.PersonAdd,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        if (isEditMode) "SAVE DETAILS" else "ADD TO CIRCLE",
+                        fontFamily = UltraFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 17.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
             }
         }
     }

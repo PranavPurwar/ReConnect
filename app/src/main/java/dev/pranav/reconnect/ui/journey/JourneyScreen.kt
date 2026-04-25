@@ -129,7 +129,18 @@ fun JourneyScreen(
                 }
             }
 
-            if (state.filteredItems.isEmpty()) {
+            if (state.isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            } else if (state.filteredItems.isEmpty()) {
                 item {
                     EmptyJourneyState(
                         Modifier.animateItem(),
@@ -201,7 +212,7 @@ private fun TimelineEntry(
                 .weight(1f)
                 .padding(bottom = 24.dp),
             shape = RoundedCornerShape(48.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(modifier = Modifier.padding(28.dp)) {
@@ -308,12 +319,12 @@ private fun ImageGrid(uris: List<String>, onClick: () -> Unit) {
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(0.4f)),
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "+$extraCount",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                         )
                     }

@@ -62,8 +62,9 @@ fun OnboardingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(top = scaffoldPadding.calculateTopPadding())
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(24.dp))
@@ -132,7 +133,7 @@ fun OnboardingScreen(
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = GoldPrimary,
-                    contentColor = NavyDark
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text("Sync Friends  →", style = MaterialTheme.typography.titleMedium)
@@ -144,7 +145,7 @@ fun OnboardingScreen(
                 Text(
                     text = "NOT NOW",
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 

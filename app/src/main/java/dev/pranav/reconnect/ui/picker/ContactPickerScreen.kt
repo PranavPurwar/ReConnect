@@ -46,6 +46,8 @@ fun ContactPickerScreen(
     viewModel: ContactPickerViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val filteredContacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -108,7 +110,7 @@ fun ContactPickerScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
-                    value = state.searchQuery,
+                    value = searchQuery,
                     onValueChange = { viewModel.updateSearch(it) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Search contacts…") },
@@ -146,13 +148,39 @@ fun ContactPickerScreen(
                         }
                     }
                 }
+            } else if (state.contacts.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No contacts found on this device.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else if (filteredContacts.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No contacts match your search.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(state.filteredContacts, key = { it.id }) { contact ->
+                    items(filteredContacts, key = { it.id }) { contact ->
                         ContactPickerItem(
                             contact = contact,
                             isSelected = contact.id in state.selectedIds,
@@ -162,48 +190,33 @@ fun ContactPickerScreen(
                         )
                     }
                 }
+            }
 
-                if (state.contacts.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No contacts found on this device.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = Color.White
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Button(
+                    onClick = {
+                        viewModel.confirmSelection()
+                        onContinue()
+                    },
+                    enabled = state.selectedCount > 0,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GoldPrimary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Button(
-                        onClick = {
-                            viewModel.confirmSelection()
-                            onContinue()
-                        },
-                        enabled = state.selectedCount > 0,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 16.dp)
-                            .height(56.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = GoldPrimary,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(
-                            text = "Continue · ${state.selectedCount} selected",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
+                    Text(
+                        text = "Continue · ${state.selectedCount} selected",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
             }
         }

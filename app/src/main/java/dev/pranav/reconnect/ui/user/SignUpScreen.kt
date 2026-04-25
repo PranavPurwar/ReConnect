@@ -29,6 +29,8 @@ import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.UltraFamily
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 @Composable
@@ -107,7 +109,7 @@ fun SignUpScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(horizontal = 32.dp)
+                    .padding(horizontal = 24.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -129,15 +131,7 @@ fun SignUpScreen(
                         .clickable { photoPickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (avatarUri == null || imageState.painterState !is PainterState.Success) {
-                        Icon(
-                            Icons.Default.AddAPhoto,
-                            null,
-                            tint = colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                    if (avatarUri != null) {
+                    if (avatarUri != null && imageState.painterState is PainterState.Success) {
                         AsyncImage(
                             uri = avatarUri.toString(),
                             state = imageState,
@@ -145,12 +139,19 @@ fun SignUpScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
+                    } else {
+                        Icon(
+                            Icons.Default.AddAPhoto,
+                            null,
+                            tint = colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
                 }
                 Text(
                     "Tap to upload photo",
                     style = MaterialTheme.typography.labelSmall,
-                    color = colorScheme.outline,
+                    color = colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 Spacer(Modifier.height(32.dp))
@@ -193,12 +194,14 @@ fun SignUpScreen(
                         scope.launch {
                             isLoading = true
                             errorMessage = null
-                            val result = AppContainer.authStore.signUp(
-                                email = email.trim(),
-                                pass = password,
-                                fullName = fullName.trim(),
-                                avatar = avatarBytes
-                            )
+                            val result = withContext(Dispatchers.IO) {
+                                AppContainer.authStore.signUp(
+                                    email = email.trim(),
+                                    pass = password,
+                                    fullName = fullName.trim(),
+                                    avatar = avatarBytes
+                                )
+                            }
                             isLoading = false
                             if (result.isSuccess) {
                                 onSignUpSuccess()

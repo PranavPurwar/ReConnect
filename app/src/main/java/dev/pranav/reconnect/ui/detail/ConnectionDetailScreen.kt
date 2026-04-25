@@ -101,7 +101,10 @@ fun ConnectionDetailScreen(
                         }
                         DropdownMenu(
                             expanded = showMoreMenu,
-                            onDismissRequest = { showMoreMenu = false }
+                            onDismissRequest = { showMoreMenu = false },
+                            modifier = Modifier.widthIn(min = 160.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         ) {
                             if (contact != null) {
                                 DropdownMenuItem(
@@ -176,7 +179,17 @@ fun ConnectionDetailScreen(
             },
             containerColor = Color.Transparent
         ) { scaffoldPadding ->
-            if (contact == null) return@Scaffold
+            if (contact == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = scaffoldPadding.calculateTopPadding()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+                return@Scaffold
+            }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -1001,31 +1014,49 @@ private fun PastMomentItem(
                     Box {
                         IconButton(
                             onClick = { showMenu = true },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 Icons.Default.MoreVert,
                                 contentDescription = "More options",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                         DropdownMenu(
                             expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.widthIn(min = 160.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit") },
+                                text = {
+                                    Text(
+                                        "Edit",
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                },
                                 onClick = {
                                     showMenu = false
                                     onEditMoment(moment)
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Edit, contentDescription = null)
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete") },
+                                text = {
+                                    Text(
+                                        "Delete",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                },
                                 onClick = {
                                     showMenu = false
                                     onDeleteMoment(moment.id)

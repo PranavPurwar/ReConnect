@@ -28,12 +28,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.pranav.reconnect.core.session.MapStyle
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.PlusJakartaSansFamily
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
@@ -46,6 +49,7 @@ fun SettingsScreen(
     val isLoginEnabled by viewModel.isLoginEnabled.collectAsStateWithLifecycle()
     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
     val signOutResult by viewModel.signOutResult.collectAsStateWithLifecycle()
+    val mapStyle by viewModel.mapStyle.collectAsStateWithLifecycle()
 
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
@@ -54,6 +58,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showBackupSheet by remember { mutableStateOf(false) }
+    var showMapStyleSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var pendingExportJson by remember { mutableStateOf<String?>(null) }
 
@@ -241,6 +248,83 @@ fun SettingsScreen(
                     title = "Notifications",
                     onClick = onNotificationsSettingsClick
                 )
+            }
+
+            SettingsSection(title = "Map") {
+                SettingsItem(
+                    icon = Icons.Default.Map,
+                    title = "Map theme",
+                    onClick = { showMapStyleSheet = true },
+                    trailingContent = {
+                        Text(
+                            text = mapStyle.label,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                )
+            }
+
+            if (showMapStyleSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showMapStyleSheet = false },
+                    sheetState = sheetState,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    dragHandle = { BottomSheetDefaults.DragHandle() }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 32.dp, top = 8.dp)
+                    ) {
+                        Text(
+                            text = "Map theme",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontFamily = PlusJakartaSansFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = CharcoalText,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                        )
+
+                        MapStyle.entries.forEach { style ->
+                            val isSelected = style == mapStyle
+                            Surface(
+                                onClick = {
+                                    viewModel.updateMapStyle(style)
+                                    scope.launch {
+                                        sheetState.hide()
+                                        showMapStyleSheet = false
+                                    }
+                                },
+                                color = Color.Transparent,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = style.label,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontFamily = PlusJakartaSansFamily,
+                                        color = if (isSelected) GoldPrimary else CharcoalText,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = "Selected",
+                                            tint = GoldPrimary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             SettingsSection(title = "Resources") {

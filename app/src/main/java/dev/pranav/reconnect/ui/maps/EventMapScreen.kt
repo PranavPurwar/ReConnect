@@ -13,14 +13,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import dev.pranav.reconnect.core.session.AppSessionStore
+import dev.pranav.reconnect.core.session.MapStyle
 import dev.pranav.reconnect.ui.home.RecentMoment
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.MediumGray
 import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.map.GestureOptions
 import org.maplibre.compose.map.MapOptions
 import org.maplibre.compose.map.MaplibreMap
-import org.maplibre.compose.map.OrnamentOptions
 import org.maplibre.compose.material3.CompassButton
 import org.maplibre.compose.material3.ExpandingAttributionButton
 import org.maplibre.compose.material3.ScaleBar
@@ -33,17 +36,20 @@ import org.maplibre.spatialk.geojson.toJson
 fun MomentsMap(
     moments: List<RecentMoment>,
     onMomentClick: (String?) -> Unit,
-    onMapClick: () -> Unit = {}
+    onMapClick: () -> Unit = {},
+    mapStyle: MapStyle = AppSessionStore(LocalContext.current).getMapStyle()
 ) {
     val camera = rememberCameraState()
     val styleState = rememberStyleState()
 
     Box(Modifier.fillMaxSize()) {
         MaplibreMap(
-            baseStyle = BaseStyle.Uri("https://maps.geo.eu-west-1.amazonaws.com/v2/styles/Hybrid/descriptor?key=v1.public.eyJqdGkiOiJiOTNkYjBlZi04OWUzLTQxMGUtODFhMC0zYjZjZjVmZWZmMDgifYtukap0NBaJpcrS6Vit9j03GJgK9Bn-RSu5UCe3jkdSql2kKp3IEgLPtyLssbmKUdVO11sXddjK3ZOZy8V6QG0olv0K_1tOxyMIe4DAO3IV6H4VzHWiaXlbSakGiEgFLuHBdcfLDeMotye7N6rSRxuZb0CN9ytH9VjLly6-NEBRZezO_qPQyvdTFdeZsARIpL0f9YVpxPxPVvUcAWYCk5LpaPseRCDPrY5SlCdA1ZKqUA4F9RzxSTxB73Fel_SoNDkCNaux1VposBu791-uUpDzUpr7leKckrPXrpZ2hwnFbafVxFV9vq4fLTpB5KoBksuLfGNIwAx1RLLxWuMhE4c.ZGQzZDY2OGQtMWQxMy00ZTEwLWIyZGUtOGVjYzUzMjU3OGE4&color-scheme=Light"),
+            baseStyle = BaseStyle.Uri(mapStyle.styleUri),
             cameraState = camera,
             styleState = styleState,
-            options = MapOptions(ornamentOptions = OrnamentOptions.OnlyLogo),
+            options = MapOptions(
+                gestureOptions = GestureOptions.Standard
+            ),
             onMapClick = { pos, offset ->
                 onMapClick()
                 val features = camera.projection?.queryRenderedFeatures(offset)

@@ -6,6 +6,7 @@ import dev.pranav.reconnect.BuildConfig
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.core.session.AppSessionStore
+import dev.pranav.reconnect.core.session.MapStyle
 import dev.pranav.reconnect.core.session.ReminderFrequency
 import dev.pranav.reconnect.core.storage.AuthState
 import dev.pranav.reconnect.di.AppContainer
@@ -35,6 +36,9 @@ class SettingsViewModel(
 
     private val _reminderFrequency = MutableStateFlow(sessionStore.getReminderFrequency())
     val reminderFrequency: StateFlow<ReminderFrequency> = _reminderFrequency.asStateFlow()
+
+    private val _mapStyle = MutableStateFlow(sessionStore.getMapStyle())
+    val mapStyle: StateFlow<MapStyle> = _mapStyle.asStateFlow()
 
     private val _signOutResult = MutableStateFlow<Result<Unit>?>(null)
     val signOutResult: StateFlow<Result<Unit>?> = _signOutResult.asStateFlow()
@@ -105,6 +109,11 @@ class SettingsViewModel(
     fun updateReminderFrequency(frequency: ReminderFrequency) {
         sessionStore.setReminderFrequency(frequency)
         _reminderFrequency.value = frequency
+    }
+
+    fun updateMapStyle(style: MapStyle) {
+        sessionStore.setMapStyle(style)
+        _mapStyle.value = style
     }
 
     fun refreshSyncStatus() {

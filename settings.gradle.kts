@@ -1,3 +1,5 @@
+import java.util.Properties
+
 pluginManagement {
     includeBuild("build-logic")
     repositories {
@@ -15,11 +17,26 @@ pluginManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.projectDir.resolve("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://maven.pkg.github.com/maplibre/maplibre-compose")
+            credentials {
+                username = localProperties.getProperty("gpr.user")
+                password = localProperties.getProperty("gpr.key")
+            }
+        }
     }
 }
 

@@ -223,6 +223,7 @@ fun MainScreen(navController: NavController) {
                     onMomentClick = { id -> /* Need a moment preview screen first */ },
                     onAddClick = { navController.navigate(AppRoute.AddConnection(null)) },
                     onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE },
+                    onMapClick = { navController.navigate(AppRoute.Map) },
                     viewModel = homeViewModel
                 )
             }

@@ -32,6 +32,9 @@ sealed class AppRoute {
     @Serializable
     data class AddConnection(val contactId: String? = null)
     @Serializable
+    data object Map
+
+    @Serializable
     data object Gallery
     @Serializable
     data class ImagePreview(val index: Int)

@@ -33,6 +33,7 @@ import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.CurrentUserAvatar
 import dev.pranav.reconnect.ui.components.ScreenTitle
+import dev.pranav.reconnect.ui.maps.MomentsMap
 import dev.pranav.reconnect.ui.theme.*
 
 @Composable
@@ -41,6 +42,7 @@ fun HomeScreen(
     onMomentClick: (String) -> Unit,
     onAddClick: () -> Unit,
     onViewAllCatchUpsClick: () -> Unit,
+    onMapClick: () -> Unit,
     innerPadding: PaddingValues = PaddingValues(),
     viewModel: HomeViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
@@ -120,6 +122,21 @@ fun HomeScreen(
                     Spacer(Modifier.height(16.dp))
                     MemoryPreviewCard(moment) { onMomentClick(it) }
                 }
+            }
+
+            item {
+                SectionHeader("Your Map")
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                ) {
+                    MomentsMap(listOf(), {}, onMapClick)
+                }
+                Spacer(Modifier.height(40.dp))
             }
         }
     }

@@ -91,6 +91,11 @@ dependencies {
     implementation(libs.sketch.http)
     implementation(libs.sketch.video)
     implementation(libs.sketch.zoom)
+    implementation("org.maplibre.compose:maplibre-compose:0.12.1") {
+        exclude(group = "org.maplibre.gl", module = "android-sdk")
+    }
+    implementation(libs.maplibre.compose.material3)
+    implementation(libs.android.sdk.vulkan)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

@@ -21,6 +21,7 @@ import dev.pranav.reconnect.ui.add.AddConnectionScreen
 import dev.pranav.reconnect.ui.detail.ConnectionDetailScreen
 import dev.pranav.reconnect.ui.gallery.GalleryScreen
 import dev.pranav.reconnect.ui.gallery.ImagePreviewScreen
+import dev.pranav.reconnect.ui.maps.MapScreen
 import dev.pranav.reconnect.ui.onboarding.OnboardingScreen
 import dev.pranav.reconnect.ui.picker.ContactPickerScreen
 import dev.pranav.reconnect.ui.privacy.PrivacyPolicyScreen
@@ -160,6 +161,12 @@ fun ReConnectNavGraph(
 
         composable<AppRoute.Main> {
             MainScreen(navController)
+        }
+
+        composable<AppRoute.Map> {
+            MapScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable<AppRoute.ConnectionDetail>(

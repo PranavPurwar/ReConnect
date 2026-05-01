@@ -1,10 +1,12 @@
 [versions]
 agp = "9.2.0"
+androidSdkVulkan = "13.1.0"
 annotation = "1.10.0"
 exifinterface = "1.4.2"
 gradle = "9.3.0-alpha01"
 kotlinGradlePlugin = "2.3.20"
 kotlinxCoroutinesCore = "1.10.2"
+maplibreComposeMaterial3 = "0.12.1"
 sketch = "4.4.0"
 supabase = "3.5.0"
 room = "2.8.4"
@@ -25,12 +27,14 @@ work = "2.11.2"
 
 [libraries]
 
+android-sdk-vulkan = { module = "org.maplibre.gl:android-sdk-vulkan", version.ref = "androidSdkVulkan" }
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
+maplibre-compose-material3 = { module = "org.maplibre.compose:maplibre-compose-material3", version.ref = "maplibreComposeMaterial3" }
 supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }
 supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt" }
 supabase-sketch = { module = "io.github.jan-tennert.supabase:sketch-integration" }

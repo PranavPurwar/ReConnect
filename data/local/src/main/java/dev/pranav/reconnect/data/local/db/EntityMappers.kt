@@ -47,6 +47,8 @@ fun MomentEntity.toModel(): PastMoment = PastMoment(
     wasPresent = wasPresent,
     groupName = groupName,
     locationMood = locationMood,
+    locationLatitude = locationLatitude,
+    locationLongitude = locationLongitude,
     createdAtEpochMs = createdAtEpochMs
 )
 
@@ -62,5 +64,7 @@ fun PastMoment.toEntity(): MomentEntity = MomentEntity(
     wasPresent = wasPresent,
     groupName = groupName,
     locationMood = locationMood,
+    locationLatitude = locationLatitude,
+    locationLongitude = locationLongitude,
     createdAtEpochMs = createdAtEpochMs
 )

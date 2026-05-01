@@ -53,6 +53,8 @@ class SupabaseMomentStore(private val client: SupabaseClient): MomentStore {
         @SerialName("was_present") val wasPresent: Boolean = true,
         @SerialName("group_name") val groupName: String? = null,
         @SerialName("location_mood") val locationMood: String? = null,
+        @SerialName("location_latitude") val locationLatitude: Double? = null,
+        @SerialName("location_longitude") val locationLongitude: Double? = null,
         @SerialName("created_at_epoch_ms") val createdAtEpochMs: Long,
         @SerialName("moment_contacts") val momentContacts: List<MomentContactSupabase> = emptyList()
     )
@@ -69,6 +71,8 @@ class SupabaseMomentStore(private val client: SupabaseClient): MomentStore {
         @SerialName("was_present") val wasPresent: Boolean,
         @SerialName("group_name") val groupName: String?,
         @SerialName("location_mood") val locationMood: String?,
+        @SerialName("location_latitude") val locationLatitude: Double? = null,
+        @SerialName("location_longitude") val locationLongitude: Double? = null,
         @SerialName("created_at_epoch_ms") val createdAtEpochMs: Long
     )
 
@@ -91,6 +95,8 @@ class SupabaseMomentStore(private val client: SupabaseClient): MomentStore {
             wasPresent = wasPresent,
             groupName = groupName,
             locationMood = locationMood,
+            locationLatitude = locationLatitude,
+            locationLongitude = locationLongitude,
             createdAtEpochMs = createdAtEpochMs
         )
     }
@@ -127,6 +133,8 @@ class SupabaseMomentStore(private val client: SupabaseClient): MomentStore {
             wasPresent = moment.wasPresent,
             groupName = moment.groupName,
             locationMood = moment.locationMood,
+            locationLatitude = moment.locationLatitude,
+            locationLongitude = moment.locationLongitude,
             createdAtEpochMs = moment.createdAtEpochMs
         )
         client.postgrest["moments"].insert(momentInsert)
@@ -153,6 +161,8 @@ class SupabaseMomentStore(private val client: SupabaseClient): MomentStore {
             wasPresent = moment.wasPresent,
             groupName = moment.groupName,
             locationMood = moment.locationMood,
+            locationLatitude = moment.locationLatitude,
+            locationLongitude = moment.locationLongitude,
             createdAtEpochMs = moment.createdAtEpochMs
         )
         client.postgrest["moments"].update(momentUpdate) {

@@ -807,7 +807,7 @@ fun ConnectionDetailScreen(
                     showLogSheet = false
                     momentToEdit = null
                 },
-                onSave = { title, description, category, images, isCoreMemory, wasPresent, groupName, locationMood, momentId, additionalContactIds, dateEpochMs ->
+                onSave = { title, description, category, images, isCoreMemory, wasPresent, groupName, locationMood, locationLatitude, locationLongitude, momentId, additionalContactIds, dateEpochMs ->
                     viewModel.logMoment(
                         contactId = contactId,
                         title = title,
@@ -818,6 +818,8 @@ fun ConnectionDetailScreen(
                         wasPresent = wasPresent,
                         groupName = groupName,
                         locationMood = locationMood,
+                        locationLatitude = locationLatitude,
+                        locationLongitude = locationLongitude,
                         momentId = momentId,
                         additionalContactIds = additionalContactIds,
                         dateEpochMs = dateEpochMs,

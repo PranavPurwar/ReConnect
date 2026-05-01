@@ -22,6 +22,7 @@ data class HomeUiState(
     val reconnectSummary: String? = null,
     val reconnectChips: List<ReconnectChip> = emptyList(),
     val recentMoment: RecentMoment? = null,
+    val mapMoments: List<PastMoment> = emptyList(),
     val upcomingEvents: List<UpcomingEvent> = emptyList(),
     val quickCatchUps: List<Pair<Contact, String>> = emptyList(),
     val isLoading: Boolean = false
@@ -111,6 +112,7 @@ class HomeViewModel(
             reconnectSummary = reconnectSummary,
             reconnectChips = reconnectChips,
             recentMoment = deriveRecentMoment(moments, contacts),
+            mapMoments = moments.filter { it.locationLatitude != null && it.locationLongitude != null },
             upcomingEvents = timedEvents.map { it.event },
             quickCatchUps = contacts.map { it to "Reconnect · ${it.reconnectInterval.label}" },
             isLoading = false
@@ -182,7 +184,7 @@ class HomeViewModel(
         val title = latestMoment.title.takeIf { it.isNotBlank() }
             ?: if (contactNames.isNotEmpty()) "Memory with ${contactNames.first()}" else "Recent memory"
         val subtitle = latestMoment.description.takeIf { it.isNotBlank() }
-            ?: latestMoment.locationMood.takeIf { it!!.isNotBlank() }
+            ?: latestMoment.locationMood.takeIf { !it.isNullOrBlank() }
             ?: "A memory from last time"
 
         val imageUri = latestMoment.images.firstOrNull()?.uri

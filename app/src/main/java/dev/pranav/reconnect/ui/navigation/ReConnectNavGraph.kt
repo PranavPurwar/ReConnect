@@ -22,6 +22,7 @@ import dev.pranav.reconnect.ui.detail.ConnectionDetailScreen
 import dev.pranav.reconnect.ui.gallery.GalleryScreen
 import dev.pranav.reconnect.ui.gallery.ImagePreviewScreen
 import dev.pranav.reconnect.ui.maps.MapScreen
+import dev.pranav.reconnect.ui.maps.MomentsViewModel
 import dev.pranav.reconnect.ui.onboarding.OnboardingScreen
 import dev.pranav.reconnect.ui.picker.ContactPickerScreen
 import dev.pranav.reconnect.ui.privacy.PrivacyPolicyScreen
@@ -29,7 +30,11 @@ import dev.pranav.reconnect.ui.settings.*
 import dev.pranav.reconnect.ui.user.EmailVerificationScreen
 import dev.pranav.reconnect.ui.user.LoginScreen
 import dev.pranav.reconnect.ui.user.SignUpScreen
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 
+@OptIn(ExperimentalCoroutinesApi::class)
+@FlowPreview
 @Composable
 fun ReConnectNavGraph(
     navController: NavHostController,
@@ -164,8 +169,11 @@ fun ReConnectNavGraph(
         }
 
         composable<AppRoute.Map> {
+            val vm: MomentsViewModel =
+                viewModel(factory = AppViewModelProvider.Factory)
             MapScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                viewModel = vm
             )
         }
 

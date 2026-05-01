@@ -26,5 +26,7 @@ data class PastMoment(
     @SerialName("was_present") val wasPresent: Boolean = true,
     @SerialName("group_name") val groupName: String? = null,
     @SerialName("location_mood") val locationMood: String? = null,
+    @SerialName("location_latitude") val locationLatitude: Double? = null,
+    @SerialName("location_longitude") val locationLongitude: Double? = null,
     @SerialName("created_at_epoch_ms") val createdAtEpochMs: Long = System.currentTimeMillis()
 )

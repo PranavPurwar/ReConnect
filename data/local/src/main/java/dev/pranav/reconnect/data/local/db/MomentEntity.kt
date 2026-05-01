@@ -18,5 +18,7 @@ data class MomentEntity(
     val wasPresent: Boolean,
     val groupName: String?,
     val locationMood: String?,
+    val locationLatitude: Double?,
+    val locationLongitude: Double?,
     val createdAtEpochMs: Long
 )

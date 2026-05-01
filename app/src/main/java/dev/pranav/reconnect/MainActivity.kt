@@ -37,6 +37,7 @@ import androidx.work.WorkManager
 import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.core.session.StartDestination
 import dev.pranav.reconnect.di.AppContainer
+import dev.pranav.reconnect.di.AppViewModelProvider
 import dev.pranav.reconnect.ui.circle.SocialCircleScreen
 import dev.pranav.reconnect.ui.circle.SocialCircleViewModel
 import dev.pranav.reconnect.ui.home.HomeScreen
@@ -50,6 +51,7 @@ import dev.pranav.reconnect.ui.settings.SettingsScreen
 import dev.pranav.reconnect.ui.settings.SettingsViewModel
 import dev.pranav.reconnect.ui.theme.AppTheme
 import dev.pranav.reconnect.worker.DailyReminderWorker
+import kotlinx.coroutines.FlowPreview
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
@@ -154,13 +156,15 @@ fun ReConnectApp(
     )
 }
 
+@FlowPreview
 @Composable
 fun MainScreen(navController: NavController) {
     val context = LocalContext.current
     val sessionStore = remember(context) { AppSessionStore(context) }
-    val homeViewModel: HomeViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
-    val socialCircleViewModel: SocialCircleViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
-    val journeyViewModel: JourneyViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
+    val homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val socialCircleViewModel: SocialCircleViewModel =
+        viewModel(factory = AppViewModelProvider.Factory)
+    val journeyViewModel: JourneyViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val settingsViewModel = remember { SettingsViewModel(sessionStore) }
     var selectedTab by rememberSaveable { mutableStateOf(AppDestination.HOME) }
 

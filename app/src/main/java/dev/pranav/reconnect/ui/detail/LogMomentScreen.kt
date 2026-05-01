@@ -12,10 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -31,11 +29,19 @@ import com.github.panpf.sketch.AsyncImage
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.core.model.MomentImage
 import dev.pranav.reconnect.core.model.PastMoment
+import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.MediumGray
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
 import kotlinx.coroutines.launch
+import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.map.MapOptions
+import org.maplibre.compose.map.MaplibreMap
+import org.maplibre.compose.map.OrnamentOptions
+import org.maplibre.compose.style.BaseStyle
+import org.maplibre.compose.style.rememberStyleState
+import org.maplibre.compose.util.ClickResult
 import java.util.UUID
 
 private const val MAX_IMAGES = 100
@@ -55,6 +61,8 @@ fun LogMomentScreen(
         wasPresent: Boolean,
         groupName: String?,
         locationMood: String?,
+        locationLatitude: Double?,
+        locationLongitude: Double?,
         momentId: String,
         contactIds: List<String>,
         dateEpochMs: Long
@@ -73,6 +81,8 @@ fun LogMomentScreen(
     var wasPresent by remember { mutableStateOf(initialMoment?.wasPresent ?: true) }
     var groupName by remember { mutableStateOf(initialMoment?.groupName ?: "") }
     var locationMood by remember { mutableStateOf(initialMoment?.locationMood ?: "") }
+    var locationLatitude by remember { mutableStateOf(initialMoment?.locationLatitude) }
+    var locationLongitude by remember { mutableStateOf(initialMoment?.locationLongitude) }
     var selectedContactIds by remember(initialContactId, initialMoment) {
         mutableStateOf(
             if (initialMoment != null) {
@@ -93,7 +103,7 @@ fun LogMomentScreen(
         )
     }
     var showDatePicker by remember { mutableStateOf(false) }
-
+    var showLocationPicker by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val attachmentStore = remember { AppContainer.attachmentStore }
     val contactStore = remember { AppContainer.contactStore }
@@ -324,6 +334,31 @@ fun LogMomentScreen(
                 singleLine = true
             )
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { showLocationPicker = true }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text("Location", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = if (locationLatitude != null && locationLongitude != null) {
+                            "${"%.5f".format(locationLatitude)} , ${"%.5f".format(locationLongitude)}"
+                        } else {
+                            "Select a location on the map"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(imageVector = Icons.Default.Place, contentDescription = "Select location")
+            }
+
             OutlinedTextField(
                 value = locationMood,
                 onValueChange = { locationMood = it },
@@ -512,6 +547,8 @@ fun LogMomentScreen(
                                     wasPresent,
                                     groupName.takeIf { it.isNotBlank() },
                                     locationMood.takeIf { it.isNotBlank() },
+                                    locationLatitude,
+                                    locationLongitude,
                                     momentId,
                                     selectedContactIds.toList(),
                                     selectedDateMs
@@ -534,6 +571,89 @@ fun LogMomentScreen(
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
                     Text("Log It", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
+
+        if (showLocationPicker) {
+            val locationSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
+                onDismissRequest = { showLocationPicker = false },
+                sheetState = locationSheetState,
+                containerColor = MaterialTheme.colorScheme.surface,
+                dragHandle = { BottomSheetDefaults.DragHandle() },
+                sheetGesturesEnabled = false
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp, top = 8.dp)
+                ) {
+                    Text(
+                        text = "Select location",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.6f)
+                    ) {
+                        val mapStyle = AppSessionStore(LocalContext.current).getMapStyle()
+                        val cameraState = rememberCameraState()
+                        val styleState = rememberStyleState()
+
+                        MaplibreMap(
+                            baseStyle = BaseStyle.Uri(mapStyle.styleUri),
+                            cameraState = cameraState,
+                            styleState = styleState,
+                            options = MapOptions(ornamentOptions = OrnamentOptions.OnlyLogo),
+                            onMapClick = { pos, _ ->
+                                locationLatitude = pos.latitude
+                                locationLongitude = pos.longitude
+                                ClickResult.Pass
+                            }
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(28.dp)
+                                .background(Color.White.copy(alpha = 0.9f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = null,
+                                tint = GoldPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        TextButton(onClick = {
+                            locationLatitude = null
+                            locationLongitude = null
+                            showLocationPicker = false
+                        }) {
+                            Text("Clear")
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Button(onClick = { showLocationPicker = false }) {
+                            Text("Save")
+                        }
+                    }
                 }
             }
         }
@@ -682,6 +802,8 @@ fun LogMomentScreen(
                             wasPresent,
                             groupName.takeIf { it.isNotBlank() },
                             locationMood.takeIf { it.isNotBlank() },
+                            locationLatitude,
+                            locationLongitude,
                             currentMomentId,
                             selectedContactIds.toList(),
                             selectedDateMs

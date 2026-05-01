@@ -134,7 +134,7 @@ fun HomeScreen(
                         .height(300.dp)
                         .clip(RoundedCornerShape(32.dp))
                 ) {
-                    MomentsMap(listOf(), {}, onMapClick)
+                    MomentsMap(state.mapMoments, {}, onMapClick = onMapClick)
                 }
                 Spacer(Modifier.height(40.dp))
             }

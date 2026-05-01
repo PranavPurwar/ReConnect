@@ -129,6 +129,8 @@ class ConnectionDetailViewModel(
         wasPresent: Boolean = true,
         groupName: String? = null,
         locationMood: String? = null,
+        locationLatitude: Double? = null,
+        locationLongitude: Double? = null,
         momentId: String = UUID.randomUUID().toString(),
         additionalContactIds: List<String> = emptyList(),
         dateEpochMs: Long = System.currentTimeMillis(),
@@ -156,6 +158,8 @@ class ConnectionDetailViewModel(
                 wasPresent = wasPresent,
                 groupName = groupName,
                 locationMood = locationMood,
+                locationLatitude = locationLatitude,
+                locationLongitude = locationLongitude,
                 createdAtEpochMs = existingCreatedAt ?: System.currentTimeMillis()
             )
 

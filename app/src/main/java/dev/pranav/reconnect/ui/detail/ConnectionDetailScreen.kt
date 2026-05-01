@@ -427,15 +427,16 @@ fun ConnectionDetailScreen(
                         Button(
                             onClick = {
                                 if (contact.phoneNumber.isNotBlank()) {
-                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-
-                                        putExtra(Intent.EXTRA_TEXT, "Thinking of you!")
-                                        putExtra("address", contact.phoneNumber)
+                                    val smsIntent = Intent(
+                                        Intent.ACTION_SENDTO,
+                                        "smsto:${contact.phoneNumber}".toUri()
+                                    ).apply {
+                                        putExtra(
+                                            "sms_body",
+                                            "Hey ${contact.name}, just checking in!"
+                                        )
                                     }
-                                    context.startActivity(
-                                        Intent.createChooser(sendIntent, "Connect via...")
-                                    )
+                                    context.startActivity(smsIntent)
                                 }
                             },
                             modifier = Modifier

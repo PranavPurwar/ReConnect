@@ -14,7 +14,7 @@ object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
         initializer {
             val contactStore = AppContainer.contactStore
-            HomeViewModel(contactStore)
+            HomeViewModel(contactStore, AppContainer.momentStore)
         }
         initializer {
             SocialCircleViewModel(AppContainer.contactStore)

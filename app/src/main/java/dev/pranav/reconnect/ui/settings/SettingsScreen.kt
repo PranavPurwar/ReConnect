@@ -1,5 +1,9 @@
 package dev.pranav.reconnect.ui.settings
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -9,16 +13,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,15 +41,45 @@ fun SettingsScreen(
     onSignOutSuccess: () -> Unit,
     onPrivacyPolicyClick: () -> Unit,
     onNotificationsSettingsClick: () -> Unit,
+    onSubscriptionPlanClick: () -> Unit,
 ) {
     val isLoginEnabled by viewModel.isLoginEnabled.collectAsStateWithLifecycle()
+    val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
     val signOutResult by viewModel.signOutResult.collectAsStateWithLifecycle()
 
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
     val userId by viewModel.userId.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    var showBackupSheet by remember { mutableStateOf(false) }
+    var backupMessage by remember { mutableStateOf<String?>(null) }
+    var pendingExportJson by remember { mutableStateOf<String?>(null) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        if (uri != null && pendingExportJson != null) {
+            writeTextToUri(context, uri, pendingExportJson!!)
+            backupMessage = "Backup exported successfully"
+            pendingExportJson = null
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val backupJson = readTextFromUri(context, uri)
+            if (backupJson != null) {
+                viewModel.restoreBackupJson(backupJson)
+                backupMessage = "Backup imported successfully"
+            } else {
+                backupMessage = "Unable to read backup file"
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadUserProfile()
@@ -176,14 +208,32 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            SettingsSection(title = "Sync") {
+                SettingsItem(
+                    icon = Icons.Default.Cloud,
+                    title = "Cloud sync",
+                    onClick = { viewModel.refreshSyncStatus() },
+                    trailingContent = {
+                        Text(
+                            text = syncStatus,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                )
+                SettingsItem(
+                    icon = Icons.Default.FileUpload,
+                    title = "Backup & restore",
+                    onClick = { showBackupSheet = true }
+                )
+            }
+
             SettingsSection(title = "Preferences") {
                 if (isLoginEnabled) {
                     SettingsItem(
                         icon = Icons.Default.Subscriptions,
                         title = "Subscription Plan",
-                        onClick = {
-                            // TODO: Add screen
-                        }
+                        onClick = onSubscriptionPlanClick
                     )
                 }
                 SettingsItem(
@@ -228,11 +278,72 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(48.dp)) // Extra padding clear from bottom bar
         }
 
+        if (showBackupSheet) {
+            AlertDialog(
+                onDismissRequest = { showBackupSheet = false },
+                title = { Text("Backup & restore") },
+                text = {
+                    Column {
+                        Text(
+                            "Export your current contacts and moments as JSON, or import a previously saved backup. " +
+                                    "This preserves your circle data and reconnect history."
+                        )
+                        backupMessage?.let {
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Green
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Row {
+                        TextButton(onClick = {
+                            showBackupSheet = false
+                            backupMessage = null
+                        }) {
+                            Text("Close")
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            viewModel.prepareExportJson(
+                                onReady = { json ->
+                                    pendingExportJson = json
+                                    exportLauncher.launch("reconnect-backup.json")
+                                }
+                            )
+                        }) {
+                            Text("Export")
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            backupMessage = null
+                            importLauncher.launch(arrayOf("application/json", "text/*"))
+                        }) {
+                            Text("Import")
+                        }
+                    }
+                }
+            )
+        }
+
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
+}
+
+private fun writeTextToUri(context: Context, uri: Uri, text: String) {
+    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+        outputStream.write(text.toByteArray())
+    }
+}
+
+private fun readTextFromUri(context: Context, uri: Uri): String? {
+    return context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
 }
 
 @Composable

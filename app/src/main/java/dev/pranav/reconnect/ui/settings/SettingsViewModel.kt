@@ -3,13 +3,16 @@ package dev.pranav.reconnect.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pranav.reconnect.BuildConfig
+import dev.pranav.reconnect.core.model.Contact
+import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.core.session.ReminderFrequency
+import dev.pranav.reconnect.core.storage.AuthState
 import dev.pranav.reconnect.di.AppContainer
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 class SettingsViewModel(
     private val sessionStore: AppSessionStore
@@ -45,8 +48,28 @@ class SettingsViewModel(
     private val _userId = MutableStateFlow("")
     val userId: StateFlow<String> = _userId.asStateFlow()
 
+    private val _authState: StateFlow<AuthState> = AppContainer.authStore.authState
+    val syncStatus: StateFlow<String> =
+        combine(_isLoginEnabled, _authState) { loginEnabled, authState ->
+            if (!loginEnabled) {
+                "Local-only storage"
+            } else {
+                when (authState) {
+                    AuthState.Loading -> "Checking connection..."
+                    AuthState.Authenticated -> "Cloud sync enabled"
+                    AuthState.NotAuthenticated -> "Not signed in"
+                    AuthState.Unknown -> "Sync status unknown"
+                }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = if (BuildConfig.ENABLE_LOGIN_GATE) "Checking connection..." else "Local-only storage"
+        )
+
     init {
         loadUserProfile()
+        refreshSyncStatus()
     }
 
     fun loadUserProfile() {
@@ -84,6 +107,49 @@ class SettingsViewModel(
         _reminderFrequency.value = frequency
     }
 
+    fun refreshSyncStatus() {
+        viewModelScope.launch {
+            AppContainer.authStore.getCurrentSession()
+            if (_isLoginEnabled.value) {
+                loadUserProfile()
+            }
+        }
+    }
+
+    fun prepareExportJson(onReady: (String) -> Unit) {
+        viewModelScope.launch {
+            val contacts = AppContainer.contactStore.contacts.first()
+            val moments = AppContainer.momentStore.moments.first()
+            onReady(Json.encodeToString(BackupPayload(contacts, moments)))
+        }
+    }
+
+    fun restoreBackupJson(backupJson: String) {
+        viewModelScope.launch {
+            runCatching {
+                val payload = Json.decodeFromString<BackupPayload>(backupJson)
+                payload.contacts.forEach { contact ->
+                    val existingContact = AppContainer.contactStore.findById(contact.id)
+                    if (existingContact != null) {
+                        AppContainer.contactStore.updateContact(contact)
+                    } else {
+                        AppContainer.contactStore.addContact(contact)
+                    }
+                }
+
+                val existingMomentIds =
+                    AppContainer.momentStore.moments.first().map { it.id }.toSet()
+                payload.moments.forEach { moment ->
+                    if (moment.id in existingMomentIds) {
+                        AppContainer.momentStore.updateMoment(moment)
+                    } else {
+                        AppContainer.momentStore.addMoment(moment)
+                    }
+                }
+            }
+        }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             if (_isLoginEnabled.value) {
@@ -98,3 +164,9 @@ class SettingsViewModel(
         }
     }
 }
+
+@Serializable
+private data class BackupPayload(
+    val contacts: List<Contact>,
+    val moments: List<PastMoment>
+)

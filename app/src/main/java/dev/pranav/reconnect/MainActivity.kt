@@ -27,8 +27,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -38,14 +38,14 @@ import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.core.session.StartDestination
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.circle.SocialCircleScreen
+import dev.pranav.reconnect.ui.circle.SocialCircleViewModel
 import dev.pranav.reconnect.ui.home.HomeScreen
+import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.journey.JourneyScreen
+import dev.pranav.reconnect.ui.journey.JourneyViewModel
 import dev.pranav.reconnect.ui.navigation.AppRoute
 import dev.pranav.reconnect.ui.navigation.ReConnectNavGraph
 import dev.pranav.reconnect.ui.navigation.openGallery
-import dev.pranav.reconnect.ui.circle.SocialCircleViewModel
-import dev.pranav.reconnect.ui.home.HomeViewModel
-import dev.pranav.reconnect.ui.journey.JourneyViewModel
 import dev.pranav.reconnect.ui.settings.SettingsScreen
 import dev.pranav.reconnect.ui.settings.SettingsViewModel
 import dev.pranav.reconnect.ui.theme.AppTheme
@@ -213,12 +213,14 @@ fun MainScreen(navController: NavController) {
                             }
                         },
                         onPrivacyPolicyClick = { navController.navigate(AppRoute.PrivacyPolicy) },
-                        onNotificationsSettingsClick = { navController.navigate(AppRoute.NotificationSettings) }
+                        onNotificationsSettingsClick = { navController.navigate(AppRoute.NotificationSettings) },
+                        onSubscriptionPlanClick = { navController.navigate(AppRoute.SubscriptionPlan) }
                     )
                 }
 
                 else -> HomeScreen(
                     onContactClick = { id -> navController.navigate(AppRoute.ConnectionDetail(id)) },
+                    onMomentClick = { id -> /* Need a moment preview screen first */ },
                     onAddClick = { navController.navigate(AppRoute.AddConnection(null)) },
                     onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE },
                     viewModel = homeViewModel

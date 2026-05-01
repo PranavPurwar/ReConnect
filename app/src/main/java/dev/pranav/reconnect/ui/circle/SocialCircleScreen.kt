@@ -1,7 +1,11 @@
 package dev.pranav.reconnect.ui.circle
 
+import android.content.Context
+import android.content.Intent
+import android.provider.CalendarContract
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,12 +19,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
@@ -31,6 +38,7 @@ import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.CurrentUserAvatar
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.*
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +48,7 @@ fun SocialCircleScreen(
     innerPadding: PaddingValues = PaddingValues(),
     viewModel: SocialCircleViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
+    val context = LocalContext.current
     val contacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
@@ -138,6 +147,14 @@ fun SocialCircleScreen(
                         actionLabel = actionLabel,
                         actionIcon = actionIcon,
                         onCardClick = { onContactClick(contact.id) },
+                        onActionClick = {
+                            if (category == "Work") {
+                                scheduleReconnectEvent(context, contact)
+                            } else {
+                                sendSms(context, contact.phoneNumber)
+                            }
+                        },
+                        onCallClick = { dialContact(context, contact.phoneNumber) },
                         modifier = Modifier
                             .animateItem()
                             .padding(horizontal = 24.dp)
@@ -220,21 +237,54 @@ private fun CategoryFilterRow(
         items(categories) { category ->
             val isSelected = category == selectedCategory
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = if (isSelected) GoldPrimary else Color.White,
+                shape = RoundedCornerShape(24.dp),
+                color = if (isSelected) GoldPrimary else MaterialTheme.colorScheme.surface,
+                shadowElevation = if (isSelected) 6.dp else 0.dp,
                 onClick = { onCategorySelected(category) }
             ) {
                 Text(
                     text = category,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                     style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = if (isSelected) Color.White else CharcoalText
                     )
                 )
             }
         }
     }
+}
+
+private fun sendSms(context: Context, phoneNumber: String) {
+    if (phoneNumber.isBlank()) return
+    val smsIntent = Intent(Intent.ACTION_SENDTO, "smsto:$phoneNumber".toUri()).apply {
+        putExtra("sms_body", "Hi! Just reaching out to reconnect.")
+    }
+    context.startActivity(smsIntent)
+}
+
+private fun dialContact(context: Context, phoneNumber: String) {
+    if (phoneNumber.isBlank()) return
+    val callIntent = Intent(Intent.ACTION_DIAL, "tel:$phoneNumber".toUri())
+    context.startActivity(callIntent)
+}
+
+private fun scheduleReconnectEvent(context: Context, contact: Contact) {
+    val calendar = Calendar.getInstance().apply {
+        add(Calendar.DAY_OF_YEAR, contact.reconnectInterval.days)
+    }
+    val intent = Intent(Intent.ACTION_INSERT).apply {
+        data = CalendarContract.Events.CONTENT_URI
+        putExtra(CalendarContract.Events.TITLE, "Reconnect with ${contact.name}")
+        putExtra(
+            CalendarContract.Events.DESCRIPTION,
+            "ReConnect reminder: keep in touch with ${contact.name}."
+        )
+        putExtra(CalendarContract.Events.EVENT_LOCATION, contact.relationship)
+        putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, calendar.timeInMillis)
+        putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+    }
+    context.startActivity(intent)
 }
 
 @Composable
@@ -289,10 +339,12 @@ private fun CircleContactCard(
     actionLabel: String = "Message",
     actionIcon: ImageVector = Icons.Default.ChatBubble,
     onCardClick: () -> Unit,
+    onActionClick: () -> Unit,
+    onCallClick: () -> Unit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(48.dp),
+        shape = RoundedCornerShape(36.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         onClick = onCardClick
     ) {
@@ -352,13 +404,13 @@ private fun CircleContactCard(
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
-                    onClick = {},
+                    onClick = onActionClick,
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
-                    shapes = ButtonDefaults.shapes(),
+                    shape = RoundedCornerShape(22.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.8f),
+                        containerColor = Color.White.copy(alpha = 0.94f),
                         contentColor = CharcoalText
                     )
                 ) {
@@ -368,10 +420,13 @@ private fun CircleContactCard(
                 }
 
                 Surface(
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clickable(onClick = onCallClick)
+                        .clip(RoundedCornerShape(20.dp)),
                     shape = RoundedCornerShape(20.dp),
-                    color = Color.White.copy(alpha = 0.3f),
-                    onClick = {}
+                    color = Color.White.copy(alpha = 0.9f),
+                    tonalElevation = 2.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Call, contentDescription = "Call", tint = CharcoalText)

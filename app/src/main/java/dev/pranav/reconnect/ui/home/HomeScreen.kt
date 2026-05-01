@@ -1,34 +1,27 @@
 package dev.pranav.reconnect.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Coffee
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.rounded.AllInclusive
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,160 +30,15 @@ import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.core.model.Contact
-import dev.pranav.reconnect.core.model.UpcomingEvent
 import dev.pranav.reconnect.di.AppContainer
+import dev.pranav.reconnect.ui.components.CurrentUserAvatar
+import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.*
-
-@Composable
-private fun TimelineReminderCard(
-    event: UpcomingEvent.TimelineReminder,
-    onContactClick: (String) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = PurpleCard)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Icon(
-                Icons.Default.History,
-                contentDescription = null,
-                tint = PurpleText,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = event.duration,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = CharcoalText
-            )
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = { onContactClick(event.contactId) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PurpleText.copy(alpha = 0.15f),
-                    contentColor = PurpleText
-                ),
-                shape = RoundedCornerShape(16.dp),
-                elevation = ButtonDefaults.buttonElevation(0.dp)
-            ) {
-                Text(
-                    text = event.actionLabel,
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickCatchUpsHeader(onViewAllClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "QUICK CATCH-UPS",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 1.5.sp,
-            color = CharcoalText,
-            modifier = Modifier.weight(1f)
-        )
-        TextButton(onClick = onViewAllClick) {
-            Text("View all", color = GoldPrimary)
-        }
-    }
-}
-
-
-@Composable
-private fun HomeHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-            color = IconBackground
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.AllInclusive,
-                        null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            Text(
-                text = "ReConnect",
-                style = MaterialTheme.typography.displaySmallEmphasized.copy(
-                    fontFamily = UltraFamily,
-                    color = IconBackground,
-                    letterSpacing = 1.sp
-                )
-            )
-        }
-}
-
-@Composable
-private fun EmptyHomeState(
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 40.dp, vertical = 60.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Rounded.AllInclusive,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Your circle is empty",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Add connections to start ReConnecting.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String, modifier: Modifier = Modifier) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge.copy(
-            fontFamily = PlayfairFamily,
-            fontWeight = FontWeight.Bold
-        ),
-        color = CharcoalText,
-        modifier = modifier.padding(horizontal = 24.dp, vertical = 16.dp)
-    )
-}
 
 @Composable
 fun HomeScreen(
     onContactClick: (String) -> Unit,
+    onMomentClick: (String) -> Unit,
     onAddClick: () -> Unit,
     onViewAllCatchUpsClick: () -> Unit,
     innerPadding: PaddingValues = PaddingValues(),
@@ -198,348 +46,387 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val birthdayEvents = state.upcomingEvents.filterIsInstance<UpcomingEvent.Birthday>()
-    val connectionEvents = state.upcomingEvents.filter { it !is UpcomingEvent.Birthday }
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = CreamBackground,
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = onAddClick,
+                containerColor = GoldPrimary,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "New Connection",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = paddingValues.calculateTopPadding() + 24.dp,
+                bottom = innerPadding.calculateBottomPadding() + 100.dp
+            )
+        ) {
+            // --- Header ---
+            item {
+                HomeHeader(state.userName)
+                Spacer(Modifier.height(32.dp))
+            }
 
-    val isEmpty = state.upcomingEvents.isEmpty() && state.quickCatchUps.isEmpty()
+            // --- Suggestion Hero ---
+            state.topSlot?.let { slot ->
+                item {
+                    SuggestionHero(slot, onContactClick)
+                    Spacer(Modifier.height(40.dp))
+                }
+            }
+
+            // --- Frequent Faces ---
+            if (state.reconnectChips.isNotEmpty()) {
+                item {
+                    SectionHeader("Inner Circle", onAction = onViewAllCatchUpsClick)
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    ) {
+                        items(state.reconnectChips) { chip ->
+                            FrequentFaceNode(chip, onContactClick)
+                        }
+                    }
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
+
+            // --- Daily Reconnects (Unified Sheet) ---
+            if (state.quickCatchUps.isNotEmpty()) {
+                item {
+                    SectionHeader("Daily Reconnects", subtitle = state.reconnectSummary)
+                    Spacer(Modifier.height(12.dp))
+                    ReconnectActionSheet(state.quickCatchUps.take(5), onContactClick)
+                    Spacer(Modifier.height(40.dp))
+                }
+            }
+
+            state.recentMoment?.let { moment ->
+                item {
+                    SectionHeader("Recent Memory")
+                    Spacer(Modifier.height(16.dp))
+                    MemoryPreviewCard(moment) { onMomentClick(it) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeHeader(userName: String) {
+    Column(Modifier.padding(horizontal = 24.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "RECONNECT",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    letterSpacing = 4.sp,
+                    fontWeight = FontWeight.Black,
+                    color = GoldPrimary
+                )
+            )
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                border = BorderStroke(1.5.dp, GoldPrimary)
+            ) {
+                CurrentUserAvatar(modifier = Modifier.fillMaxSize(), showBorder = false)
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        ScreenTitle(text = "Hello, $userName")
+    }
+}
+
+@Composable
+private fun SuggestionHero(slot: HomeTopSlot, onContactClick: (String) -> Unit) {
+    val (bgColor, accentColor, label) = when (slot) {
+        is HomeTopSlot.Birthday -> Triple(AmberCardStart, GoldDark, "Upcoming Birthday")
+        is HomeTopSlot.MemoryFlashback -> Triple(PurpleCard, PurpleText, "On this day")
+        is HomeTopSlot.RelationshipSummary -> Triple(BlueCard, BlueText, "Connection Insight")
+        is HomeTopSlot.SuggestedCatchUp -> Triple(Color.White, GoldPrimary, "Suggested Catch-up")
+    }
+
+    val contactId = when (slot) {
+        is HomeTopSlot.Birthday -> slot.event.contactId
+        is HomeTopSlot.SuggestedCatchUp -> slot.event.contactId
+        is HomeTopSlot.MemoryFlashback -> slot.contactId
+        else -> null
+    }
+
+    Surface(
+        modifier = Modifier
+            .padding(horizontal = 24.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(42.dp),
+        color = bgColor,
+        border = if (bgColor == Color.White) BorderStroke(1.dp, CreamBackground) else null,
+        onClick = {
+            when (slot) {
+                is HomeTopSlot.Birthday -> onContactClick(slot.event.contactId)
+                is HomeTopSlot.MemoryFlashback -> slot.contactId?.let { onContactClick(it) }
+                is HomeTopSlot.SuggestedCatchUp -> onContactClick(slot.event.contactId)
+                else -> {}
+            }
+        }
+    ) {
+        Row(
+            modifier = Modifier.padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.5.sp
+                    ),
+                    color = accentColor.copy(alpha = 0.7f)
+                )
+                Spacer(Modifier.height(8.dp))
+
+                val title = when (slot) {
+                    is HomeTopSlot.Birthday -> slot.event.contactName
+                    is HomeTopSlot.MemoryFlashback -> slot.title
+                    is HomeTopSlot.SuggestedCatchUp -> slot.event.contactName
+                    is HomeTopSlot.RelationshipSummary -> slot.title
+                }
+
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontFamily = PlayfairFamily,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 28.sp
+                    ),
+                    color = CharcoalText
+                )
+
+                val body = when (slot) {
+                    is HomeTopSlot.Birthday -> "Turns ${slot.event.day} on ${slot.event.month}"
+                    is HomeTopSlot.SuggestedCatchUp -> "It's been a while since your last chat."
+                    is HomeTopSlot.MemoryFlashback -> slot.subtitle
+                    is HomeTopSlot.RelationshipSummary -> slot.subtitle
+                }
+
+                Text(
+                    text = body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CharcoalText.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            contactId?.let { id ->
+                Spacer(Modifier.width(16.dp))
+                HomeAvatar(id, "", null, size = 80.dp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReconnectActionSheet(
+    items: List<Pair<Contact, String>>,
+    onContactClick: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .padding(horizontal = 24.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(32.dp),
+        color = Color.White
+    ) {
+        Column {
+            items.forEachIndexed { index, (contact, status) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onContactClick(contact.id) }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HomeAvatar(contact.id, contact.name, contact.seedColorArgb, size = 44.dp)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            contact.name,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = CharcoalText
+                        )
+                        Text(
+                            status,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = CharcoalText.copy(0.4f)
+                        )
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        null,
+                        Modifier.size(16.dp),
+                        tint = GoldPrimary.copy(0.6f)
+                    )
+                }
+                if (index < items.lastIndex) {
+                    HorizontalDivider(
+                        Modifier.padding(horizontal = 20.dp),
+                        thickness = 0.5.dp,
+                        color = CreamBackground
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FrequentFaceNode(chip: ReconnectChip, onClick: (String) -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick(chip.contactId) }
+    ) {
+        HomeAvatar(chip.contactId, chip.name, chip.seedColorArgb, size = 68.dp, showBorder = true)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            chip.name.split(" ").first(),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = CharcoalText
+        )
+    }
+}
+
+@Composable
+private fun MemoryPreviewCard(moment: RecentMoment, onClick: (String) -> Unit) {
+    Surface(
+        modifier = Modifier.padding(horizontal = 24.dp),
+        shape = RoundedCornerShape(48.dp),
+        color = Color.White,
+        onClick = { onClick(moment.id) }
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            AsyncImage(
+                uri = moment.imageUri,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(40.dp)),
+                contentScale = ContentScale.Crop
+            )
+            Column(Modifier.padding(24.dp)) {
+                Text(
+                    moment.title,
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontFamily = SerifFontFamily,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    color = CharcoalText
+                )
+                Text(
+                    moment.subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CharcoalText.copy(0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, subtitle: String? = null, onAction: (() -> Unit)? = null) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 28.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = PlayfairFamily,
+                    fontWeight = FontWeight.Black
+                ),
+                color = CharcoalText
+            )
+            if (subtitle != null) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = CharcoalText.copy(0.4f)
+                )
+            }
+        }
+        if (onAction != null) {
+            Text(
+                "View All",
+                Modifier.clickable { onAction() },
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = GoldPrimary
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeAvatar(
+    id: String,
+    name: String,
+    seed: Int?,
+    size: androidx.compose.ui.unit.Dp,
+    showBorder: Boolean = false
+) {
+    val state = rememberAsyncImageState()
+    val initials =
+        name.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }
+            .uppercase()
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(bottom = innerPadding.calculateBottomPadding())
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(Modifier.statusBarsPadding())
-            HomeHeader()
-
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ContainedLoadingIndicator()
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(bottom = 100.dp)
-                ) {
-                    if (isEmpty) {
-                        item {
-                            EmptyHomeState()
-                        }
-                    } else {
-                        if (birthdayEvents.isNotEmpty()) {
-                            item {
-                                SectionHeader(title = "Upcoming Birthdays")
-                                val pagerState = rememberPagerState(pageCount = { birthdayEvents.size })
-                                HorizontalPager(
-                                    state = pagerState,
-                                    contentPadding = PaddingValues(horizontal = 24.dp),
-                                    pageSpacing = 12.dp,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) { page ->
-                                    val event = birthdayEvents[page]
-                                    BirthdayBashCard(event, onContactClick)
-                                }
-                            }
-                        }
-
-                        if (connectionEvents.isNotEmpty()) {
-                            item {
-                                SectionHeader(title = "To Reconnect")
-                                val pagerState =
-                                    rememberPagerState(pageCount = { connectionEvents.size })
-                                HorizontalPager(
-                                    state = pagerState,
-                                    contentPadding = PaddingValues(horizontal = 24.dp),
-                                    pageSpacing = 12.dp,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) { page ->
-                                    when (val event = connectionEvents[page]) {
-                                        is UpcomingEvent.CatchUp -> CatchUpCard(event)
-                                        is UpcomingEvent.TimelineReminder -> TimelineReminderCard(
-                                            event,
-                                            onContactClick
-                                        )
-
-                                        else -> {}
-                                    }
-                                }
-                                Spacer(Modifier.height(16.dp))
-                            }
-                        }
-
-                        if (state.quickCatchUps.isNotEmpty()) {
-                            item {
-                                QuickCatchUpsHeader(onViewAllClick = onViewAllCatchUpsClick)
-                            }
-
-                            items(
-                                items = state.quickCatchUps.take(5),
-                                key = { pair -> pair.first.id }
-                            ) { (contact, subtitle) ->
-                                QuickCatchUpRow(
-                                    contact = contact,
-                                    subtitle = subtitle,
-                                    onClick = onContactClick,
-                                    modifier = Modifier.animateItem()
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        ExtendedFloatingActionButton(
-            onClick = onAddClick,
-            containerColor = GoldPrimary,
-            contentColor = Color.White,
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Add Contact", fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun BirthdayBashCard(event: UpcomingEvent.Birthday, onContactClick: (String) -> Unit) {
-    val seedColor = event.seedColorArgb?.let { Color(it) } ?: AmberCardStart
-    val startColor = lerp(Color.White, seedColor, 0.4f)
-    val endColor = lerp(Color.White, seedColor, 0.1f)
-    val accentColor = lerp(seedColor, CharcoalText, 0.4f)
-
-    Card(
-        onClick = { onContactClick(event.contactId) },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.horizontalGradient(listOf(startColor, endColor)))
-        ) {
-            // Subtle aesthetic glow / circle
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 24.dp, y = 24.dp)
-                    .size(120.dp)
-                    .background(seedColor.copy(alpha = 0.25f), CircleShape)
+            .size(size)
+            .then(
+                if (showBorder) Modifier
+                    .background(GoldPrimary.copy(0.1f), CircleShape)
+                    .padding(3.dp) else Modifier
             )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "BIRTHDAY",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.sp
-                        ),
-                        color = accentColor
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = event.contactName,
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontFamily = PlayfairFamily,
-                            fontWeight = FontWeight.Black
-                        ),
-                        color = CharcoalText,
-                        maxLines = 2
-                    )
-                    Spacer(Modifier.height(20.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = CircleShape,
-                            color = accentColor,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.AutoAwesome,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            text = "Send a wish",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                            color = accentColor
-                        )
-                    }
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(start = 16.dp)
-                ) {
-                    Text(
-                        text = "${event.day}",
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = UltraFamily
-                        ),
-                        color = accentColor
-                    )
-                    Text(
-                        text = event.month.take(3).uppercase(),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Black
-                        ),
-                        color = CharcoalText
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CatchUpCard(event: UpcomingEvent.CatchUp) {
-    val backgroundColor = event.seedColorArgb?.let { Color(it) } ?: BlueCard
-    val contentColor = if (backgroundColor.luminance() > 0.62f) CharcoalText else Color.White
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .clip(CircleShape)
+            .background(if (seed != null) Color(seed).copy(0.15f) else CreamBackground),
+        contentAlignment = Alignment.Center
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Icon(Icons.Default.Coffee, null, tint = contentColor, modifier = Modifier.size(24.dp))
-
-            Spacer(Modifier.height(16.dp))
-
+        if (state.painterState !is PainterState.Success) {
             Text(
-                text = "Catch up with\n${event.contactName}",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = PlayfairFamily,
+                initials,
+                style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 28.sp
-                ),
-                color = contentColor,
-                maxLines = 2
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = "${event.day}",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontFamily = UltraFamily
-                    ),
-                    color = contentColor.copy(alpha = 0.7f)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = event.dayOfWeek.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp
-                    ),
-                    color = contentColor,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun QuickCatchUpRow(
-    contact: Contact,
-    subtitle: String,
-    onClick: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick(contact.id) }
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val state = rememberAsyncImageState()
-        val seedColor = contact.seedColorArgb?.let { Color(it) } ?: DefaultSeedColor
-        val scheme = colorSchemeFromSeed(seedColor)
-
-        SeedColorTheme(colors = scheme) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                if (state.painterState !is PainterState.Success) {
-                    val initials = contact.name.split(" ").take(2)
-                        .mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
-                        .takeIf { it.isNotEmpty() } ?: "?"
-                    Text(
-                        text = initials,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    )
-                }
-
-                AsyncImage(
-                    uri = AppContainer.photoResolver.resolveContactPhoto(contact.id),
-                    state = state,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-        }
-
-        Spacer(Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = contact.name,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = PlayfairFamily,
-                    fontWeight = FontWeight.Black
+                    color = CharcoalText
                 )
             )
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
-
-        Surface(
-            shape = CircleShape,
-            color = AmberCardStart.copy(alpha = 0.5f),
-            modifier = Modifier.size(48.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.AutoMirrored.Filled.Send, null, tint = GoldPrimary)
-            }
-        }
+        AsyncImage(
+            uri = AppContainer.photoResolver.resolveContactPhoto(id),
+            state = state,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
     }
 }

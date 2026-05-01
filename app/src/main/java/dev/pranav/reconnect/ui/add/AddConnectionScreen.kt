@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -63,7 +62,6 @@ private val fallbackSeedColors = listOf(
 @Composable
 fun AddConnectionScreen(
     contactIdToEdit: String? = null,
-    onBack: () -> Unit,
     onAdded: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
@@ -254,22 +252,6 @@ fun AddConnectionScreen(
                         .padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        onClick = onBack,
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.78f),
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
                     Text(
                         text = if (isEditMode) "Edit Connection" else "New Connection",
                         fontFamily = UltraFamily,

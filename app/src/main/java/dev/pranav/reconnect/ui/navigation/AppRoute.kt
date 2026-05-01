@@ -23,6 +23,9 @@ sealed class AppRoute {
     @Serializable
     data object PrivacyPolicy
     @Serializable
+    data object SubscriptionPlan
+
+    @Serializable
     data object EditProfile
     @Serializable
     data class ConnectionDetail(val contactId: String)

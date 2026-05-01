@@ -1,5 +1,6 @@
 package dev.pranav.reconnect.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -23,10 +24,7 @@ import dev.pranav.reconnect.ui.gallery.ImagePreviewScreen
 import dev.pranav.reconnect.ui.onboarding.OnboardingScreen
 import dev.pranav.reconnect.ui.picker.ContactPickerScreen
 import dev.pranav.reconnect.ui.privacy.PrivacyPolicyScreen
-import dev.pranav.reconnect.ui.settings.EditProfileScreen
-import dev.pranav.reconnect.ui.settings.EditProfileViewModel
-import dev.pranav.reconnect.ui.settings.NotificationSettingsScreen
-import dev.pranav.reconnect.ui.settings.SettingsViewModel
+import dev.pranav.reconnect.ui.settings.*
 import dev.pranav.reconnect.ui.user.EmailVerificationScreen
 import dev.pranav.reconnect.ui.user.LoginScreen
 import dev.pranav.reconnect.ui.user.SignUpScreen
@@ -184,7 +182,6 @@ fun ReConnectNavGraph(
             val route = backStack.toRoute<AppRoute.AddConnection>()
             AddConnectionScreen(
                 contactIdToEdit = route.contactId,
-                onBack = { navController.popBackStack() },
                 onAdded = { navController.popBackStack() }
             )
         }
@@ -224,5 +221,13 @@ fun ReConnectNavGraph(
                 onBack = { navController.popBackStack() }
             )
         }
+
+        composable<AppRoute.SubscriptionPlan> {
+            SubscriptionPlanScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
+
+    BackHandler(true) { navController.popBackStack() }
 }

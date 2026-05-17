@@ -97,6 +97,8 @@ dependencies {
     implementation(libs.maplibre.compose.material3)
     implementation(libs.android.sdk.vulkan)
 
+    implementation(libs.haze)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

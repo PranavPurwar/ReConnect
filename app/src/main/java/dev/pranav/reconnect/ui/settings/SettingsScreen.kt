@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -30,7 +31,7 @@ import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
 import dev.pranav.reconnect.core.session.MapStyle
 import dev.pranav.reconnect.di.AppContainer
-import dev.pranav.reconnect.ui.components.ScreenTitle
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.PlusJakartaSansFamily
@@ -60,6 +61,7 @@ fun SettingsScreen(
     var showBackupSheet by remember { mutableStateOf(false) }
     var showMapStyleSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scope = rememberCoroutineScope()
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var pendingExportJson by remember { mutableStateOf<String?>(null) }
@@ -108,28 +110,27 @@ fun SettingsScreen(
     val imageState = rememberAsyncImageState()
     val isSuccess = imageState.painterState is PainterState.Success
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.background)
-    ) {
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            AppTopBar(
+                title = "Settings",
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.statusBarsPadding())
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                ScreenTitle(
-                    text = "Settings",
-                    modifier = Modifier.padding(top = 24.dp, bottom = 12.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (isLoginEnabled) {
                 Column(
@@ -414,8 +415,7 @@ fun SettingsScreen(
         }
 
         SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            hostState = snackbarHostState
         )
     }
 }

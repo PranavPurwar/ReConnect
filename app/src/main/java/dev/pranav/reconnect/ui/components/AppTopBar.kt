@@ -1,28 +1,21 @@
 package dev.pranav.reconnect.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BubbleChart
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.panpf.sketch.AsyncImage
-import com.github.panpf.sketch.PainterState
-import com.github.panpf.sketch.rememberAsyncImageState
-import dev.pranav.reconnect.di.AppContainer
+import dev.chrisbanes.haze.HazeDefaults
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
 import dev.pranav.reconnect.ui.theme.CharcoalText
-import dev.pranav.reconnect.ui.theme.GoldPrimary
+import dev.pranav.reconnect.ui.theme.SansFontFamily
 import dev.pranav.reconnect.ui.theme.UltraFamily
 
 @Composable
@@ -43,90 +36,65 @@ fun ScreenTitle(
     )
 }
 
-@Composable
-fun CurrentUserAvatar(
-    modifier: Modifier = Modifier,
-    showBorder: Boolean = true
-) {
-    val imageUri = AppContainer.photoResolver.resolveUserAvatar(
-        AppContainer.authStore.currentUserId
-    )
-
-    val imageState = rememberAsyncImageState()
-    val isSuccess = imageState.painterState is PainterState.Success
-
-    Box(
-        modifier = modifier
-            .size(40.dp)
-            .then(
-                if (showBorder) {
-                    Modifier.border(2.dp, GoldPrimary.copy(alpha = 0.35f), CircleShape)
-                } else {
-                    Modifier
-                }
-            )
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-    ) {
-        if (!isSuccess) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = Color(0xFF6B6B6B)
-            )
-        }
-
-        AsyncImage(
-            uri = imageUri,
-            state = imageState,
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
-    showLogo: Boolean = true,
+    title: String,
+    modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
-    actions: @Composable RowScope.() -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {},
+    hazeState: HazeState? = null,
+    scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
-    TopAppBar(
-        title = {
-            if (showLogo) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(GoldPrimary, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.BubbleChart,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
+    val collapsedFraction = (scrollBehavior?.state?.collapsedFraction ?: 0f).coerceIn(0f, 1f)
+
+    val currentFontFamily = if (scrollBehavior != null && collapsedFraction > 0.6f) {
+        SansFontFamily
+    } else {
+        UltraFamily
+    }
+
+    val backgroundColor = MaterialTheme.colorScheme.surface
+
+    LargeTopAppBar(
+        modifier = modifier
+            .then(
+                if (hazeState != null && collapsedFraction > 0f) {
+                    Modifier.hazeEffect(hazeState) {
+                        // Dynamically increase blur radius up to 16.dp as it collapses
+                        blurRadius = 16.dp * collapsedFraction
+                        // Mix in your subtle surface tint directly on the blurred surface
+                        tints =
+                            listOf(HazeDefaults.tint(backgroundColor.copy(alpha = collapsedFraction * 0.7f)))
                     }
-                    Text(
-                        text = "ReConnect",
-                        fontFamily = UltraFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 22.sp,
-                        color = GoldPrimary
-                    )
+                } else {
+                    Modifier
                 }
-            }
+            ),
+        title = {
+            Text(
+                text = title,
+                fontFamily = currentFontFamily,
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-1).sp,
+                color = CharcoalText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         navigationIcon = navigationIcon,
-        actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        actions = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                actions()
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent,
+            titleContentColor = CharcoalText
+        ),
+        scrollBehavior = scrollBehavior
     )
 }

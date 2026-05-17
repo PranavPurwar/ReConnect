@@ -23,7 +23,6 @@ import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.core.session.MapStyle
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.MediumGray
-import io.github.jan.supabase.annotations.SupabaseInternal
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -51,7 +50,7 @@ import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.toJson
 
-@OptIn(SupabaseInternal::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MomentsMap(
     moments: List<PastMoment>,

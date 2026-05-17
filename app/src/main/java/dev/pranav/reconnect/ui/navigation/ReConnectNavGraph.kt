@@ -14,13 +14,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
-import dev.pranav.reconnect.MainScreen
 import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.di.AppViewModelProvider
 import dev.pranav.reconnect.ui.add.AddConnectionScreen
 import dev.pranav.reconnect.ui.detail.ConnectionDetailScreen
 import dev.pranav.reconnect.ui.gallery.GalleryScreen
 import dev.pranav.reconnect.ui.gallery.ImagePreviewScreen
+import dev.pranav.reconnect.ui.main.MainScreen
 import dev.pranav.reconnect.ui.maps.MapScreen
 import dev.pranav.reconnect.ui.maps.MomentsViewModel
 import dev.pranav.reconnect.ui.onboarding.OnboardingScreen
@@ -33,8 +33,7 @@ import dev.pranav.reconnect.ui.user.SignUpScreen
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
-@OptIn(ExperimentalCoroutinesApi::class)
-@FlowPreview
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
 fun ReConnectNavGraph(
     navController: NavHostController,
@@ -132,7 +131,7 @@ fun ReConnectNavGraph(
                 onSkip = {
                     sessionStore.setOnboardingDone(true)
                     navController.navigate(AppRoute.Main) {
-                        popUpTo<AppRoute.Onboarding> { inclusive = true }
+                        popUpTo(AppRoute.Onboarding) { inclusive = true }
                     }
                 }
             )
@@ -143,13 +142,13 @@ fun ReConnectNavGraph(
                 onContinue = {
                     sessionStore.setOnboardingDone(true)
                     navController.navigate(AppRoute.Main) {
-                        popUpTo<AppRoute.Onboarding> { inclusive = true }
+                        popUpTo(AppRoute.Onboarding) { inclusive = true }
                     }
                 },
                 onSkip = {
                     sessionStore.setOnboardingDone(true)
                     navController.navigate(AppRoute.Main) {
-                        popUpTo<AppRoute.Onboarding> { inclusive = true }
+                        popUpTo(AppRoute.Onboarding) { inclusive = true }
                     }
                 }
             )

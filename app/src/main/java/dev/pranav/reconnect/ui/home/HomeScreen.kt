@@ -15,10 +15,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -29,13 +31,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.di.AppContainer
-import dev.pranav.reconnect.ui.components.CurrentUserAvatar
-import dev.pranav.reconnect.ui.components.ScreenTitle
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.maps.MomentsMap
 import dev.pranav.reconnect.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onContactClick: (String) -> Unit,
@@ -47,10 +51,21 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = CreamBackground,
+        topBar = {
+            AppTopBar(
+                title = "Hello, ${state.userName}",
+                scrollBehavior = scrollBehavior,
+                hazeState = hazeState
+            )
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddClick,
@@ -69,21 +84,18 @@ fun HomeScreen(
         }
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(hazeState),
             contentPadding = PaddingValues(
-                top = paddingValues.calculateTopPadding() + 24.dp,
+                top = paddingValues.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + 100.dp
             )
         ) {
-            // --- Header ---
-            item {
-                HomeHeader(state.userName)
-                Spacer(Modifier.height(32.dp))
-            }
-
             // --- Suggestion Hero ---
             state.topSlot?.let { slot ->
                 item {
+                    Spacer(Modifier.height(16.dp))
                     SuggestionHero(slot, onContactClick)
                     Spacer(Modifier.height(40.dp))
                 }
@@ -142,34 +154,6 @@ fun HomeScreen(
     }
 }
 
-@Composable
-private fun HomeHeader(userName: String) {
-    Column(Modifier.padding(horizontal = 24.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "RECONNECT",
-                style = MaterialTheme.typography.labelLarge.copy(
-                    letterSpacing = 4.sp,
-                    fontWeight = FontWeight.Black,
-                    color = GoldPrimary
-                )
-            )
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                border = BorderStroke(1.5.dp, GoldPrimary)
-            ) {
-                CurrentUserAvatar(modifier = Modifier.fillMaxSize(), showBorder = false)
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        ScreenTitle(text = "Hello, $userName")
-    }
-}
 
 @Composable
 private fun SuggestionHero(slot: HomeTopSlot, onContactClick: (String) -> Unit) {

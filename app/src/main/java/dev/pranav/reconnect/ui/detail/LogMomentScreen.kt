@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +32,7 @@ import dev.pranav.reconnect.core.model.MomentImage
 import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.di.AppContainer
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.MediumGray
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
@@ -147,21 +149,22 @@ fun LogMomentScreen(
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .zIndex(10f),
+            .zIndex(10f)
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text("Log a Moment") },
+            AppTopBar(
+                title = "Log a Moment",
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                }
             )
         },
         containerColor = MaterialTheme.colorScheme.surface,
@@ -169,8 +172,8 @@ fun LogMomentScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)

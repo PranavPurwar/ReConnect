@@ -39,7 +39,7 @@ fun OnboardingScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                showLogo = false,
+                title = "Sync Contacts",
                 navigationIcon = {
                     IconButton(onClick = onSkip) {
                         Icon(Icons.Default.Close, contentDescription = "Close")

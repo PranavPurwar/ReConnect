@@ -17,15 +17,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.AmberCardStart
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.GoldPrimary
-import dev.pranav.reconnect.ui.theme.MediumGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,23 +36,14 @@ fun GalleryScreen(
     onBack: () -> Unit,
     onImageClick: (index: Int) -> Unit
 ) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = CharcoalText
-                        )
-                        Text(
-                            "${imageUris.size} ${if (imageUris.size == 1) "photo" else "photos"}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MediumGray
-                        )
-                    }
-                },
+            AppTopBar(
+                title = title,
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -60,10 +52,7 @@ fun GalleryScreen(
                             tint = CharcoalText
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.92f)
-                )
+                }
             )
         },
         containerColor = Color.Transparent

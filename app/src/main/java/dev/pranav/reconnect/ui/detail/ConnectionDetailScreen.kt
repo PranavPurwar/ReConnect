@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -34,9 +35,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.di.AppContainer
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,6 +65,8 @@ fun ConnectionDetailScreen(
     var showLogSheet by remember { mutableStateOf(false) }
     var momentToEdit by remember { mutableStateOf<PastMoment?>(null) }
     var showMoreMenu by remember { mutableStateOf(false) }
+    val hazeState = remember { HazeState() }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     // Removed specific local bitmapping, using placeholder color
     val contactPhotoBitmap by produceState<android.graphics.Bitmap?>(
@@ -77,11 +83,13 @@ fun ConnectionDetailScreen(
 
     val detailContent: @Composable () -> Unit = {
         Scaffold(
-            modifier = Modifier,
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             contentWindowInsets = WindowInsets(0.dp),
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = { },
+                AppTopBar(
+                    title = contact?.name ?: "",
+                    scrollBehavior = scrollBehavior,
+                    hazeState = hazeState,
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(
@@ -156,13 +164,7 @@ fun ConnectionDetailScreen(
                                 )
                             }
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent.copy(alpha = 0.95f),
-                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                    )
+                    }
                 )
             },
             floatingActionButton = {
@@ -192,8 +194,12 @@ fun ConnectionDetailScreen(
             }
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 96.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .hazeSource(hazeState),
+                contentPadding = PaddingValues(
+                    bottom = innerPadding.calculateBottomPadding() + 96.dp
+                )
             ) {
                 item {
                     // Hero Header
@@ -208,16 +214,14 @@ fun ConnectionDetailScreen(
                                     )
                                 )
                             )
-                            .padding(top = scaffoldPadding.calculateTopPadding(), bottom = 24.dp),
+                            .padding(bottom = 24.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(scaffoldPadding.calculateTopPadding() + 8.dp))
 
                             Box(contentAlignment = Alignment.BottomEnd) {
                                 val imageState = rememberAsyncImageState()
-                                // Since ConnectionDetailScreen applies a SeedColorTheme dynamically to its content,
-                                // MaterialTheme.colorScheme already contains the seeded colors for this contact.
                                 Surface(
                                     modifier = Modifier
                                         .size(120.dp)
@@ -291,12 +295,6 @@ fun ConnectionDetailScreen(
 
                             Spacer(Modifier.height(12.dp))
 
-                            Text(
-                                text = contact.name,
-                                style = MaterialTheme.typography.headlineLarge,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 32.dp)
-                            )
 
                             val subtitle = listOfNotNull(
                                 contact.title.takeIf { it.isNotBlank() },

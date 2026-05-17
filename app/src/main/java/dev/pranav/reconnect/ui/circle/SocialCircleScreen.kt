@@ -3,25 +3,25 @@ package dev.pranav.reconnect.ui.circle
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -33,10 +33,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.di.AppContainer
-import dev.pranav.reconnect.ui.components.CurrentUserAvatar
-import dev.pranav.reconnect.ui.components.ScreenTitle
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.*
 import java.util.Calendar
 
@@ -52,10 +53,21 @@ fun SocialCircleScreen(
     val contacts by viewModel.filteredContacts.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            AppTopBar(
+                title = "Your Circle",
+                scrollBehavior = scrollBehavior,
+                hazeState = hazeState
+            )
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddClick,
@@ -75,16 +87,17 @@ fun SocialCircleScreen(
         contentWindowInsets = WindowInsets.statusBars
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(hazeState),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + 120.dp
             ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            item { CircleHeader() }
-
             item {
+                Spacer(Modifier.height(16.dp))
                 CircleSearchBar(
                     query = searchQuery,
                     onQueryChange = { viewModel.updateSearch(it) }
@@ -165,35 +178,6 @@ fun SocialCircleScreen(
     }
 }
 
-@Composable
-private fun CircleHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = 24.dp,
-                vertical = 20.dp
-            ),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        ScreenTitle(
-            text = "Your Circle",
-            modifier = Modifier.weight(1f)
-        )
-
-        Surface(
-            modifier = Modifier.size(48.dp),
-            shape = CircleShape,
-            border = BorderStroke(2.dp, GoldPrimary)
-        ) {
-            CurrentUserAvatar(
-                modifier = Modifier.size(48.dp),
-                showBorder = false
-            )
-        }
-    }
-}
 
 @Composable
 private fun CircleSearchBar(query: String, onQueryChange: (String) -> Unit) {

@@ -1,7 +1,6 @@
 package dev.pranav.reconnect.ui.journey
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -35,8 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.SubcomposeAsyncImage
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.di.AppContainer
-import dev.pranav.reconnect.ui.components.CurrentUserAvatar
-import dev.pranav.reconnect.ui.components.ScreenTitle
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.GoldPrimary
 import dev.pranav.reconnect.ui.theme.PlayfairFamily
@@ -45,19 +44,34 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JourneyScreen(
     onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
     viewModel: JourneyViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    LazyColumn(
+    Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = WindowInsets.statusBars.asPaddingValues()
-    ) {
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            AppTopBar(
+                title = "Your Journey",
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = padding.calculateTopPadding(),
+                bottom = 120.dp
+            )
+        ) {
             item {
                 Column(
                     modifier = Modifier
@@ -69,44 +83,6 @@ fun JourneyScreen(
                             bottom = 16.dp
                         )
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        //Surface(
-                        //    onClick = onBackClick,
-                        //    shape = CircleShape,
-                        //    color = GoldPrimary.copy(alpha = 0.1f),
-                        //    modifier = Modifier.size(48.dp)
-                        //) {
-                        //    Box(contentAlignment = Alignment.Center) {
-                        //        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GoldPrimary)
-                        //    }
-                        //}
-
-                        Surface(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .border(2.dp, GoldPrimary.copy(alpha = 0.2f), CircleShape),
-                            shape = CircleShape,
-                            color = Color.LightGray
-                        ) {
-                            CurrentUserAvatar(
-                                modifier = Modifier.size(48.dp),
-                                showBorder = false
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(24.dp))
-
-                    ScreenTitle(
-                        text = "Your Journey",
-                        modifier = Modifier.padding(end = 32.dp)
-                    )
-
-                    Spacer(Modifier.height(24.dp))
 
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         item {
@@ -164,6 +140,7 @@ fun JourneyScreen(
             }
         }
     }
+}
 
 @Composable
 private fun TimelineEntry(

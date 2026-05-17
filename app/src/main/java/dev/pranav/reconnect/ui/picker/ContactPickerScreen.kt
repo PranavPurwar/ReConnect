@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,18 +70,9 @@ fun ContactPickerScreen(
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
-        topBar = {
-            AppTopBar(
-                showLogo = false,
-                navigationIcon = {
-                    IconButton(onClick = onSkip) {
-                        Icon(Icons.Default.Close, contentDescription = "Skip")
-                    }
-                }
-            )
-        },
-        containerColor = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -91,17 +83,29 @@ fun ContactPickerScreen(
                     )
                 )
             )
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            AppTopBar(
+                title = "Choose Your Circle",
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    IconButton(onClick = onSkip) {
+                        Icon(Icons.Default.Close, contentDescription = "Skip")
+                    }
+                }
+            )
+        },
+        containerColor = Color.Transparent
     ) { scaffoldPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = scaffoldPadding.calculateTopPadding())
+                .padding(
+                    top = scaffoldPadding.calculateTopPadding(),
+                    bottom = scaffoldPadding.calculateBottomPadding()
+                )
         ) {
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Text(
-                    text = "Choose Your Circle",
-                    style = MaterialTheme.typography.headlineMedium
-                )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Select the people who matter most and how often you'd like to reconnect.",

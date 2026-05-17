@@ -1,8 +1,6 @@
 package dev.pranav.reconnect.ui.settings
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,11 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.GoldPrimary
-import dev.pranav.reconnect.ui.theme.PlusJakartaSansFamily
 
 private enum class PlanType(val title: String, val subtitle: String, val price: String) {
     FREE("Free", "Basic access to ReConnect features", "$0/mo"),
@@ -36,23 +35,19 @@ fun SubscriptionPlanScreen(
     onBack: () -> Unit
 ) {
     val selectedPlan = remember { mutableStateOf(PlanType.FREE) }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Subscription Plan",
-                        fontFamily = PlusJakartaSansFamily,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+            AppTopBar(
+                title = "Subscription Plan",
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                }
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -62,7 +57,8 @@ fun SubscriptionPlanScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp, vertical = 16.dp)
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.Start
         ) {
             ScreenTitle(
@@ -109,7 +105,8 @@ fun SubscriptionPlanScreen(
                 description = "Get smarter alerts for your highest-priority relationships."
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f, fill = false))
+            Spacer(modifier = Modifier.height(16.dp))
 
             val actionLabel =
                 if (selectedPlan.value == PlanType.PREMIUM) "Coming soon" else "Continue with Free"

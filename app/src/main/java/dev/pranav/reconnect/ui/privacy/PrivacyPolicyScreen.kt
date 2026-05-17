@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,6 +22,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.*
 
@@ -30,6 +33,7 @@ fun PrivacyPolicyScreen(
     onBack: () -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -38,6 +42,7 @@ fun PrivacyPolicyScreen(
             AppTopBar(
                 title = "Privacy Promise",
                 scrollBehavior = scrollBehavior,
+                hazeState = hazeState,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -49,9 +54,14 @@ fun PrivacyPolicyScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .hazeSource(hazeState)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(
+                    top = padding.calculateTopPadding() + 24.dp,
+                    bottom = padding.calculateBottomPadding() + 24.dp,
+                    start = 24.dp,
+                    end = 24.dp
+                ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             PrivacyHeroCard()

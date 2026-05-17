@@ -11,8 +11,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.pranav.reconnect.ui.theme.CharcoalText
 import dev.pranav.reconnect.ui.theme.SansFontFamily
@@ -60,13 +60,14 @@ fun AppTopBar(
         modifier = modifier
             .then(
                 if (hazeState != null && collapsedFraction > 0f) {
-                    Modifier.hazeEffect(hazeState) {
-                        // Dynamically increase blur radius up to 16.dp as it collapses
-                        blurRadius = 16.dp * collapsedFraction
-                        // Mix in your subtle surface tint directly on the blurred surface
-                        tints =
-                            listOf(HazeDefaults.tint(backgroundColor.copy(alpha = collapsedFraction * 0.7f)))
-                    }
+                    Modifier.hazeEffect(
+                        state = hazeState,
+                        style = dev.chrisbanes.haze.HazeStyle(
+                            backgroundColor = backgroundColor.copy(alpha = collapsedFraction * 0.7f),
+                            tint = HazeTint(backgroundColor.copy(alpha = collapsedFraction * 0.7f)),
+                            blurRadius = 16.dp * collapsedFraction
+                        )
+                    )
                 } else {
                     Modifier
                 }

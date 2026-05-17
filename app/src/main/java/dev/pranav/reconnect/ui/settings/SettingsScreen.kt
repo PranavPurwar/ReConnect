@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.session.MapStyle
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.AppTopBar
@@ -109,6 +110,7 @@ fun SettingsScreen(
 
     val imageState = rememberAsyncImageState()
     val isSuccess = imageState.painterState is PainterState.Success
+    val hazeState = remember { dev.chrisbanes.haze.HazeState() }
 
     Scaffold(
         modifier = Modifier
@@ -118,16 +120,22 @@ fun SettingsScreen(
         topBar = {
             AppTopBar(
                 title = "Settings",
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
+                hazeState = hazeState
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
+                .hazeSource(hazeState)
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    top = padding.calculateTopPadding(),
+                    bottom = padding.calculateBottomPadding(),
+                    start = 24.dp,
+                    end = 24.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))

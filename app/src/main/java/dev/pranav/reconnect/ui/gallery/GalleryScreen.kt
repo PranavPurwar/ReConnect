@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.AmberCardStart
 import dev.pranav.reconnect.ui.theme.CharcoalText
@@ -37,6 +40,7 @@ fun GalleryScreen(
     onImageClick: (index: Int) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -44,6 +48,7 @@ fun GalleryScreen(
             AppTopBar(
                 title = title,
                 scrollBehavior = scrollBehavior,
+                hazeState = hazeState,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -60,6 +65,7 @@ fun GalleryScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .hazeSource(hazeState)
                 .background(
                     Brush.verticalGradient(
                         listOf(

@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.components.ScreenTitle
 import dev.pranav.reconnect.ui.theme.GoldPrimary
@@ -36,6 +38,7 @@ fun SubscriptionPlanScreen(
 ) {
     val selectedPlan = remember { mutableStateOf(PlanType.FREE) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -43,6 +46,7 @@ fun SubscriptionPlanScreen(
             AppTopBar(
                 title = "Subscription Plan",
                 scrollBehavior = scrollBehavior,
+                hazeState = hazeState,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -55,10 +59,14 @@ fun SubscriptionPlanScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState()),
+                .hazeSource(hazeState)
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    top = paddingValues.calculateTopPadding() + 16.dp,
+                    bottom = paddingValues.calculateBottomPadding() + 16.dp,
+                    start = 24.dp,
+                    end = 24.dp
+                ),
             horizontalAlignment = Alignment.Start
         ) {
             ScreenTitle(

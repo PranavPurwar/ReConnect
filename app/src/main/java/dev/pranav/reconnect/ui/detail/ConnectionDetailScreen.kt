@@ -193,605 +193,618 @@ fun ConnectionDetailScreen(
                 return@Scaffold
             }
 
-            LazyColumn(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .hazeSource(hazeState),
-                contentPadding = PaddingValues(
-                    bottom = innerPadding.calculateBottomPadding() + 96.dp
-                )
+                    .hazeSource(hazeState)
             ) {
-                item {
-                    // Hero Header
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primaryContainer,
-                                        Color.Transparent
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        bottom = innerPadding.calculateBottomPadding() + 96.dp
+                    )
+                ) {
+                    item {
+                        // Hero Header
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.primaryContainer,
+                                            Color.Transparent
+                                        )
                                     )
                                 )
-                            )
-                            .padding(bottom = 24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Spacer(Modifier.height(scaffoldPadding.calculateTopPadding() + 8.dp))
+                                .padding(bottom = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Spacer(Modifier.height(scaffoldPadding.calculateTopPadding() + 8.dp))
 
-                            Box(contentAlignment = Alignment.BottomEnd) {
-                                val imageState = rememberAsyncImageState()
-                                Surface(
-                                    modifier = Modifier
-                                        .size(120.dp)
-                                        .border(
-                                            3.dp,
-                                            MaterialTheme.colorScheme.outlineVariant,
-                                            CircleShape
-                                        ),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surfaceContainer
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        if (imageState.painterState !is PainterState.Success) {
-                                            val initials = contact.name.split(" ").take(2)
-                                                .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-                                                .joinToString("").takeIf { it.isNotEmpty() } ?: "?"
-                                            Text(
-                                                text = initials,
-                                                style = MaterialTheme.typography.headlineLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
+                                Box(contentAlignment = Alignment.BottomEnd) {
+                                    val imageState = rememberAsyncImageState()
+                                    Surface(
+                                        modifier = Modifier
+                                            .size(120.dp)
+                                            .border(
+                                                3.dp,
+                                                MaterialTheme.colorScheme.outlineVariant,
+                                                CircleShape
+                                            ),
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.surfaceContainer
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (imageState.painterState !is PainterState.Success) {
+                                                val initials = contact.name.split(" ").take(2)
+                                                    .mapNotNull {
+                                                        it.firstOrNull()?.uppercaseChar()
+                                                    }
+                                                    .joinToString("").takeIf { it.isNotEmpty() }
+                                                    ?: "?"
+                                                Text(
+                                                    text = initials,
+                                                    style = MaterialTheme.typography.headlineLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+
+                                            AsyncImage(
+                                                uri = AppContainer.photoResolver.resolveContactPhoto(
+                                                    contact.id
+                                                ),
+                                                state = imageState,
+                                                contentDescription = contact.name,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
                                             )
                                         }
-
-                                        AsyncImage(
-                                            uri = AppContainer.photoResolver.resolveContactPhoto(
-                                                contact.id
-                                            ),
-                                            state = imageState,
-                                            contentDescription = contact.name,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
+                                    }
+                                    if (contact.isActive) {
+                                        Box(
+                                            modifier = Modifier
+                                                .offset(x = (-4).dp, y = (-4).dp)
+                                                .size(20.dp)
+                                                .border(
+                                                    3.dp,
+                                                    MaterialTheme.colorScheme.surface,
+                                                    CircleShape
+                                                )
+                                                .clip(CircleShape)
+                                                .background(ActiveGreen)
                                         )
                                     }
                                 }
-                                if (contact.isActive) {
-                                    Box(
-                                        modifier = Modifier
-                                            .offset(x = (-4).dp, y = (-4).dp)
-                                            .size(20.dp)
-                                            .border(
-                                                3.dp,
-                                                MaterialTheme.colorScheme.surface,
-                                                CircleShape
-                                            )
-                                            .clip(CircleShape)
-                                            .background(ActiveGreen)
-                                    )
-                                }
-                            }
 
-                            if (contact.isImportant) {
-                                Spacer(Modifier.height(6.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Star,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(13.dp),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        "Important",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-
-                            Spacer(Modifier.height(12.dp))
-
-
-                            val subtitle = listOfNotNull(
-                                contact.title.takeIf { it.isNotBlank() },
-                                contact.relationship.takeIf { it.isNotBlank() }
-                            ).joinToString(" • ")
-                            if (subtitle.isNotBlank()) {
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = subtitle,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-
-                            if (contact.phoneNumber.isNotBlank()) {
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = contact.phoneNumber,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-
-                            Spacer(Modifier.height(12.dp))
-
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                ) {
-                                    Text(
-                                        "Reconnects ${contact.reconnectInterval.label}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(
-                                            horizontal = 10.dp,
-                                            vertical = 4.dp
-                                        )
-                                    )
-                                }
-
-                                val healthColor = when (state.relationshipHealth) {
-                                    RelationshipHealth.STRONG -> ActiveGreen
-                                    RelationshipHealth.NEUTRAL -> MaterialTheme.colorScheme.primary
-                                    RelationshipHealth.FADING -> Color(0xFFE57373)
-                                }
-                                val healthLabel = when (state.relationshipHealth) {
-                                    RelationshipHealth.STRONG -> "Strong Bond"
-                                    RelationshipHealth.NEUTRAL -> "Nurturing"
-                                    RelationshipHealth.FADING -> "Fading"
-                                }
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = healthColor.copy(alpha = 0.12f)
-                                ) {
+                                if (contact.isImportant) {
+                                    Spacer(Modifier.height(6.dp))
                                     Row(
-                                        modifier = Modifier.padding(
-                                            horizontal = 10.dp,
-                                            vertical = 4.dp
-                                        ),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .clip(CircleShape)
-                                                .background(healthColor)
+                                        Icon(
+                                            Icons.Default.Star,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(13.dp),
+                                            tint = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            healthLabel,
+                                            "Important",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = healthColor
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
-                            }
-                        }
-                    }
 
-                    Spacer(Modifier.height(16.dp))
-                } // end hero header item
+                                Spacer(Modifier.height(12.dp))
 
-                item {
-                    // Stats Row
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            value = state.filteredMoments.size.toString(),
-                            label = "moments",
-                            icon = Icons.Default.BookmarkBorder
-                        )
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            value = state.daysSinceLastContact?.let {
-                                if (it == 0) "Today" else "${it}d ago"
-                            } ?: "—",
-                            label = "last contact",
-                            icon = Icons.Default.AccessTime
-                        )
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            value = state.daysUntilBirthday?.let { "${it}d" } ?: "—",
-                            label = "till birthday",
-                            icon = Icons.Default.Cake
-                        )
-                    }
-                }
 
-                item {
-                    // Action Buttons
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 20.dp, end = 20.dp, top = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                if (contact.phoneNumber.isNotBlank()) {
-                                    val smsIntent = Intent(
-                                        Intent.ACTION_SENDTO,
-                                        "smsto:${contact.phoneNumber}".toUri()
-                                    ).apply {
-                                        putExtra(
-                                            "sms_body",
-                                            "Hey ${contact.name}, just checking in!"
-                                        )
-                                    }
-                                    context.startActivity(smsIntent)
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(28.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.ChatBubbleOutline,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text("Message")
-                        }
-                        Button(
-                            onClick = {
-                                if (contact.phoneNumber.isNotBlank()) {
-                                    context.startActivity(
-                                        Intent(Intent.ACTION_DIAL).apply {
-                                            data = "tel:${contact.phoneNumber}".toUri()
-                                        }
+                                val subtitle = listOfNotNull(
+                                    contact.title.takeIf { it.isNotBlank() },
+                                    contact.relationship.takeIf { it.isNotBlank() }
+                                ).joinToString(" • ")
+                                if (subtitle.isNotBlank()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = subtitle,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(28.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.Phone,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text("Call")
-                        }
-                    }
-                }
 
-                if (state.daysUntilBirthday != null && state.daysUntilBirthday!! <= 30) {
-                    item {
-                        BirthdayReminderCard(
-                            daysUntilBirthday = state.daysUntilBirthday!!,
-                            name = contact.name,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 20.dp, end = 20.dp, top = 20.dp)
-                        )
-                    }
-                }
+                                if (contact.phoneNumber.isNotBlank()) {
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = contact.phoneNumber,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
 
-                if (contact.notes.isNotBlank()) {
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 20.dp, end = 20.dp, top = 20.dp)
-                        ) {
-                            Text("Notes", style = MaterialTheme.typography.headlineMedium)
-                            Spacer(Modifier.height(12.dp))
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
+                                Spacer(Modifier.height(12.dp))
+
                                 Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.Top,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.StickyNote2,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .padding(top = 2.dp)
-                                    )
-                                    Text(
-                                        contact.notes,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    // Next Talk Section
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 20.dp, end = 20.dp, top = 32.dp)
-                    ) {
-                        Text("Next Talk", style = MaterialTheme.typography.headlineMedium)
-                        Spacer(Modifier.height(12.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(28.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
-                        ) {
-                            Column(modifier = Modifier.padding(20.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Default.CalendarToday,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
-                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        state.nextTalkDate,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                }
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 16.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                )
-                                //Row(
-                                //    verticalAlignment = Alignment.CenterVertically,
-                                //    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                //) {
-                                //Icon(
-                                //    Icons.Default.AutoAwesome,
-                                //    contentDescription = null,
-                                //    modifier = Modifier.size(16.dp),
-                                //    tint = MaterialTheme.colorScheme.primary
-                                //)
-                                //Text(
-                                //    "AI PREP",
-                                //    style = MaterialTheme.typography.labelLarge,
-                                //    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                //    letterSpacing = 1.sp
-                                //)
-                                //Surface(
-                                //    shape = RoundedCornerShape(4.dp),
-                                //    color = MaterialTheme.colorScheme.secondary
-                                //) {
-                                //    Text(
-                                //        "PRO",
-                                //        style = MaterialTheme.typography.labelSmall,
-                                //        color = MaterialTheme.colorScheme.onSecondary,
-                                //        modifier = Modifier.padding(
-                                //            horizontal = 6.dp,
-                                //            vertical = 2.dp
-                                //        )
-                                //    )
-                                //}
-                                //}
-                                Spacer(Modifier.height(10.dp))
-                                state.aiPrepBullets.forEach { bullet ->
-                                    Row(
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                        verticalAlignment = Alignment.Top
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(top = 7.dp)
-                                                .size(6.dp)
-                                                .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.primary)
+                                        Text(
+                                            "Reconnects ${contact.reconnectInterval.label}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(
+                                                horizontal = 10.dp,
+                                                vertical = 4.dp
+                                            )
                                         )
-                                        Spacer(Modifier.width(10.dp))
-                                        Text(bullet, style = MaterialTheme.typography.bodyMedium)
+                                    }
+
+                                    val healthColor = when (state.relationshipHealth) {
+                                        RelationshipHealth.STRONG -> ActiveGreen
+                                        RelationshipHealth.NEUTRAL -> MaterialTheme.colorScheme.primary
+                                        RelationshipHealth.FADING -> Color(0xFFE57373)
+                                    }
+                                    val healthLabel = when (state.relationshipHealth) {
+                                        RelationshipHealth.STRONG -> "Strong Bond"
+                                        RelationshipHealth.NEUTRAL -> "Nurturing"
+                                        RelationshipHealth.FADING -> "Fading"
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = healthColor.copy(alpha = 0.12f)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(
+                                                horizontal = 10.dp,
+                                                vertical = 4.dp
+                                            ),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(healthColor)
+                                            )
+                                            Text(
+                                                healthLabel,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = healthColor
+                                            )
+                                        }
                                     }
                                 }
-                                Spacer(Modifier.height(16.dp))
-                                Button(
-                                    onClick = {
-                                        val intent = Intent(Intent.ACTION_INSERT).apply {
-                                            data =
-                                                android.provider.CalendarContract.Events.CONTENT_URI
-                                            putExtra(
-                                                android.provider.CalendarContract.Events.TITLE,
-                                                "Reconnect with ${contact.name}"
-                                            )
-                                            putExtra(
-                                                android.provider.CalendarContract.Events.DESCRIPTION,
-                                                "ReConnect reminder — ${state.nextTalkDate}"
-                                            )
-                                            contact.seedColorArgb?.let {
-                                                putExtra(
-                                                    android.provider.CalendarContract.Events.EVENT_COLOR,
-                                                    it
-                                                )
-                                            }
-                                            if (contact.phoneNumber.isNotBlank()) {
-                                                putExtra(
-                                                    Intent.EXTRA_PHONE_NUMBER,
-                                                    contact.phoneNumber
-                                                )
-                                            } else {
-                                                putExtra(Intent.EXTRA_EMAIL, contact.name)
-                                            }
-                                            state.nextTalkDateEpochMs?.let {
-                                                putExtra(
-                                                    android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                    it
-                                                )
-                                                putExtra(
-                                                    android.provider.CalendarContract.EXTRA_EVENT_ALL_DAY,
-                                                    true
-                                                )
-                                            }
-                                        }
-                                        context.startActivity(intent)
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(28.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondary,
-                                        contentColor = MaterialTheme.colorScheme.onSecondary
-                                    )
-                                ) {
-                                    Icon(
-                                        Icons.Default.CalendarMonth,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Add to Calendar", fontFamily = PlusJakartaSansFamily)
-                                }
                             }
                         }
-                    }
-                }
 
-                item {
-                    // Past Moments Header + Filter Chips
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 32.dp)
-                    ) {
-                        Text(
-                            "Past Moments",
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            item {
-                                FilterChip(
-                                    selected = state.selectedCategory == null,
-                                    onClick = { viewModel.setFilter(null) },
-                                    label = {
-                                        Text(
-                                            "All",
-                                            style = MaterialTheme.typography.labelMedium
-                                        )
-                                    },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                )
-                            }
-                            items(MomentCategory.entries.toList()) { cat ->
-                                FilterChip(
-                                    selected = state.selectedCategory == cat,
-                                    onClick = { viewModel.setFilter(cat) },
-                                    label = {
-                                        Text(
-                                            cat.name.lowercase()
-                                                .replaceFirstChar { it.uppercase() },
-                                            style = MaterialTheme.typography.labelMedium
-                                        )
-                                    },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                )
-                            }
-                        }
                         Spacer(Modifier.height(16.dp))
-                    }
-                }
+                    } // end hero header item
 
-                if (state.filteredMoments.isEmpty()) {
                     item {
-                        Card(
+                        // Stats Row
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                            shape = RoundedCornerShape(20.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
+                            StatCard(
+                                modifier = Modifier.weight(1f),
+                                value = state.filteredMoments.size.toString(),
+                                label = "moments",
+                                icon = Icons.Default.BookmarkBorder
+                            )
+                            StatCard(
+                                modifier = Modifier.weight(1f),
+                                value = state.daysSinceLastContact?.let {
+                                    if (it == 0) "Today" else "${it}d ago"
+                                } ?: "—",
+                                label = "last contact",
+                                icon = Icons.Default.AccessTime
+                            )
+                            StatCard(
+                                modifier = Modifier.weight(1f),
+                                value = state.daysUntilBirthday?.let { "${it}d" } ?: "—",
+                                label = "till birthday",
+                                icon = Icons.Default.Cake
+                            )
+                        }
+                    }
+
+                    item {
+                        // Action Buttons
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 20.dp, end = 20.dp, top = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    if (contact.phoneNumber.isNotBlank()) {
+                                        val smsIntent = Intent(
+                                            Intent.ACTION_SENDTO,
+                                            "smsto:${contact.phoneNumber}".toUri()
+                                        ).apply {
+                                            putExtra(
+                                                "sms_body",
+                                                "Hey ${contact.name}, just checking in!"
+                                            )
+                                        }
+                                        context.startActivity(smsIntent)
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(28.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.ChatBubbleOutline,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Message")
+                            }
+                            Button(
+                                onClick = {
+                                    if (contact.phoneNumber.isNotBlank()) {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_DIAL).apply {
+                                                data = "tel:${contact.phoneNumber}".toUri()
+                                            }
+                                        )
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(28.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Phone,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Call")
+                            }
+                        }
+                    }
+
+                    if (state.daysUntilBirthday != null && state.daysUntilBirthday!! <= 30) {
+                        item {
+                            BirthdayReminderCard(
+                                daysUntilBirthday = state.daysUntilBirthday!!,
+                                name = contact.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 20.dp, end = 20.dp, top = 20.dp)
+                            )
+                        }
+                    }
+
+                    if (contact.notes.isNotBlank()) {
+                        item {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                    .padding(start = 20.dp, end = 20.dp, top = 20.dp)
                             ) {
-                                Icon(
-                                    Icons.Default.EditNote,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(40.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    if (state.selectedCategory != null) "No ${state.selectedCategory!!.name.lowercase()} moments yet" else "No moments yet",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                if (state.selectedCategory == null) {
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        "Tap 'Log Moment' to record your first memory.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        textAlign = TextAlign.Center,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                Text("Notes", style = MaterialTheme.typography.headlineMedium)
+                                Spacer(Modifier.height(12.dp))
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.Top,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.StickyNote2,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .padding(top = 2.dp)
+                                        )
+                                        Text(
+                                            contact.notes,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                } else {
-                    itemsIndexed(
-                        items = state.filteredMoments,
-                        key = { _, moment -> moment.id }
-                    ) { index, moment ->
-                        PastMomentItem(
-                            moment = moment,
-                            isLast = index == state.filteredMoments.lastIndex,
-                            onOpenGallery = onOpenGallery,
+
+                    item {
+                        // Next Talk Section
+                        Column(
                             modifier = Modifier
-                                .animateItem()
-                                .padding(horizontal = 20.dp),
-                            onEditMoment = { moment ->
-                                momentToEdit = moment
-                                showLogSheet = true
-                            },
-                            onDeleteMoment = { id ->
-                                viewModel.deleteMoment(id)
+                                .fillMaxWidth()
+                                .padding(start = 20.dp, end = 20.dp, top = 32.dp)
+                        ) {
+                            Text("Next Talk", style = MaterialTheme.typography.headlineMedium)
+                            Spacer(Modifier.height(12.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(28.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                            ) {
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.CalendarToday,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            state.nextTalkDate,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 16.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    )
+                                    //Row(
+                                    //    verticalAlignment = Alignment.CenterVertically,
+                                    //    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    //) {
+                                    //Icon(
+                                    //    Icons.Default.AutoAwesome,
+                                    //    contentDescription = null,
+                                    //    modifier = Modifier.size(16.dp),
+                                    //    tint = MaterialTheme.colorScheme.primary
+                                    //)
+                                    //Text(
+                                    //    "AI PREP",
+                                    //    style = MaterialTheme.typography.labelLarge,
+                                    //    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    //    letterSpacing = 1.sp
+                                    //)
+                                    //Surface(
+                                    //    shape = RoundedCornerShape(4.dp),
+                                    //    color = MaterialTheme.colorScheme.secondary
+                                    //) {
+                                    //    Text(
+                                    //        "PRO",
+                                    //        style = MaterialTheme.typography.labelSmall,
+                                    //        color = MaterialTheme.colorScheme.onSecondary,
+                                    //        modifier = Modifier.padding(
+                                    //            horizontal = 6.dp,
+                                    //            vertical = 2.dp
+                                    //        )
+                                    //    )
+                                    //}
+                                    //}
+                                    Spacer(Modifier.height(10.dp))
+                                    state.aiPrepBullets.forEach { bullet ->
+                                        Row(
+                                            modifier = Modifier.padding(vertical = 4.dp),
+                                            verticalAlignment = Alignment.Top
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .padding(top = 7.dp)
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.primary)
+                                            )
+                                            Spacer(Modifier.width(10.dp))
+                                            Text(
+                                                bullet,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                    }
+                                    Spacer(Modifier.height(16.dp))
+                                    Button(
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_INSERT).apply {
+                                                data =
+                                                    android.provider.CalendarContract.Events.CONTENT_URI
+                                                putExtra(
+                                                    android.provider.CalendarContract.Events.TITLE,
+                                                    "Reconnect with ${contact.name}"
+                                                )
+                                                putExtra(
+                                                    android.provider.CalendarContract.Events.DESCRIPTION,
+                                                    "ReConnect reminder — ${state.nextTalkDate}"
+                                                )
+                                                contact.seedColorArgb?.let {
+                                                    putExtra(
+                                                        android.provider.CalendarContract.Events.EVENT_COLOR,
+                                                        it
+                                                    )
+                                                }
+                                                if (contact.phoneNumber.isNotBlank()) {
+                                                    putExtra(
+                                                        Intent.EXTRA_PHONE_NUMBER,
+                                                        contact.phoneNumber
+                                                    )
+                                                } else {
+                                                    putExtra(Intent.EXTRA_EMAIL, contact.name)
+                                                }
+                                                state.nextTalkDateEpochMs?.let {
+                                                    putExtra(
+                                                        android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                        it
+                                                    )
+                                                    putExtra(
+                                                        android.provider.CalendarContract.EXTRA_EVENT_ALL_DAY,
+                                                        true
+                                                    )
+                                                }
+                                            }
+                                            context.startActivity(intent)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(28.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondary,
+                                            contentColor = MaterialTheme.colorScheme.onSecondary
+                                        )
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CalendarMonth,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            "Add to Calendar",
+                                            fontFamily = PlusJakartaSansFamily
+                                        )
+                                    }
+                                }
                             }
-                        )
+                        }
+                    }
+
+                    item {
+                        // Past Moments Header + Filter Chips
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 32.dp)
+                        ) {
+                            Text(
+                                "Past Moments",
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 20.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                item {
+                                    FilterChip(
+                                        selected = state.selectedCategory == null,
+                                        onClick = { viewModel.setFilter(null) },
+                                        label = {
+                                            Text(
+                                                "All",
+                                                style = MaterialTheme.typography.labelMedium
+                                            )
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    )
+                                }
+                                items(MomentCategory.entries.toList()) { cat ->
+                                    FilterChip(
+                                        selected = state.selectedCategory == cat,
+                                        onClick = { viewModel.setFilter(cat) },
+                                        label = {
+                                            Text(
+                                                cat.name.lowercase()
+                                                    .replaceFirstChar { it.uppercase() },
+                                                style = MaterialTheme.typography.labelMedium
+                                            )
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                        }
+                    }
+
+                    if (state.filteredMoments.isEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        Icons.Default.EditNote,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        if (state.selectedCategory != null) "No ${state.selectedCategory!!.name.lowercase()} moments yet" else "No moments yet",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    if (state.selectedCategory == null) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            "Tap 'Log Moment' to record your first memory.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            textAlign = TextAlign.Center,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        itemsIndexed(
+                            items = state.filteredMoments,
+                            key = { _, moment -> moment.id }
+                        ) { index, moment ->
+                            PastMomentItem(
+                                moment = moment,
+                                isLast = index == state.filteredMoments.lastIndex,
+                                onOpenGallery = onOpenGallery,
+                                modifier = Modifier
+                                    .animateItem()
+                                    .padding(horizontal = 20.dp),
+                                onEditMoment = { moment ->
+                                    momentToEdit = moment
+                                    showLogSheet = true
+                                },
+                                onDeleteMoment = { id ->
+                                    viewModel.deleteMoment(id)
+                                }
+                            )
+                        }
                     }
                 }
             }

@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.github.panpf.sketch.AsyncImage
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.core.model.MomentImage
 import dev.pranav.reconnect.core.model.PastMoment
@@ -150,6 +152,7 @@ fun LogMomentScreen(
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier
@@ -160,6 +163,7 @@ fun LogMomentScreen(
             AppTopBar(
                 title = "Log a Moment",
                 scrollBehavior = scrollBehavior,
+                hazeState = hazeState,
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
@@ -169,411 +173,431 @@ fun LogMomentScreen(
         },
         containerColor = MaterialTheme.colorScheme.surface,
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .hazeSource(hazeState)
         ) {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Title *") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
-                singleLine = true
-            )
-
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { showDatePicker = true }
-                    .padding(vertical = 12.dp, horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                val formattedDate = remember(selectedDateMs) {
-                    java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.US)
-                        .format(java.util.Date(selectedDateMs))
-                }
-                Column {
-                    Text("Date", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        text = formattedDate,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
+                    singleLine = true
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showDatePicker = true }
+                        .padding(vertical = 12.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val formattedDate = remember(selectedDateMs) {
+                        java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.US)
+                            .format(java.util.Date(selectedDateMs))
+                    }
+                    Column {
+                        Text("Date", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = formattedDate,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = "Select Date",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Icon(
-                    imageVector = Icons.Default.CalendarToday,
-                    contentDescription = "Select Date",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Mark as Core Memory", style = MaterialTheme.typography.bodyLarge)
-                Switch(
-                    checked = isCoreMemory,
-                    onCheckedChange = { isCoreMemory = it },
-                    colors = SwitchDefaults.colors(checkedTrackColor = GoldPrimary)
-                )
-            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Mark as Core Memory", style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = isCoreMemory,
+                        onCheckedChange = { isCoreMemory = it },
+                        colors = SwitchDefaults.colors(checkedTrackColor = GoldPrimary)
+                    )
+                }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("I was present", style = MaterialTheme.typography.bodyLarge)
-                Switch(
-                    checked = wasPresent,
-                    onCheckedChange = { wasPresent = it },
-                    colors = SwitchDefaults.colors(checkedTrackColor = GoldPrimary)
-                )
-            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("I was present", style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = wasPresent,
+                        onCheckedChange = { wasPresent = it },
+                        colors = SwitchDefaults.colors(checkedTrackColor = GoldPrimary)
+                    )
+                }
 
-            Text("People involved", style = MaterialTheme.typography.labelLarge)
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(selectedContactIds.toList(), key = { it }) { id ->
-                    val contact = allContacts.find { it.id == id }
-                    if (contact != null) {
+                Text("People involved", style = MaterialTheme.typography.labelLarge)
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(selectedContactIds.toList(), key = { it }) { id ->
+                        val contact = allContacts.find { it.id == id }
+                        if (contact != null) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(64.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.TopEnd) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.secondaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = contact.name.firstOrNull()?.toString()
+                                                ?.uppercase()
+                                                ?: "?",
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        AsyncImage(
+                                            uri = photoResolver.resolveContactPhoto(contact.id),
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .offset(x = 4.dp, y = (-4).dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.error)
+                                            .clickable { selectedContactIds -= contact.id },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Remove",
+                                            tint = MaterialTheme.colorScheme.onError,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = contact.name.split(" ").first(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                    item {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.width(64.dp)
+                            modifier = Modifier
+                                .clickable { showContactSheet = true }
+                                .padding(horizontal = 8.dp)
                         ) {
-                            Box(contentAlignment = Alignment.TopEnd) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(52.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.secondaryContainer),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = contact.name.firstOrNull()?.toString()?.uppercase()
-                                            ?: "?",
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        style = MaterialTheme.typography.titleMedium
+                            Box(
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "Add Person",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("Add", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = groupName,
+                    onValueChange = { groupName = it },
+                    label = { Text("Project / Group Name (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
+                    singleLine = true
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { showLocationPicker = true }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Location", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (locationLatitude != null && locationLongitude != null) {
+                                "${"%.5f".format(locationLatitude)} , ${
+                                    "%.5f".format(
+                                        locationLongitude
                                     )
-                                    AsyncImage(
-                                        uri = photoResolver.resolveContactPhoto(contact.id),
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
+                                }"
+                            } else {
+                                "Select a location on the map"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(imageVector = Icons.Default.Place, contentDescription = "Select location")
+                }
+
+                OutlinedTextField(
+                    value = locationMood,
+                    onValueChange = { locationMood = it },
+                    label = { Text("Location Mood (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Notes (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 10,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary)
+                )
+
+                Text("Category", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MomentCategory.entries.forEach { option ->
+                        FilterChip(
+                            selected = category == option,
+                            onClick = { category = option },
+                            label = {
+                                Text(
+                                    option.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = GoldPrimary,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Photos", style = MaterialTheme.typography.labelLarge)
+                    if (selectedImages.isNotEmpty()) {
+                        Text(
+                            "${selectedImages.size}/$MAX_IMAGES",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MediumGray
+                        )
+                    }
+                }
+
+                if (selectedImages.isNotEmpty()) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(selectedImages, key = { it.id }) { image ->
+                            Box(
+                                modifier = Modifier
+                                    .width(130.dp)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { imageForCaption = image }
+                            ) {
+                                val finalUri =
+                                    if (image.uri.startsWith("content://")) image.uri else photoResolver.resolveMomentPhoto(
+                                        image.uri
                                     )
+                                AsyncImage(
+                                    uri = finalUri,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                if (!image.caption.isNullOrBlank()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomStart)
+                                            .fillMaxWidth()
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = image.caption!!,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.White,
+                                            maxLines = 1,
+                                        )
+                                    }
                                 }
-                                Box(
+
+                                IconButton(
+                                    onClick = {
+                                        selectedImages = selectedImages.filter { it.id != image.id }
+                                    },
                                     modifier = Modifier
-                                        .size(18.dp)
-                                        .offset(x = 4.dp, y = (-4).dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.error)
-                                        .clickable { selectedContactIds -= contact.id },
-                                    contentAlignment = Alignment.Center
+                                        .align(Alignment.TopEnd)
+                                        .padding(4.dp)
+                                        .size(24.dp)
                                 ) {
+                                    // Design modification: Using light shadow and no background instead of a grey background square
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription = "Remove",
-                                        tint = MaterialTheme.colorScheme.onError,
-                                        modifier = Modifier.size(14.dp)
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp) // Removed clipping and black background
                                     )
                                 }
                             }
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = contact.name.split(" ").first(),
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                textAlign = TextAlign.Center
-                            )
                         }
                     }
                 }
-                item {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clickable { showContactSheet = true }
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = "Add Person",
-                                tint = MaterialTheme.colorScheme.onSurface
+
+                OutlinedButton(
+                    onClick = {
+                        imagePicker.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageAndVideo
                             )
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Text("Add", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-
-            OutlinedTextField(
-                value = groupName,
-                onValueChange = { groupName = it },
-                label = { Text("Project / Group Name (optional)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
-                singleLine = true
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { showLocationPicker = true }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("Location", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        text = if (locationLatitude != null && locationLongitude != null) {
-                            "${"%.5f".format(locationLatitude)} , ${"%.5f".format(locationLongitude)}"
-                        } else {
-                            "Select a location on the map"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Icon(imageVector = Icons.Default.Place, contentDescription = "Select location")
-            }
-
-            OutlinedTextField(
-                value = locationMood,
-                onValueChange = { locationMood = it },
-                label = { Text("Location Mood (optional)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Notes (optional)") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 10,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary)
-            )
-
-            Text("Category", style = MaterialTheme.typography.labelLarge)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                MomentCategory.entries.forEach { option ->
-                    FilterChip(
-                        selected = category == option,
-                        onClick = { category = option },
-                        label = {
-                            Text(
-                                option.name.lowercase().replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = GoldPrimary,
-                            selectedLabelColor = Color.White
                         )
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Photos", style = MaterialTheme.typography.labelLarge)
-                if (selectedImages.isNotEmpty()) {
-                    Text(
-                        "${selectedImages.size}/$MAX_IMAGES",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MediumGray
-                    )
-                }
-            }
-
-            if (selectedImages.isNotEmpty()) {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    },
+                    enabled = selectedImages.size < MAX_IMAGES,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldPrimary)
                 ) {
-                    items(selectedImages, key = { it.id }) { image ->
-                        Box(
-                            modifier = Modifier
-                                .width(130.dp)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { imageForCaption = image }
-                        ) {
-                            val finalUri =
-                                if (image.uri.startsWith("content://")) image.uri else photoResolver.resolveMomentPhoto(
-                                    image.uri
-                                )
-                            AsyncImage(
-                                uri = finalUri,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-
-                            if (!image.caption.isNullOrBlank()) {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomStart)
-                                        .fillMaxWidth()
-                                        .background(Color.Black.copy(alpha = 0.4f))
-                                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = image.caption!!,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.White,
-                                        maxLines = 1,
-                                    )
-                                }
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    selectedImages = selectedImages.filter { it.id != image.id }
-                                },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(4.dp)
-                                    .size(24.dp)
-                            ) {
-                                // Design modification: Using light shadow and no background instead of a grey background square
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp) // Removed clipping and black background
-                                )
-                            }
-                        }
-                    }
+                    Icon(
+                        Icons.Default.AddPhotoAlternate,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (selectedImages.isEmpty()) "Add Photos" else "Add More Photos")
                 }
-            }
 
-            OutlinedButton(
-                onClick = { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) },
-                enabled = selectedImages.size < MAX_IMAGES,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldPrimary)
-            ) {
-                Icon(
-                    Icons.Default.AddPhotoAlternate,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(if (selectedImages.isEmpty()) "Add Photos" else "Add More Photos")
-            }
+                Spacer(Modifier.height(4.dp))
 
-            Spacer(Modifier.height(4.dp))
+                Button(
+                    onClick = {
+                        if (title.isNotBlank()) {
+                            scope.launch {
+                                isUploading = true
+                                uploadErrors = emptyList()
+                                successfulUploads = emptyList()
 
-            Button(
-                onClick = {
-                    if (title.isNotBlank()) {
-                        scope.launch {
-                            isUploading = true
-                            uploadErrors = emptyList()
-                            successfulUploads = emptyList()
+                                val momentId = initialMoment?.id ?: UUID.randomUUID().toString()
+                                currentMomentId = momentId
+                                val successfulImages = mutableListOf<MomentImage>()
+                                val failedImages = mutableListOf<MomentImage>()
 
-                            val momentId = initialMoment?.id ?: UUID.randomUUID().toString()
-                            currentMomentId = momentId
-                            val successfulImages = mutableListOf<MomentImage>()
-                            val failedImages = mutableListOf<MomentImage>()
-
-                            for (img in selectedImages) {
-                                if (!img.uri.startsWith("content://")) {
-                                    successfulImages.add(img)
-                                    continue
-                                }
-                                try {
-                                    val up = attachmentStore.persistMomentAttachments(
-                                        contactId = "N/A",
-                                        momentId = momentId,
-                                        sourceUris = listOf(img)
-                                    )
-                                    if (up.isNotEmpty()) {
-                                        successfulImages.add(up.first())
-                                    } else {
+                                for (img in selectedImages) {
+                                    if (!img.uri.startsWith("content://")) {
+                                        successfulImages.add(img)
+                                        continue
+                                    }
+                                    try {
+                                        val up = attachmentStore.persistMomentAttachments(
+                                            contactId = "N/A",
+                                            momentId = momentId,
+                                            sourceUris = listOf(img)
+                                        )
+                                        if (up.isNotEmpty()) {
+                                            successfulImages.add(up.first())
+                                        } else {
+                                            failedImages.add(img)
+                                        }
+                                    } catch (_: Exception) {
                                         failedImages.add(img)
                                     }
-                                } catch (_: Exception) {
-                                    failedImages.add(img)
+                                }
+
+                                if (failedImages.isNotEmpty()) {
+                                    isUploading = false
+                                    uploadErrors = failedImages
+                                    successfulUploads = successfulImages
+                                } else {
+                                    onSave(
+                                        title,
+                                        description,
+                                        category,
+                                        successfulImages,
+                                        isCoreMemory,
+                                        wasPresent,
+                                        groupName.takeIf { it.isNotBlank() },
+                                        locationMood.takeIf { it.isNotBlank() },
+                                        locationLatitude,
+                                        locationLongitude,
+                                        momentId,
+                                        selectedContactIds.toList(),
+                                        selectedDateMs
+                                    )
                                 }
                             }
-
-                            if (failedImages.isNotEmpty()) {
-                                isUploading = false
-                                uploadErrors = failedImages
-                                successfulUploads = successfulImages
-                            } else {
-                                onSave(
-                                    title,
-                                    description,
-                                    category,
-                                    successfulImages,
-                                    isCoreMemory,
-                                    wasPresent,
-                                    groupName.takeIf { it.isNotBlank() },
-                                    locationMood.takeIf { it.isNotBlank() },
-                                    locationLatitude,
-                                    locationLongitude,
-                                    momentId,
-                                    selectedContactIds.toList(),
-                                    selectedDateMs
-                                )
-                            }
                         }
+                    },
+                    enabled = title.isNotBlank() && !isUploading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GoldPrimary,
+                        contentColor = Color.White
+                    )
+                ) {
+                    if (isUploading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text("Log It", style = MaterialTheme.typography.titleMedium)
                     }
-                },
-                enabled = title.isNotBlank() && !isUploading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GoldPrimary,
-                    contentColor = Color.White
-                )
-            ) {
-                if (isUploading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Text("Log It", style = MaterialTheme.typography.titleMedium)
                 }
             }
         }
@@ -667,9 +691,11 @@ fun LogMomentScreen(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
-                Column(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp)
+                ) {
                     Text(
                         text = "Select Contacts",
                         style = MaterialTheme.typography.titleLarge,

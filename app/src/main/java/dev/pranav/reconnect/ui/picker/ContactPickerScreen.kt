@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +35,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ReconnectInterval
 import dev.pranav.reconnect.ui.components.AppTopBar
@@ -71,23 +74,17 @@ fun ContactPickerScreen(
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.background,
-                        Color.White
-                    )
-                )
-            )
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             AppTopBar(
                 title = "Choose Your Circle",
                 scrollBehavior = scrollBehavior,
+                hazeState = hazeState,
                 navigationIcon = {
                     IconButton(onClick = onSkip) {
                         Icon(Icons.Default.Close, contentDescription = "Skip")
@@ -97,130 +94,146 @@ fun ContactPickerScreen(
         },
         containerColor = Color.Transparent
     ) { scaffoldPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    top = scaffoldPadding.calculateTopPadding(),
-                    bottom = scaffoldPadding.calculateBottomPadding()
-                )
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Select the people who matter most and how often you'd like to reconnect.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.updateSearch(it) },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search contacts…") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    shape = RoundedCornerShape(28.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = GoldPrimary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                .hazeSource(hazeState)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.background,
+                            Color.White
+                        )
                     )
                 )
-                Spacer(Modifier.height(12.dp))
-            }
-
-            if (state.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = GoldPrimary)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = scaffoldPadding.calculateTopPadding(),
+                        bottom = scaffoldPadding.calculateBottomPadding()
+                    )
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Select the people who matter most and how often you'd like to reconnect.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.updateSearch(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Search contacts…") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        shape = RoundedCornerShape(28.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GoldPrimary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    )
+                    Spacer(Modifier.height(12.dp))
                 }
-            } else if (state.needsContactsPermission) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                if (state.isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = GoldPrimary)
+                    }
+                } else if (state.needsContactsPermission) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "Allow contacts access to show your device contacts.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Button(onClick = {
+                                permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                            }) {
+                                Text("Grant Permission")
+                            }
+                        }
+                    }
+                } else if (state.contacts.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = "Allow contacts access to show your device contacts.",
-                            style = MaterialTheme.typography.bodyLarge,
+                            text = "No contacts found on this device.",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) }) {
-                            Text("Grant Permission")
+                    }
+                } else if (filteredContacts.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No contacts match your search.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(filteredContacts, key = { it.id }) { contact ->
+                            ContactPickerItem(
+                                contact = contact,
+                                isSelected = contact.id in state.selectedIds,
+                                interval = state.intervals[contact.id] ?: ReconnectInterval.MONTHLY,
+                                onToggle = { viewModel.toggleContact(contact.id) },
+                                onIntervalChanged = { viewModel.setInterval(contact.id, it) }
+                            )
                         }
                     }
                 }
-            } else if (state.contacts.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface
                 ) {
-                    Text(
-                        text = "No contacts found on this device.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else if (filteredContacts.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No contacts match your search.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(filteredContacts, key = { it.id }) { contact ->
-                        ContactPickerItem(
-                            contact = contact,
-                            isSelected = contact.id in state.selectedIds,
-                            interval = state.intervals[contact.id] ?: ReconnectInterval.MONTHLY,
-                            onToggle = { viewModel.toggleContact(contact.id) },
-                            onIntervalChanged = { viewModel.setInterval(contact.id, it) }
+                    Button(
+                        onClick = {
+                            viewModel.confirmSelection()
+                            onContinue()
+                        },
+                        enabled = state.selectedCount > 0,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = GoldPrimary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(
+                            text = "Continue · ${state.selectedCount} selected",
+                            style = MaterialTheme.typography.titleMedium
                         )
                     }
-                }
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 8.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Button(
-                    onClick = {
-                        viewModel.confirmSelection()
-                        onContinue()
-                    },
-                    enabled = state.selectedCount > 0,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GoldPrimary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text(
-                        text = "Continue · ${state.selectedCount} selected",
-                        style = MaterialTheme.typography.titleMedium
-                    )
                 }
             }
         }

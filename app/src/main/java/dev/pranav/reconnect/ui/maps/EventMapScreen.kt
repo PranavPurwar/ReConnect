@@ -2,7 +2,6 @@ package dev.pranav.reconnect.ui.maps
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -10,19 +9,23 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.PastMoment
 import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.core.session.MapStyle
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.CharcoalText
-import dev.pranav.reconnect.ui.theme.MediumGray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -157,24 +160,16 @@ fun MapScreen(
     viewModel: MomentsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     val moments by viewModel.moments.collectAsStateWithLifecycle()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            "Your Map",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = CharcoalText
-                        )
-                        Text(
-                            "${moments.size} ${if (moments.size == 1) "location" else "locations"}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MediumGray
-                        )
-                    }
-                },
+            AppTopBar(
+                title = "Your Map",
+                scrollBehavior = scrollBehavior,
+                hazeState = hazeState,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -183,10 +178,7 @@ fun MapScreen(
                             tint = CharcoalText
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.92f)
-                )
+                }
             )
         },
         containerColor = Color.Transparent
@@ -194,6 +186,7 @@ fun MapScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .hazeSource(hazeState)
                 .padding(paddingValues)
                 .background(
                     Brush.verticalGradient(

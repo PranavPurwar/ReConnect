@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.SubcomposeAsyncImage
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.MomentCategory
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.AppTopBar
@@ -52,6 +54,7 @@ fun JourneyScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier
@@ -61,81 +64,88 @@ fun JourneyScreen(
         topBar = {
             AppTopBar(
                 title = "Your Journey",
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
+                hazeState = hazeState
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
-                bottom = 120.dp
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(hazeState)
         ) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = 24.dp,
-                            end = 24.dp,
-                            top = 16.dp,
-                            bottom = 16.dp
-                        )
-                ) {
-
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item {
-                            JourneyFilterChip(
-                                selected = state.selectedCategory == null,
-                                label = "All",
-                                onClick = { viewModel.setFilter(null) },
-                                modifier = Modifier.animateItem()
-                            )
-                        }
-                        items(MomentCategory.entries.toList(), key = { it.name }) { cat ->
-                            JourneyFilterChip(
-                                selected = state.selectedCategory == cat,
-                                label = cat.displayName(),
-                                onClick = { viewModel.setFilter(cat) },
-                                modifier = Modifier.animateItem()
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (state.isLoading) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = padding.calculateTopPadding(),
+                    bottom = 120.dp
+                )
+            ) {
                 item {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 64.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(
+                                start = 24.dp,
+                                end = 24.dp,
+                                top = 16.dp,
+                                bottom = 16.dp
+                            )
                     ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            item {
+                                JourneyFilterChip(
+                                    selected = state.selectedCategory == null,
+                                    label = "All",
+                                    onClick = { viewModel.setFilter(null) },
+                                    modifier = Modifier.animateItem()
+                                )
+                            }
+                            items(MomentCategory.entries.toList(), key = { it.name }) { cat ->
+                                JourneyFilterChip(
+                                    selected = state.selectedCategory == cat,
+                                    label = cat.displayName(),
+                                    onClick = { viewModel.setFilter(cat) },
+                                    modifier = Modifier.animateItem()
+                                )
+                            }
+                        }
                     }
                 }
-            } else if (state.filteredItems.isEmpty()) {
-                item {
-                    EmptyJourneyState(
-                        Modifier.animateItem(),
-                        state.selectedCategory?.displayName()?.lowercase(),
-                    )
-                }
-            } else {
-                itemsIndexed(
-                    items = state.filteredItems,
-                    key = { _, item -> item.moment.id }
-                ) { index, item ->
-                    TimelineEntry(
-                        modifier = Modifier
-                            .animateItem()
-                            .padding(horizontal = 24.dp),
-                        item = item,
-                        isLast = index == state.filteredItems.lastIndex,
-                        onOpenGallery = onOpenGallery
-                    )
+
+                if (state.isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 64.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                } else if (state.filteredItems.isEmpty()) {
+                    item {
+                        EmptyJourneyState(
+                            Modifier.animateItem(),
+                            state.selectedCategory?.displayName()?.lowercase(),
+                        )
+                    }
+                } else {
+                    itemsIndexed(
+                        items = state.filteredItems,
+                        key = { _, item -> item.moment.id }
+                    ) { index, item ->
+                        TimelineEntry(
+                            modifier = Modifier
+                                .animateItem()
+                                .padding(horizontal = 24.dp),
+                            item = item,
+                            isLast = index == state.filteredItems.lastIndex,
+                            onOpenGallery = onOpenGallery
+                        )
+                    }
                 }
             }
         }
@@ -155,9 +165,11 @@ private fun TimelineEntry(
         fmt.format(Date(item.moment.dateEpochMs)).uppercase()
     }
 
-    Row(modifier = modifier
-        .fillMaxWidth()
-        .height(IntrinsicSize.Min)) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -165,20 +177,26 @@ private fun TimelineEntry(
                 .padding(top = 28.dp)
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.size(22.dp)) {
-                Box(Modifier
-                    .size(22.dp)
-                    .clip(CircleShape)
-                    .background(dotColor.copy(alpha = 0.2f)))
-                Box(Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(dotColor))
+                Box(
+                    Modifier
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(dotColor.copy(alpha = 0.2f))
+                )
+                Box(
+                    Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(dotColor)
+                )
             }
             if (!isLast) {
-                Box(Modifier
-                    .width(2.dp)
-                    .weight(1f)
-                    .background(GoldPrimary.copy(alpha = 0.15f)))
+                Box(
+                    Modifier
+                        .width(2.dp)
+                        .weight(1f)
+                        .background(GoldPrimary.copy(alpha = 0.15f))
+                )
             }
         }
 

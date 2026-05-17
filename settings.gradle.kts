@@ -33,8 +33,8 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://maven.pkg.github.com/maplibre/maplibre-compose")
             credentials {
-                username = localProperties.getProperty("gpr.user")
-                password = localProperties.getProperty("gpr.key")
+                username = localProperties.getProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = localProperties.getProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }

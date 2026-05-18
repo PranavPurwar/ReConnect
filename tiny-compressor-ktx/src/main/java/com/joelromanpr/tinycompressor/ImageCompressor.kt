@@ -87,8 +87,6 @@ public object ImageCompressor {
             send(Progress(Step.Done, 100, resultFile))
         }
 
-    // region Internal
-
     private suspend fun internalCompressToFile(
         context: Context,
         source: Source,
@@ -431,8 +429,6 @@ public object ImageCompressor {
             else -> null
         }
     }
-
-    // endregion
 }
 
 private interface ProgressEmitter {

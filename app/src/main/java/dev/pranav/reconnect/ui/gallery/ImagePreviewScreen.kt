@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +33,7 @@ import dev.pranav.reconnect.ui.theme.GoldPrimary
 @Composable
 fun ImagePreviewScreen(
     imageUris: List<String>,
+    captions: List<String> = emptyList(),
     initialIndex: Int,
     onBack: () -> Unit
 ) {
@@ -121,7 +123,6 @@ fun ImagePreviewScreen(
             }
         }
 
-        // Top bar overlay
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -131,25 +132,22 @@ fun ImagePreviewScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-                shadowElevation = 2.dp,
-                modifier = Modifier.size(44.dp)
-            ) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .size(44.dp)
+                            .padding(8.dp)
+                            .clip(CircleShape),
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                     )
                 }
-            }
 
             if (imageUris.size > 1) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-                    shadowElevation = 2.dp
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                 ) {
                     Text(
                         "${pagerState.currentPage + 1} / ${imageUris.size}",
@@ -159,6 +157,28 @@ fun ImagePreviewScreen(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                     )
                 }
+            }
+        }
+
+        val currentCaption = captions.getOrNull(pagerState.currentPage)
+        if (!currentCaption.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = currentCaption,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CharcoalText,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

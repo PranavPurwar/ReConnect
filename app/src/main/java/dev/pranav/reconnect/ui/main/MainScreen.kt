@@ -87,9 +87,8 @@ fun MainScreen(navController: NavController) {
                 )
 
                 AppDestination.HISTORY -> JourneyScreen(
-                    onOpenGallery = { title, uris ->
-                        navController.openGallery(title, uris)
-                    },
+                    onMomentClick = { id -> navController.navigate(AppRoute.MomentDetail(id)) },
+                    onOpenGallery = { title, uris -> navController.openGallery(title, uris) },
                     viewModel = journeyViewModel
                 )
 
@@ -110,7 +109,7 @@ fun MainScreen(navController: NavController) {
 
                 else -> HomeScreen(
                     onContactClick = { id -> navController.navigate(AppRoute.ConnectionDetail(id)) },
-                    onMomentClick = { id -> /* Need a moment preview screen first */ },
+                    onMomentClick = { id -> navController.navigate(AppRoute.MomentDetail(id)) },
                     onAddClick = { navController.navigate(AppRoute.AddConnection(null)) },
                     onViewAllCatchUpsClick = { selectedTab = AppDestination.CIRCLE },
                     onMapClick = { navController.navigate(AppRoute.Map) },
@@ -120,4 +119,3 @@ fun MainScreen(navController: NavController) {
         }
     }
 }
-

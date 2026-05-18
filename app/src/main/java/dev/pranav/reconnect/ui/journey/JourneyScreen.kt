@@ -49,6 +49,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JourneyScreen(
+    onContactClick: (String) -> Unit = {},
+    onMomentClick: (String) -> Unit = {},
     onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
     viewModel: JourneyViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
@@ -140,7 +142,8 @@ fun JourneyScreen(
                         TimelineEntry(
                             modifier = Modifier
                                 .animateItem()
-                                .padding(horizontal = 24.dp),
+                                .padding(horizontal = 24.dp)
+                                .clickable { onMomentClick(item.moment.id) },
                             item = item,
                             isLast = index == state.filteredItems.lastIndex,
                             onOpenGallery = onOpenGallery

@@ -28,6 +28,9 @@ sealed class AppRoute {
     @Serializable
     data object EditProfile
     @Serializable
+    data class MomentDetail(val momentId: String)
+
+    @Serializable
     data class ConnectionDetail(val contactId: String)
     @Serializable
     data class AddConnection(val contactId: String? = null)

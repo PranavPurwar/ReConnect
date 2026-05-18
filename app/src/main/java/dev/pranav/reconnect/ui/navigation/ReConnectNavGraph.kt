@@ -18,6 +18,8 @@ import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.di.AppViewModelProvider
 import dev.pranav.reconnect.ui.add.AddConnectionScreen
 import dev.pranav.reconnect.ui.detail.ConnectionDetailScreen
+import dev.pranav.reconnect.ui.detail.MomentDetailScreen
+import dev.pranav.reconnect.ui.detail.MomentDetailViewModel
 import dev.pranav.reconnect.ui.gallery.GalleryScreen
 import dev.pranav.reconnect.ui.gallery.ImagePreviewScreen
 import dev.pranav.reconnect.ui.main.MainScreen
@@ -114,12 +116,12 @@ fun ReConnectNavGraph(
                         AppRoute.Onboarding
                     }
                     navController.navigate(destination) {
-                        popUpTo<AppRoute.VerifyEmail> { inclusive = true }
+                        popUpTo(AppRoute.VerifyEmail) { inclusive = true }
                     }
                 },
                 onBackToLogin = {
                     navController.navigate(AppRoute.Login) {
-                        popUpTo<AppRoute.VerifyEmail> { inclusive = true }
+                        popUpTo(AppRoute.VerifyEmail) { inclusive = true }
                     }
                 }
             )
@@ -176,6 +178,22 @@ fun ReConnectNavGraph(
             )
         }
 
+        composable<AppRoute.MomentDetail> {
+            val vm: MomentDetailViewModel = viewModel(factory = AppViewModelProvider.Factory)
+            MomentDetailScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onContactClick = { id -> navController.navigate(AppRoute.ConnectionDetail(id)) },
+                onImageClick = { index, uris, captions ->
+                    navController.openImagePreview(
+                        index,
+                        ArrayList(uris),
+                        ArrayList(captions)
+                    )
+                }
+            )
+        }
+
         composable<AppRoute.ConnectionDetail>(
             deepLinks = listOf(
                 navDeepLink { uriPattern = "reconnect://contact/{contactId}" }
@@ -186,8 +204,8 @@ fun ReConnectNavGraph(
                 contactId = route.contactId,
                 onBack = { navController.popBackStack() },
                 onEditDetails = { id -> navController.navigate(AppRoute.AddConnection(id)) },
-                onOpenGallery = { title, uris ->
-                    navController.openGallery(title, uris)
+                onOpenGallery = { title, uris, captions ->
+                    navController.openGallery(title, uris, captions)
                 }
             )
         }
@@ -201,22 +219,23 @@ fun ReConnectNavGraph(
         }
 
         composable<AppRoute.Gallery> {
-            val (title, uris) = navController.galleryPayload()
+            val (title, uris, captions) = navController.galleryPayload()
             GalleryScreen(
                 title = title,
                 imageUris = uris,
                 onBack = { navController.popBackStack() },
                 onImageClick = { index ->
-                    navController.openImagePreview(index, uris)
+                    navController.openImagePreview(index, uris, captions)
                 }
             )
         }
 
         composable<AppRoute.ImagePreview> { backStack ->
             val route = backStack.toRoute<AppRoute.ImagePreview>()
-            val uris = navController.previewPayload()
+            val (uris, captions) = navController.previewPayload()
             ImagePreviewScreen(
                 imageUris = uris,
+                captions = captions,
                 initialIndex = route.index,
                 onBack = { navController.popBackStack() }
             )

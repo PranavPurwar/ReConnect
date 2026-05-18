@@ -8,6 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -16,6 +18,8 @@ import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.ReConnectApp
 import dev.pranav.reconnect.ui.theme.AppTheme
 import dev.pranav.reconnect.worker.DailyReminderWorker
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
@@ -31,8 +35,24 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         AppContainer.init(this)
+
+        var isSyncing = true
+        splashScreen.setKeepOnScreenCondition { isSyncing }
+
+        lifecycleScope.launch {
+            try {
+                AppContainer.contactStore.contacts.first()
+                AppContainer.momentStore.moments.first()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isSyncing = false
+            }
+        }
+
         AppContainer.authStore.getCurrentSession()
         enableEdgeToEdge()
         setContent {

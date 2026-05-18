@@ -53,7 +53,7 @@ fun ConnectionDetailScreen(
     onBack: () -> Unit,
     innerPadding: PaddingValues = PaddingValues(),
     onEditDetails: (String) -> Unit = {},
-    onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
+    onOpenGallery: (title: String, uris: List<String>, captions: List<String>) -> Unit = { _, _, _ -> },
     viewModel: ConnectionDetailViewModel = viewModel(factory = dev.pranav.reconnect.di.AppViewModelProvider.Factory)
 ) {
     LaunchedEffect(contactId) { viewModel.loadContact(contactId) }
@@ -68,7 +68,6 @@ fun ConnectionDetailScreen(
     val hazeState = remember { HazeState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    // Removed specific local bitmapping, using placeholder color
     val contactPhotoBitmap by produceState<android.graphics.Bitmap?>(
         initialValue = null,
         key1 = contact?.id,
@@ -387,7 +386,7 @@ fun ConnectionDetailScreen(
                         }
 
                         Spacer(Modifier.height(16.dp))
-                    } // end hero header item
+                    }
 
                     item {
                         // Stats Row
@@ -601,7 +600,6 @@ fun ConnectionDetailScreen(
                                     //            horizontal = 6.dp,
                                     //            vertical = 2.dp
                                     //        )
-                                    //    )
                                     //}
                                     //}
                                     Spacer(Modifier.height(10.dp))
@@ -948,7 +946,7 @@ private fun PastMomentItem(
     moment: PastMoment,
     isLast: Boolean,
     modifier: Modifier = Modifier,
-    onOpenGallery: (title: String, uris: List<String>) -> Unit = { _, _ -> },
+    onOpenGallery: (title: String, uris: List<String>, captions: List<String>) -> Unit = { _, _, _ -> },
     onEditMoment: (PastMoment) -> Unit = {},
     onDeleteMoment: (String) -> Unit = {}
 ) {
@@ -1109,7 +1107,9 @@ private fun PastMomentItem(
                                             moment.title,
                                             moment.images.map {
                                                 AppContainer.photoResolver.resolveMomentPhoto(it.uri)
-                                            })
+                                            },
+                                            moment.images.map { it.caption ?: "" }
+                                        )
                                     }
                             ) {
                                 ImageThumbnailPlaceholder(resolvedUri)
@@ -1121,7 +1121,9 @@ private fun PastMomentItem(
                         onClick = {
                             onOpenGallery(
                                 moment.title,
-                                moment.images.map { AppContainer.photoResolver.resolveMomentPhoto(it.uri) })
+                                moment.images.map { AppContainer.photoResolver.resolveMomentPhoto(it.uri) },
+                                moment.images.map { it.caption ?: "" }
+                            )
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),

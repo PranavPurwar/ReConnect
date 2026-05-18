@@ -92,7 +92,6 @@ fun HomeScreen(
                 bottom = innerPadding.calculateBottomPadding() + 100.dp
             )
         ) {
-            // --- Suggestion Hero ---
             state.topSlot?.let { slot ->
                 item {
                     Spacer(Modifier.height(16.dp))
@@ -118,7 +117,6 @@ fun HomeScreen(
                 }
             }
 
-            // --- Daily Reconnects (Unified Sheet) ---
             if (state.quickCatchUps.isNotEmpty()) {
                 item {
                     SectionHeader("Daily Reconnects", subtitle = state.reconnectSummary)

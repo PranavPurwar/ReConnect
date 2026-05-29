@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
 import com.github.panpf.sketch.rememberAsyncImageState
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.session.MapStyle
 import dev.pranav.reconnect.di.AppContainer
@@ -61,7 +62,8 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showBackupSheet by remember { mutableStateOf(false) }
     var showMapStyleSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState =
+        rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Expanded, SheetValue.Hidden))
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scope = rememberCoroutineScope()
     var backupMessage by remember { mutableStateOf<String?>(null) }
@@ -110,7 +112,7 @@ fun SettingsScreen(
 
     val imageState = rememberAsyncImageState()
     val isSuccess = imageState.painterState is PainterState.Success
-    val hazeState = remember { dev.chrisbanes.haze.HazeState() }
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier

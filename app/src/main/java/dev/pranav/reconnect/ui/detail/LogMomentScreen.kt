@@ -717,7 +717,10 @@ fun LogMomentScreen(
         }
 
         if (showLocationPicker) {
-            val locationSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val locationSheetState = rememberBottomSheetState(
+                SheetValue.Hidden,
+                setOf(SheetValue.Expanded, SheetValue.Hidden)
+            )
             ModalBottomSheet(
                 onDismissRequest = { showLocationPicker = false },
                 sheetState = locationSheetState,
@@ -802,7 +805,10 @@ fun LogMomentScreen(
         if (showContactSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showContactSheet = false },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(
+                    SheetValue.Hidden,
+                    setOf(SheetValue.Expanded, SheetValue.Hidden)
+                ),
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Column(
@@ -883,7 +889,10 @@ fun LogMomentScreen(
             val currentImage = imageForCaption!!
             ModalBottomSheet(
                 onDismissRequest = { imageForCaption = null },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(
+                    SheetValue.Hidden,
+                    setOf(SheetValue.Expanded, SheetValue.Hidden)
+                ),
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Column(

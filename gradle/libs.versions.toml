@@ -1,46 +1,45 @@
 [versions]
 agp = "9.2.1"
-androidSdkVulkan = "13.1.0"
+maplibreVulkan = "13.2.0"
+maplibreCompose = "0.13.0"
 annotation = "1.10.0"
 exifinterface = "1.4.2"
 gradle = "9.2.1"
 haze = "1.7.2"
-kotlinGradlePlugin = "2.3.20"
-kotlinxCoroutinesCore = "1.11.0"
-maplibreComposeMaterial3 = "0.12.2-SNAPSHOT"
+coroutines = "1.11.0"
+media3 = "1.10.1"
 sketch = "4.4.0"
 supabase = "3.6.0"
 room = "2.8.4"
 ksp = "2.3.6"
 coreKtx = "1.18.0"
-lifecycle = "2.11.0-beta01"
+lifecycle = "2.11.0-beta02"
 activityCompose = "1.13.0"
 kotlin = "2.3.21"
-composeBom = "2026.05.00"
-navigationCompose = "2.10.0-alpha04"
+composeBom = "2026.05.01"
+navigationCompose = "2.10.0-alpha05"
 paletteKtx = "1.0.0"
-uiTextGoogleFonts = "1.11.1"
+uiTextGoogleFonts = "1.11.2"
 serialization = "1.11.0"
 splashscreen = "1.2.0"
 ktor = "3.5.0"
-media3 = "1.10.1"
 zoomable = "0.19.0"
 work = "2.11.2"
-junitPlatformLauncher = "1.13.4"
-junitPlatformEngine = "1.13.4"
-journeysJunitEngine = "0.3.0"
 
 [libraries]
 
-android-sdk-vulkan = { module = "org.maplibre.gl:android-sdk-vulkan", version.ref = "androidSdkVulkan" }
+android-sdk-vulkan = { module = "org.maplibre.gl:android-sdk-vulkan", version.ref = "maplibreVulkan" }
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
+androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
+androidx-media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }
+androidx-media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3" }
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
-kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesCore" }
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
-maplibre-compose-material3 = { module = "org.maplibre.compose:maplibre-compose-material3", version.ref = "maplibreComposeMaterial3" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+maplibre-compose-material3 = { module = "org.maplibre.compose:maplibre-compose-material3", version.ref = "maplibreCompose" }
 supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }
 supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt" }
 supabase-sketch = { module = "io.github.jan-tennert.supabase:sketch-integration" }
@@ -84,9 +83,6 @@ androidx-media3-ui = { module = "androidx.media3:media3-ui-compose-material3", v
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 
 zoomable = { module = "me.saket.telephoto:zoomable", version.ref = "zoomable" }
-junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatformLauncher" }
-junit-platform-engine = { group = "org.junit.platform", name = "junit-platform-engine", version.ref = "junitPlatformEngine" }
-journeys-junit-engine = { group = "com.android.tools.journeys", name = "journeys-junit-engine", version.ref = "journeysJunitEngine" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }

@@ -37,7 +37,8 @@ fun NotificationSettingsScreen(
     val notifyMemories by viewModel.notifyMemories.collectAsStateWithLifecycle()
     val reminderFrequency by viewModel.reminderFrequency.collectAsStateWithLifecycle()
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState =
+        rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Expanded, SheetValue.Hidden))
     var showFrequencySheet by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val hazeState = remember { HazeState() }

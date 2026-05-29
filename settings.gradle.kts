@@ -1,5 +1,7 @@
 import java.util.Properties
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 pluginManagement {
     includeBuild("build-logic")
     repositories {
@@ -48,3 +50,4 @@ include(":core:session")
 include(":data:local")
 include(":data:supabase")
 include(":tiny-compressor-ktx")
+include(":video-compressor")

@@ -8,8 +8,10 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:model"))
-    api(project(":core:storage"))
+    implementation(projects.core.model)
+    api(projects.core.storage)
+    implementation(projects.videoCompressor)
+
 
     api(libs.androidx.room.runtime)
     api(libs.androidx.room.ktx)

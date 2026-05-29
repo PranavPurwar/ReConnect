@@ -31,9 +31,11 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:model"))
-    implementation(project(":core:storage"))
-    implementation(project(":tiny-compressor-ktx"))
+
+    implementation(projects.core.model)
+    implementation(projects.core.storage)
+    implementation(projects.tinyCompressorKtx)
+    implementation(projects.videoCompressor)
 
     api(platform(libs.supabase.bom))
     api(libs.supabase.auth)

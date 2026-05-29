@@ -43,26 +43,6 @@ android {
         compose = true
         buildConfig = true
     }
-    testOptions {
-        suites {
-            create("journeysTest") {
-                assets {
-                }
-                targets {
-                    create("default") {
-                    }
-                }
-                useJunitEngine {
-                    inputs += listOf(com.android.build.api.dsl.AgpTestSuiteInputParameters.TESTED_APKS)
-                    includeEngines += listOf("journeys-test-engine")
-                    enginesDependencies(libs.junit.platform.launcher)
-                    enginesDependencies(libs.junit.platform.engine)
-                    enginesDependencies(libs.journeys.junit.engine)
-                }
-                targetVariants += listOf("supabaseDebug")
-            }
-        }
-    }
 
 }
 
@@ -77,12 +57,12 @@ dependencies {
 
     implementation(libs.zoomable)
 
-    implementation(project(":core:model"))
-    implementation(project(":core:storage"))
-    implementation(project(":core:session"))
+    implementation(projects.core.model)
+    implementation(projects.core.storage)
+    implementation(projects.core.session)
 
-    "localImplementation"(project(":data:local"))
-    "supabaseImplementation"(project(":data:supabase"))
+    "localImplementation"(projects.data.local)
+    "supabaseImplementation"(projects.data.supabase)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
@@ -112,10 +92,9 @@ dependencies {
     implementation(libs.sketch.http)
     implementation(libs.sketch.video)
     implementation(libs.sketch.zoom)
-    implementation("org.maplibre.compose:maplibre-compose:0.12.2-SNAPSHOT") {
+    implementation(libs.maplibre.compose.material3) {
         exclude(group = "org.maplibre.gl", module = "android-sdk")
     }
-    implementation(libs.maplibre.compose.material3)
     implementation(libs.android.sdk.vulkan)
 
     implementation(libs.haze)

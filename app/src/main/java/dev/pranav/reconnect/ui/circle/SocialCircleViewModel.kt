@@ -6,10 +6,10 @@ import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.storage.ContactStore
 import dev.pranav.reconnect.di.AppContainer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.debounce
+import kotlin.time.Duration.Companion.milliseconds
 
-@kotlinx.coroutines.FlowPreview
 class SocialCircleViewModel(
     contactStore: ContactStore = AppContainer.contactStore
 ): ViewModel() {
@@ -20,9 +20,10 @@ class SocialCircleViewModel(
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
+    @OptIn(FlowPreview::class)
     val filteredContacts: StateFlow<List<Contact>> = combine(
         contactStore.contacts,
-        _searchQuery.debounce(150L),
+        _searchQuery.debounce(150L.milliseconds),
         _selectedCategory
     ) { contacts, query, category ->
         applyFilters(contacts, query, category)

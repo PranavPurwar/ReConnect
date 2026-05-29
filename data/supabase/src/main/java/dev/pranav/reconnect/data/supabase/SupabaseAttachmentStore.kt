@@ -8,6 +8,7 @@ import com.joelromanpr.tinycompressor.CompressFormat
 import com.joelromanpr.tinycompressor.ImageCompressor
 import com.joelromanpr.tinycompressor.Options
 import com.joelromanpr.tinycompressor.Source
+import com.pranav.video.compressor.compress
 import dev.pranav.reconnect.core.model.MomentImage
 import dev.pranav.reconnect.core.storage.AttachmentStore
 import io.github.jan.supabase.SupabaseClient
@@ -76,20 +77,24 @@ class SupabaseAttachmentStore(
 
 
     suspend fun compressFromUriToBytes(context: Context, uri: Uri, extension: String): ByteArray {
-        if (extension !in listOf("png", "jpg", "jpeg", "webp")) {
-            return context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                ?: ByteArray(0)
+        if (extension in listOf("png", "jpg", "jpeg", "webp")) {
+            return ImageCompressor.compressToByteArray(
+                context = context,
+                source = Source.Uri(uri),
+                options = Options(
+                    maxWidth = 2560,
+                    maxHeight = 2560,
+                    format = CompressFormat.WEBP,
+                    quality = 90
+                )
+            )
         }
 
-        return ImageCompressor.compressToByteArray(
-            context = context,
-            source = Source.Uri(uri),
-            options = Options(
-                maxWidth = 2560,
-                maxHeight = 2560,
-                format = CompressFormat.WEBP,
-                quality = 90
-            )
-        )
+        if (extension in listOf("mp4", "mov", "webm")) {
+            return uri.compress(context).use { it.readBytes() }
+        }
+
+        return context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: ByteArray(0)
     }
 }

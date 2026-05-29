@@ -266,7 +266,8 @@ fun AddConnectionScreen(
                             bottom = padding.calculateBottomPadding()
                         )
                         .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Spacer(Modifier.height(24.dp))
 
@@ -997,7 +998,10 @@ private fun ContactSearchSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberBottomSheetState(
+            SheetValue.Hidden,
+            setOf(SheetValue.Expanded, SheetValue.Hidden)
+        ),
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(

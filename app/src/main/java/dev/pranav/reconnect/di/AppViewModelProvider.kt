@@ -12,9 +12,7 @@ import dev.pranav.reconnect.ui.journey.JourneyViewModel
 import dev.pranav.reconnect.ui.maps.MomentsViewModel
 import dev.pranav.reconnect.ui.picker.ContactPickerViewModel
 import dev.pranav.reconnect.ui.settings.EditProfileViewModel
-import kotlinx.coroutines.FlowPreview
 
-@FlowPreview
 object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
         initializer {

@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -30,11 +31,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.PainterState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.pranav.reconnect.core.model.Contact
 import dev.pranav.reconnect.core.model.ContactFormData
 import dev.pranav.reconnect.core.model.ReconnectInterval
 import dev.pranav.reconnect.core.storage.DeviceContactsDataSource
 import dev.pranav.reconnect.di.AppContainer
+import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.home.HomeViewModel
 import dev.pranav.reconnect.ui.theme.*
 import dev.pranav.reconnect.util.decodePhotoBitmap
@@ -46,7 +50,6 @@ import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.Locale
 
-private val MorphedFabShape = RoundedCornerShape(topStart = 48.dp, topEnd = 16.dp, bottomEnd = 48.dp, bottomStart = 40.dp)
 private val relationships = listOf("Family", "Friend", "Colleague", "Other")
 private val fallbackSeedColors = listOf(
     Color(0xFFE53935),
@@ -158,26 +161,64 @@ fun AddConnectionScreen(
         )
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    val hazeState = remember { HazeState() }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    var isAdvancedOptionsExpanded by remember { mutableStateOf(false) }
+
+    @OptIn(ExperimentalMaterial3Api::class)
     val screenContent: @Composable () -> Unit = {
         Scaffold(
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0.dp),
-        bottomBar = {
-            AddConnectionFooter(
-                onAdd = {
-                    isSaving = true
-                    if (isEditMode) {
-                        existingContact.let { contact ->
-                            viewModel.updateContact(
-                                contact.copy(
-                                    name = state.name.trim(),
-                                    title = state.title.trim(),
-                                    phoneNumber = state.phone.trim(),
-                                    relationship = state.selectedRelationship.orEmpty().trim(),
-                                    notes = state.notes.trim(),
-                                    birthdayYear = state.birthdayYear,
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0.dp),
+            topBar = {
+                AppTopBar(
+                    title = if (isEditMode) "Edit Connection" else "New Connection",
+                    scrollBehavior = scrollBehavior,
+                    hazeState = hazeState
+                )
+            },
+            bottomBar = {
+                AddConnectionFooter(
+                    onAdd = {
+                        isSaving = true
+                        if (isEditMode) {
+                            existingContact.let { contact ->
+                                viewModel.updateContact(
+                                    contact.copy(
+                                        name = state.name.trim(),
+                                        title = state.title.trim(),
+                                        phoneNumber = state.phone.trim(),
+                                        relationship = state.selectedRelationship.orEmpty().trim(),
+                                        notes = state.notes.trim(),
+                                        birthdayYear = state.birthdayYear,
+                                        birthdayMonth = state.birthdayMonth,
+                                        birthdayDay = state.birthdayDay,
+                                        seedColorArgb = state.seedColor.toArgb()
+                                    ),
+                                    photoUri = state.photoUri,
+                                    onComplete = {
+                                        isSaving = false
+                                        onAdded()
+                                    }
+                                )
+                            }
+                        } else {
+                            viewModel.addContact(
+                                form = ContactFormData(
+                                    name = state.name,
+                                    phone = state.phone,
+                                    title = state.title,
+                                    relationship = state.selectedRelationship ?: "",
+                                    notes = state.notes,
+                                    interval = ReconnectInterval.MONTHLY,
                                     birthdayMonth = state.birthdayMonth,
                                     birthdayDay = state.birthdayDay,
+                                    birthdayYear = state.birthdayYear,
                                     seedColorArgb = state.seedColor.toArgb()
                                 ),
                                 photoUri = state.photoUri,
@@ -187,260 +228,262 @@ fun AddConnectionScreen(
                                 }
                             )
                         }
-                    } else {
-                        viewModel.addContact(
-                            form = ContactFormData(
-                                name = state.name,
-                                phone = state.phone,
-                                title = state.title,
-                                relationship = state.selectedRelationship ?: "",
-                                notes = state.notes,
-                                interval = ReconnectInterval.MONTHLY,
-                                birthdayMonth = state.birthdayMonth,
-                                birthdayDay = state.birthdayDay,
-                                birthdayYear = state.birthdayYear,
-                                seedColorArgb = state.seedColor.toArgb()
-                            ),
-                            photoUri = state.photoUri,
-                            onComplete = {
-                                isSaving = false
-                                onAdded()
-                            }
-                        )
-                    }
-                },
-                canAdd = state.name.isNotBlank() && !isSaving,
-                isEditMode = isEditMode,
-                isSaving = isSaving,
-                expressiveScheme = expressiveScheme
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
+                    },
+                    canAdd = state.name.isNotBlank() && !isSaving,
+                    isEditMode = isEditMode,
+                    isSaving = isSaving
+                )
+            }
+        ) { padding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(baseBackgroundBrush)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(topBloomBrush)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(bottomBloomBrush)
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(bottom = padding.calculateBottomPadding())
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .background(MaterialTheme.colorScheme.background)
+                    .hazeSource(hazeState)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (isEditMode) "Edit Connection" else "New Connection",
-                        fontFamily = UltraFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 30.sp,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 8.dp)
-                    )
-
-                    Spacer(Modifier.size(46.dp))
-                }
-
-                Spacer(Modifier.height(18.dp))
-
                 Box(
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    contentAlignment = Alignment.BottomEnd
-                ) {
-                    Surface(
-                        onClick = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                        shape = RoundedCornerShape(topStart = 52.dp, topEnd = 34.dp, bottomEnd = 54.dp, bottomStart = 44.dp),
-                        color = expressiveColors.avatarContainer,
-                        border = BorderStroke(2.dp, Color.White.copy(alpha = 0.75f)),
-                        shadowElevation = 5.dp,
-                        modifier = Modifier.size(150.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (!state.photoUri.isNullOrBlank()) {
-                                AsyncImage(
-                                    uri = state.photoUri,
-                                    contentDescription = "Profile photo",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(
-                                            RoundedCornerShape(
-                                                topStart = 52.dp,
-                                                topEnd = 34.dp,
-                                                bottomEnd = 54.dp,
-                                                bottomStart = 44.dp
-                                            )
-                                        )
-                                )
-                            } else if (existingContact != null) {
-                                val state = com.github.panpf.sketch.rememberAsyncImageState()
-                                val shape = RoundedCornerShape(
-                                    topStart = 52.dp,
-                                    topEnd = 34.dp,
-                                    bottomEnd = 54.dp,
-                                    bottomStart = 44.dp
-                                )
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(shape)
-                                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                                ) {
-                                    if (state.painterState !is PainterState.Success) {
-                                        val initials =
-                                            existingContact.name.split(" ").take(2)
-                                                .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-                                                .joinToString("")
-                                        Text(initials, color = CharcoalText)
-                                    }
-
-                                    val resolvedUri =
-                                        AppContainer.photoResolver.resolveContactPhoto(
-                                            existingContact.id
-                                        )
-
-                                    AsyncImage(
-                                        uri = resolvedUri,
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                            } else {
-                                Icon(
-                                    Icons.Default.AddAPhoto,
-                                    contentDescription = "Add photo",
-                                    tint = expressiveColors.avatarIcon,
-                                    modifier = Modifier.size(44.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Surface(
-                        shape = CircleShape,
-                        color = expressiveScheme.primary,
-                        shadowElevation = 4.dp,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Edit,
-                                contentDescription = "Edit photo",
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    text = if (state.photoUri.isNullOrBlank()) "Add Profile Picture" else "Update Profile Picture",
-                    fontFamily = PlayfairFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(baseBackgroundBrush)
                 )
-                Text(
-                    text = "Capture a moment to remember",
-                    fontFamily = PlusJakartaSansFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(topBloomBrush)
                 )
-
-                Spacer(Modifier.height(24.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(bottomBloomBrush)
+                )
 
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
-                    verticalArrangement = Arrangement.spacedBy(22.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            top = padding.calculateTopPadding(),
+                            bottom = padding.calculateBottomPadding()
+                        )
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Surface(
-                        onClick = { state.showContactSearch = true },
-                        shape = CircleShape,
-                        color = expressiveColors.syncChipContainer,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    Spacer(Modifier.height(24.dp))
+
+                    Box(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        contentAlignment = Alignment.BottomEnd
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        Surface(
+                            onClick = {
+                                photoPicker.launch(
+                                    PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+                            border = BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                            ),
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.size(150.dp)
                         ) {
-                            Icon(Icons.Default.ImportContacts, contentDescription = null, tint = expressiveColors.syncChipIcon)
-                            Text(
-                                "Sync from Contacts",
-                                fontFamily = PlusJakartaSansFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                color = expressiveColors.syncChipText
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                if (!state.photoUri.isNullOrBlank()) {
+                                    AsyncImage(
+                                        uri = state.photoUri,
+                                        contentDescription = "Profile photo",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(RoundedCornerShape(48.dp))
+                                    )
+                                } else if (existingContact != null) {
+                                    val state = com.github.panpf.sketch.rememberAsyncImageState()
+                                    val shape = RoundedCornerShape(48.dp)
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(shape)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    ) {
+                                        if (state.painterState !is PainterState.Success) {
+                                            val initials =
+                                                existingContact.name.split(" ").take(2)
+                                                    .mapNotNull {
+                                                        it.firstOrNull()?.uppercaseChar()
+                                                    }
+                                                    .joinToString("")
+                                            Text(initials, color = CharcoalText)
+                                        }
+
+                                        val resolvedUri =
+                                            AppContainer.photoResolver.resolveContactPhoto(
+                                                existingContact.id
+                                            )
+
+                                        AsyncImage(
+                                            uri = resolvedUri,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                } else {
+                                    Icon(
+                                        Icons.Default.AddAPhoto,
+                                        contentDescription = "Add photo",
+                                        tint = expressiveColors.avatarIcon,
+                                        modifier = Modifier.size(44.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Surface(
+                            shape = CircleShape,
+                            color = expressiveScheme.primary,
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = "Edit photo",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
 
-                    FormSection(label = "Full Name") {
-                        GlassInputField(
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        text = if (state.photoUri.isNullOrBlank()) "Add Profile Picture" else "Update Profile Picture",
+                        fontFamily = PlayfairFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 560.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Surface(
+                            onClick = { state.showContactSearch = true },
+                            shape = CircleShape,
+                            color = expressiveColors.syncChipContainer,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.ImportContacts,
+                                    contentDescription = null,
+                                    tint = expressiveColors.syncChipIcon
+                                )
+                                Text(
+                                    "Sync from Contacts",
+                                    fontFamily = PlusJakartaSansFamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = expressiveColors.syncChipText
+                                )
+                            }
+                        }
+                        TextField(
                             value = state.name,
                             onValueChange = { state.name = it },
-                            placeholder = "Who are you connecting with?"
-                        )
-                    }
-
-                    FormSection(label = "Title") {
-                        GlassInputField(
-                            value = state.title,
-                            onValueChange = { state.title = it },
-                            placeholder = "Optional - e.g. Designer, Manager"
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    "Who are you connecting with?",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontFamily = PlusJakartaSansFamily,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            textStyle = LocalTextStyle.current.copy(
+                                fontFamily = PlusJakartaSansFamily,
+                                fontSize = 16.sp
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                    alpha = 0.9f
+                                ),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                    alpha = 0.8f
+                                ),
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true
                         )
                     }
 
                     FormSection(label = "Phone") {
-                        GlassInputField(
+                        TextField(
                             value = state.phone,
                             onValueChange = { state.phone = it },
-                            placeholder = "Optional - for quick reminders"
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    "Optional - for quick reminders",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontFamily = PlusJakartaSansFamily,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            textStyle = LocalTextStyle.current.copy(
+                                fontFamily = PlusJakartaSansFamily,
+                                fontSize = 16.sp
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                    alpha = 0.9f
+                                ),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                    alpha = 0.8f
+                                ),
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true
                         )
                     }
 
                     FormSection(label = "Birthday") {
                         val birthdayLabel =
                             if (state.birthdayYear != null && state.birthdayMonth != null && state.birthdayDay != null) {
-                            val cal = Calendar.getInstance().apply {
-                                set(Calendar.YEAR, state.birthdayYear!!)
-                                set(Calendar.MONTH, state.birthdayMonth!! - 1)
-                                set(Calendar.DAY_OF_MONTH, state.birthdayDay!!)
-                            }
-                            birthdayFormatter.format(cal.time)
-                        } else null
+                                val cal = Calendar.getInstance().apply {
+                                    set(Calendar.YEAR, state.birthdayYear!!)
+                                    set(Calendar.MONTH, state.birthdayMonth!! - 1)
+                                    set(Calendar.DAY_OF_MONTH, state.birthdayDay!!)
+                                }
+                                birthdayFormatter.format(cal.time)
+                            } else null
 
                         Surface(
                             onClick = { state.showBirthdayPicker = true },
@@ -495,60 +538,128 @@ fun AddConnectionScreen(
                         )
                     }
 
-                    FormSection(label = "Theme Color") {
-                        SeedColorSelector(
-                            colors = selectableSeedColors,
-                            selectedColor = state.seedColor,
-                            onSelect = {
-                                state.seedColor = it
-                                state.isSeedColorCustom = true
-                            },
-                            onOpenCustomPicker = { state.showColorPicker = true },
-                            onUsePhotoColor = {
-                                val bitmap = state.photoBitmap ?: return@SeedColorSelector
-                                state.seedColor = extractSeedColorOrDefault(bitmap, state.seedColor)
-                                state.isSeedColorCustom = false
-                            },
-                            canUsePhotoColor = state.photoBitmap != null
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { isAdvancedOptionsExpanded = !isAdvancedOptionsExpanded }
+                            .padding(vertical = 12.dp, horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "More details",
+                            fontFamily = PlusJakartaSansFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Icon(
+                            if (isAdvancedOptionsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    FormSection(label = "Memory Jogger") {
-                        TextField(
-                            value = state.notes,
-                            onValueChange = { state.notes = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(132.dp),
-                            placeholder = {
-                                Text(
-                                    "Write a note about how you met or what they love...",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    if (isAdvancedOptionsExpanded) {
+                        FormSection(label = "Title") {
+                            TextField(
+                                value = state.title,
+                                onValueChange = { state.title = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = {
+                                    Text(
+                                        "Optional - e.g. Designer, Manager",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontFamily = PlusJakartaSansFamily,
+                                        fontSize = 14.sp
+                                    )
+                                },
+                                textStyle = LocalTextStyle.current.copy(
                                     fontFamily = PlusJakartaSansFamily,
-                                    fontSize = 14.sp
-                                )
-                            },
-                            textStyle = LocalTextStyle.current.copy(fontFamily = PlusJakartaSansFamily, fontSize = 16.sp),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.White.copy(alpha = 0.42f),
-                                unfocusedContainerColor = Color.White.copy(alpha = 0.42f),
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            shape = RoundedCornerShape(topStart = 22.dp, topEnd = 28.dp, bottomEnd = 26.dp, bottomStart = 24.dp),
-                            maxLines = 5
-                        )
+                                    fontSize = 16.sp
+                                ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                        alpha = 0.9f
+                                    ),
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                        alpha = 0.8f
+                                    ),
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                singleLine = true
+                            )
+                        }
+
+                        FormSection(label = "Theme Color") {
+                            SeedColorSelector(
+                                colors = selectableSeedColors,
+                                selectedColor = state.seedColor,
+                                onSelect = {
+                                    state.seedColor = it
+                                    state.isSeedColorCustom = true
+                                },
+                                onOpenCustomPicker = { state.showColorPicker = true },
+                                onUsePhotoColor = {
+                                    val bitmap = state.photoBitmap ?: return@SeedColorSelector
+                                    state.seedColor =
+                                        extractSeedColorOrDefault(bitmap, state.seedColor)
+                                    state.isSeedColorCustom = false
+                                },
+                                canUsePhotoColor = state.photoBitmap != null
+                            )
+                        }
+
+                        FormSection(label = "Notes") {
+                            TextField(
+                                value = state.notes,
+                                onValueChange = { state.notes = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(132.dp),
+                                placeholder = {
+                                    Text(
+                                        "Write a note about how you met or what they love...",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontFamily = PlusJakartaSansFamily,
+                                        fontSize = 14.sp
+                                    )
+                                },
+                                textStyle = LocalTextStyle.current.copy(
+                                    fontFamily = PlusJakartaSansFamily,
+                                    fontSize = 16.sp
+                                ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.White.copy(alpha = 0.42f),
+                                    unfocusedContainerColor = Color.White.copy(alpha = 0.42f),
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                shape = RoundedCornerShape(
+                                    topStart = 22.dp,
+                                    topEnd = 28.dp,
+                                    bottomEnd = 26.dp,
+                                    bottomStart = 24.dp
+                                ),
+                                maxLines = 5
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(8.dp))
                 }
             }
         }
-    }
     }
 
     if (state.showContactSearch) {
@@ -621,8 +732,8 @@ private fun SeedColorSelector(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             colors.forEach { color ->
                 val isSelected = selectedColor.toArgb() == color.toArgb()
@@ -744,8 +855,8 @@ private fun GlassInputField(
         },
         textStyle = LocalTextStyle.current.copy(fontFamily = PlusJakartaSansFamily, fontSize = 16.sp),
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.White.copy(alpha = 0.42f),
-            unfocusedContainerColor = Color.White.copy(alpha = 0.42f),
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -753,7 +864,7 @@ private fun GlassInputField(
             focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
             unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         singleLine = singleLine
     )
 }
@@ -1033,7 +1144,7 @@ private fun FormSection(label: String, content: @Composable () -> Unit) {
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 8.dp)
+            modifier = Modifier.padding(start = 12.dp)
         )
         content()
     }
@@ -1044,12 +1155,12 @@ private fun AddConnectionFooter(
     onAdd: () -> Unit,
     canAdd: Boolean,
     isEditMode: Boolean,
-    isSaving: Boolean,
-    expressiveScheme: ColorScheme
+    isSaving: Boolean
 ) {
     Surface(
-        color = Color.Transparent,
-        shadowElevation = 0.dp,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
+        tonalElevation = 4.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -1064,16 +1175,8 @@ private fun AddConnectionFooter(
                 onClick = onAdd,
                 enabled = canAdd && !isSaving,
                 modifier = Modifier
-                    .weight(1f)
-                    .height(68.dp),
-                shape = MorphedFabShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = expressiveScheme.primary,
-                    contentColor = expressiveScheme.onPrimary,
-                    disabledContainerColor = expressiveScheme.surfaceVariant,
-                    disabledContentColor = expressiveScheme.onSurfaceVariant
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+                    .fillMaxWidth()
+                    .height(56.dp)
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(
@@ -1085,15 +1188,11 @@ private fun AddConnectionFooter(
                     Icon(
                         if (isEditMode) Icons.Default.Save else Icons.Default.PersonAdd,
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        if (isEditMode) "SAVE DETAILS" else "ADD TO CIRCLE",
-                        fontFamily = UltraFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 17.sp,
-                        letterSpacing = 1.sp
+                        if (isEditMode) "Save details" else "Add to Circle"
                     )
                 }
             }

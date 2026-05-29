@@ -18,6 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -25,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.panpf.sketch.AsyncImage
 import dev.chrisbanes.haze.HazeState
@@ -36,7 +39,8 @@ import dev.pranav.reconnect.core.session.AppSessionStore
 import dev.pranav.reconnect.di.AppContainer
 import dev.pranav.reconnect.ui.components.AppTopBar
 import dev.pranav.reconnect.ui.theme.GoldPrimary
-import dev.pranav.reconnect.ui.theme.MediumGray
+import dev.pranav.reconnect.ui.theme.PlayfairFamily
+import dev.pranav.reconnect.ui.theme.PlusJakartaSansFamily
 import dev.pranav.reconnect.util.takePersistableReadPermissionIfPossible
 import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.rememberCameraState
@@ -153,12 +157,42 @@ fun LogMomentScreen(
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val hazeState = remember { HazeState() }
+    val expressiveScheme = MaterialTheme.colorScheme
+
+    val baseBackgroundBrush = remember(expressiveScheme) {
+        Brush.linearGradient(
+            colors = listOf(
+                expressiveScheme.primaryContainer.copy(alpha = 0.50f),
+                expressiveScheme.secondaryContainer.copy(alpha = 0.24f),
+                expressiveScheme.tertiaryContainer.copy(alpha = 0.34f)
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(1500f, 2400f)
+        )
+    }
+
+    val topBloomBrush = remember(expressiveScheme) {
+        Brush.radialGradient(
+            colors = listOf(expressiveScheme.primary.copy(alpha = 0.42f), Color.Transparent),
+            center = Offset(1100f, 120f),
+            radius = 760f
+        )
+    }
+
+    val bottomBloomBrush = remember(expressiveScheme) {
+        Brush.radialGradient(
+            colors = listOf(expressiveScheme.tertiary.copy(alpha = 0.32f), Color.Transparent),
+            center = Offset(140f, 1950f),
+            radius = 920f
+        )
+    }
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .zIndex(10f)
             .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
                 title = "Log a Moment",
@@ -171,353 +205,428 @@ fun LogMomentScreen(
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .hazeSource(hazeState)
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(baseBackgroundBrush)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(topBloomBrush)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(bottomBloomBrush)
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(
+                        top = paddingValues.calculateTopPadding(),
+                        bottom = paddingValues.calculateBottomPadding() + 32.dp
+                    )
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title *") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
-                    singleLine = true
-                )
+                Spacer(Modifier.height(18.dp))
+
+                FormSection(label = "Title *") {
+                    GlassInputField(
+                        value = title,
+                        onValueChange = { title = it },
+                        placeholder = "What happened?"
+                    )
+                }
+
+                FormSection(label = "Date") {
+                    Surface(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.White.copy(alpha = 0.44f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val formattedDate = remember(selectedDateMs) {
+                                java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.US)
+                                    .format(java.util.Date(selectedDateMs))
+                            }
+                            Text(
+                                formattedDate,
+                                fontFamily = PlusJakartaSansFamily,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Select Date",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { showDatePicker = true }
-                        .padding(vertical = 12.dp, horizontal = 4.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val formattedDate = remember(selectedDateMs) {
-                        java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.US)
-                            .format(java.util.Date(selectedDateMs))
-                    }
-                    Column {
-                        Text("Date", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = formattedDate,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Text(
+                        "Settings",
+                        fontFamily = PlayfairFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White.copy(alpha = 0.44f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "Mark as Core Memory",
+                                fontFamily = PlusJakartaSansFamily,
+                                fontSize = 16.sp
+                            )
+                            Switch(
+                                checked = isCoreMemory,
+                                onCheckedChange = { isCoreMemory = it },
+                                colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary)
+                            )
+                        }
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                alpha = 0.5f
+                            )
                         )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "I was present",
+                                fontFamily = PlusJakartaSansFamily,
+                                fontSize = 16.sp
+                            )
+                            Switch(
+                                checked = wasPresent,
+                                onCheckedChange = { wasPresent = it },
+                                colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary)
+                            )
+                        }
                     }
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = "Select Date",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Mark as Core Memory", style = MaterialTheme.typography.bodyLarge)
-                    Switch(
-                        checked = isCoreMemory,
-                        onCheckedChange = { isCoreMemory = it },
-                        colors = SwitchDefaults.colors(checkedTrackColor = GoldPrimary)
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("I was present", style = MaterialTheme.typography.bodyLarge)
-                    Switch(
-                        checked = wasPresent,
-                        onCheckedChange = { wasPresent = it },
-                        colors = SwitchDefaults.colors(checkedTrackColor = GoldPrimary)
-                    )
-                }
-
-                Text("People involved", style = MaterialTheme.typography.labelLarge)
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(selectedContactIds.toList(), key = { it }) { id ->
-                        val contact = allContacts.find { it.id == id }
-                        if (contact != null) {
+                FormSection(label = "People involved") {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(selectedContactIds.toList(), key = { it }) { id ->
+                            val contact = allContacts.find { it.id == id }
+                            if (contact != null) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.width(64.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.TopEnd) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(52.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.secondaryContainer),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = contact.name.firstOrNull()?.toString()
+                                                    ?.uppercase()
+                                                    ?: "?",
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                style = MaterialTheme.typography.titleMedium
+                                            )
+                                            AsyncImage(
+                                                uri = photoResolver.resolveContactPhoto(contact.id),
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                                .offset(x = 4.dp, y = (-4).dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.error)
+                                                .clickable { selectedContactIds -= contact.id },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = "Remove",
+                                                tint = MaterialTheme.colorScheme.onError,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = contact.name.split(" ").first(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                        item {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.width(64.dp)
+                                modifier = Modifier
+                                    .clickable { showContactSheet = true }
+                                    .padding(horizontal = 8.dp)
                             ) {
-                                Box(contentAlignment = Alignment.TopEnd) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(52.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.secondaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = contact.name.firstOrNull()?.toString()
-                                                ?.uppercase()
-                                                ?: "?",
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        AsyncImage(
-                                            uri = photoResolver.resolveContactPhoto(contact.id),
-                                            contentDescription = null,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .size(18.dp)
-                                            .offset(x = 4.dp, y = (-4).dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.error)
-                                            .clickable { selectedContactIds -= contact.id },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Close,
-                                            contentDescription = "Remove",
-                                            tint = MaterialTheme.colorScheme.onError,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
+                                Box(
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.outline,
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = "Add Person",
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
                                 Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = contact.name.split(" ").first(),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1,
-                                    textAlign = TextAlign.Center
-                                )
+                                Text("Add", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
-                    item {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .clickable { showContactSheet = true }
-                                .padding(horizontal = 8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = "Add Person",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            Text("Add", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
                 }
 
-                OutlinedTextField(
-                    value = groupName,
-                    onValueChange = { groupName = it },
-                    label = { Text("Project / Group Name (optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
-                    singleLine = true
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { showLocationPicker = true }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text("Location", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = if (locationLatitude != null && locationLongitude != null) {
-                                "${"%.5f".format(locationLatitude)} , ${
-                                    "%.5f".format(
-                                        locationLongitude
-                                    )
-                                }"
-                            } else {
-                                "Select a location on the map"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Icon(imageVector = Icons.Default.Place, contentDescription = "Select location")
+                FormSection(label = "Project / Group Name") {
+                    GlassInputField(
+                        value = groupName,
+                        onValueChange = { groupName = it },
+                        placeholder = "Optional"
+                    )
                 }
 
-                OutlinedTextField(
-                    value = locationMood,
-                    onValueChange = { locationMood = it },
-                    label = { Text("Location Mood (optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Notes (optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 10,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary)
-                )
-
-                Text("Category", style = MaterialTheme.typography.labelLarge)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MomentCategory.entries.forEach { option ->
-                        FilterChip(
-                            selected = category == option,
-                            onClick = { category = option },
-                            label = {
-                                Text(
-                                    option.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = GoldPrimary,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Photos", style = MaterialTheme.typography.labelLarge)
-                    if (selectedImages.isNotEmpty()) {
-                        Text(
-                            "${selectedImages.size}/$MAX_IMAGES",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MediumGray
-                        )
-                    }
-                }
-
-                if (selectedImages.isNotEmpty()) {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                FormSection(label = "Location") {
+                    Surface(
+                        onClick = { showLocationPicker = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.White.copy(alpha = 0.44f)
                     ) {
-                        items(selectedImages, key = { it.id }) { image ->
-                            Box(
-                                modifier = Modifier
-                                    .width(130.dp)
-                                    .aspectRatio(1f)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable { imageForCaption = image }
-                            ) {
-                                val finalUri =
-                                    if (image.uri.startsWith("content://")) image.uri else photoResolver.resolveMomentPhoto(
-                                        image.uri
-                                    )
-                                AsyncImage(
-                                    uri = finalUri,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (locationLatitude != null && locationLongitude != null) {
+                                    "${"%.5f".format(locationLatitude)} , ${
+                                        "%.5f".format(
+                                            locationLongitude
+                                        )
+                                    }"
+                                } else {
+                                    "Select on map"
+                                },
+                                fontFamily = PlusJakartaSansFamily,
+                                fontSize = 15.sp,
+                                color = if (locationLatitude != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = "Select location",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
 
-                                if (!image.caption.isNullOrBlank()) {
+                FormSection(label = "Location Mood") {
+                    GlassInputField(
+                        value = locationMood,
+                        onValueChange = { locationMood = it },
+                        placeholder = "Optional"
+                    )
+                }
+
+                FormSection(label = "Notes") {
+                    GlassInputField(
+                        value = description,
+                        onValueChange = { description = it },
+                        placeholder = "Optional",
+                        singleLine = false,
+                        minLines = 3,
+                        maxLines = 10
+                    )
+                }
+
+                FormSection(label = "Category") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MomentCategory.entries.forEach { option ->
+                            FilterChip(
+                                selected = category == option,
+                                onClick = { category = option },
+                                label = {
+                                    Text(
+                                        option.name.lowercase().replaceFirstChar { it.uppercase() },
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+                    }
+                }
+
+                FormSection(label = "Photos") {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            if (selectedImages.isNotEmpty()) {
+                                Text(
+                                    "${selectedImages.size}/$MAX_IMAGES",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        if (selectedImages.isNotEmpty()) {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(selectedImages, key = { it.id }) { image ->
                                     Box(
                                         modifier = Modifier
-                                            .align(Alignment.BottomStart)
-                                            .fillMaxWidth()
-                                            .background(Color.Black.copy(alpha = 0.4f))
-                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                            .width(130.dp)
+                                            .aspectRatio(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { imageForCaption = image }
                                     ) {
-                                        Text(
-                                            text = image.caption!!,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color.White,
-                                            maxLines = 1,
+                                        val finalUri =
+                                            if (image.uri.startsWith("content://")) image.uri else photoResolver.resolveMomentPhoto(
+                                                image.uri
+                                            )
+                                        AsyncImage(
+                                            uri = finalUri,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
                                         )
-                                    }
-                                }
 
-                                IconButton(
-                                    onClick = {
-                                        selectedImages = selectedImages.filter { it.id != image.id }
-                                    },
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(4.dp)
-                                        .size(24.dp)
-                                ) {
-                                    // Design modification: Using light shadow and no background instead of a grey background square
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Remove",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp) // Removed clipping and black background
-                                    )
+                                        if (!image.caption.isNullOrBlank()) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomStart)
+                                                    .fillMaxWidth()
+                                                    .background(Color.Black.copy(alpha = 0.4f))
+                                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                                            ) {
+                                                Text(
+                                                    text = image.caption!!,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color.White,
+                                                    maxLines = 1,
+                                                )
+                                            }
+                                        }
+
+                                        IconButton(
+                                            onClick = {
+                                                selectedImages =
+                                                    selectedImages.filter { it.id != image.id }
+                                            },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .size(24.dp)
+                                        ) {
+                                            // Design modification: Using light shadow and no background instead of a grey background square
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = "Remove",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(20.dp) // Removed clipping and black background
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
 
-                OutlinedButton(
-                    onClick = {
-                        imagePicker.launch(
-                            PickVisualMediaRequest(
-                                ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                        OutlinedButton(
+                            onClick = {
+                                imagePicker.launch(
+                                    PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                                    )
+                                )
+                            },
+                            enabled = selectedImages.size < MAX_IMAGES,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(
+                                Icons.Default.AddPhotoAlternate,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
-                        )
-                    },
-                    enabled = selectedImages.size < MAX_IMAGES,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldPrimary)
-                ) {
-                    Icon(
-                        Icons.Default.AddPhotoAlternate,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (selectedImages.isEmpty()) "Add Photos" else "Add More Photos")
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                if (selectedImages.isEmpty()) "Add Photos" else "Add More Photos",
+                                fontFamily = PlusJakartaSansFamily,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(4.dp))
@@ -583,20 +692,25 @@ fun LogMomentScreen(
                     enabled = title.isNotBlank() && !isUploading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(56.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GoldPrimary,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     if (isUploading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
-                        Text("Log It", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Save Moment",
+                            fontFamily = dev.pranav.reconnect.ui.theme.UltraFamily,
+                            fontSize = 18.sp,
+                            letterSpacing = 1.sp
+                        )
                     }
                 }
             }
@@ -780,10 +894,13 @@ fun LogMomentScreen(
                 ) {
                     Text(
                         text = "Photo Caption",
-                        style = MaterialTheme.typography.titleLarge,
+                        fontFamily = PlayfairFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-                    OutlinedTextField(
+                    GlassInputField(
                         value = currentImage.caption ?: "",
                         onValueChange = { newCaption ->
                             if (newCaption.length <= 150) {
@@ -793,23 +910,25 @@ fun LogMomentScreen(
                                 imageForCaption = imageForCaption?.copy(caption = newCaption)
                             }
                         },
-                        placeholder = { Text("Write something about this photo...") },
-                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = "Write something about this photo...",
+                        singleLine = false,
                         minLines = 3,
-                        maxLines = 6,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrimary)
+                        maxLines = 6
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = { imageForCaption = null },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(56.dp),
                         shape = RoundedCornerShape(24.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Done")
+                        Text(
+                            "Done",
+                            fontFamily = PlusJakartaSansFamily,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -851,4 +970,62 @@ fun LogMomentScreen(
             )
         }
     }
+}
+
+@Composable
+private fun FormSection(label: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = label,
+            fontFamily = PlayfairFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 8.dp)
+        )
+        content()
+    }
+}
+
+@Composable
+private fun GlassInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    modifier: Modifier = Modifier.fillMaxWidth()
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        placeholder = {
+            Text(
+                placeholder,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = PlusJakartaSansFamily,
+                fontSize = 14.sp
+            )
+        },
+        textStyle = LocalTextStyle.current.copy(
+            fontFamily = PlusJakartaSansFamily,
+            fontSize = 16.sp
+        ),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.White.copy(alpha = 0.42f),
+            unfocusedContainerColor = Color.White.copy(alpha = 0.42f),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        shape = RoundedCornerShape(20.dp),
+        singleLine = singleLine,
+        minLines = minLines,
+        maxLines = maxLines
+    )
 }
